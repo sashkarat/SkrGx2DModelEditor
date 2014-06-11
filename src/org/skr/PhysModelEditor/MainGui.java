@@ -5,6 +5,9 @@ import com.badlogic.gdx.backends.lwjgl.LwjglAWTCanvas;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import org.skr.PhysModelEditor.PropertiesTableElements.*;
+import org.skr.physmodel.BodyItem;
+import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
+import org.skr.physmodel.PhysModel;
 
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
@@ -85,7 +88,7 @@ public class MainGui extends JFrame {
                     }
                 case BODY:
                     if ( object != null ) {
-                        PhysModel.BodyItem bi = (PhysModel.BodyItem ) object;
+                        BodyItem bi = ( BodyItem ) object;
                         return "Body: " + bi.getName();
                     }
             }
@@ -105,7 +108,7 @@ public class MainGui extends JFrame {
         setContentPane(rootPanel);
         gdxPannel.add(gdxCanvas.getCanvas(), BorderLayout.CENTER);
         pack();
-        setSize(1280, 900);
+        setSize(1280, 800);
         addWindowListener( new MainGuiWindowListener() );
 
 
@@ -396,7 +399,7 @@ public class MainGui extends JFrame {
     }
 
     void addNewBody( DefaultMutableTreeNode parentNode ) {
-        PhysModel.BodyItem bi = model.addNewBodyItem("noname");
+        BodyItem bi = model.addNewBodyItem("noname");
         parentNode.add( new DefaultMutableTreeNode( new NodeInfo(bi, NodeInfo.Type.BODY ) ) );
     }
 
@@ -427,7 +430,7 @@ public class MainGui extends JFrame {
             case BODY:
                 if ( ni.object == null )
                     return;
-                PhysModel.BodyItem bi = (PhysModel.BodyItem) ni.object;
+                BodyItem bi = (BodyItem) ni.object;
 
                 if ( bi.getAagBackground() != null )
                     return;
@@ -477,7 +480,7 @@ public class MainGui extends JFrame {
                     AnimatedActorGroup ag = (AnimatedActorGroup) ni.object;
                     parentAg.removeChild( ag );
                 } else if ( niParent.type == NodeInfo.Type.BODY ) {
-                    PhysModel.BodyItem bi = ( PhysModel.BodyItem ) niParent.object;
+                    BodyItem bi = ( BodyItem ) niParent.object;
                     bi.setAagBackground( null );
                 }
 
@@ -485,7 +488,7 @@ public class MainGui extends JFrame {
             case BODY:
                 if ( niParent.type != NodeInfo.Type.ROOT )
                     return;
-                PhysModel.BodyItem bi = (PhysModel.BodyItem) ni.object;
+                BodyItem bi = (BodyItem) ni.object;
                 model.removeBody( bi );
                 break;
         }
@@ -518,7 +521,7 @@ public class MainGui extends JFrame {
                 break;
 
             case BODY:
-                PhysModel.BodyItem bi = (PhysModel.BodyItem ) ni.object;
+                BodyItem bi = ( BodyItem ) ni.object;
                 bodyPropertiesTableModel.setBodyItem( bi );
                 tableProperties.setModel( bodyPropertiesTableModel );
                 tableProperties.updateUI();
@@ -580,7 +583,7 @@ public class MainGui extends JFrame {
 
         if ( model.getBodyItems() != null ) {
 
-            for (PhysModel.BodyItem bi : model.getBodyItems() ) {
+            for ( BodyItem bi : model.getBodyItems() ) {
                 DefaultMutableTreeNode bodyNode = new DefaultMutableTreeNode( new NodeInfo( bi, NodeInfo.Type.BODY) );
 
                 if ( bi.getAagBackground() != null ) {

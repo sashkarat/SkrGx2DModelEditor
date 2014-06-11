@@ -1,4 +1,4 @@
-package org.skr.PhysModelEditor;
+package org.skr.physmodel.animatedactorgroup;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -10,6 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.SnapshotArray;
+import org.skr.PhysModelEditor.GdxApplication;
 
 import java.util.Stack;
 
@@ -33,119 +34,6 @@ public class AnimatedActorGroup extends Group {
         globalSizeChangedListener = listener;
     }
 
-    public static class Description {
-
-        String name = "";
-        String textureName = "";
-        float frameDuration = 0.02f;
-        Animation.PlayMode playMode = Animation.PlayMode.LOOP;
-        float width = 0;
-        float height = 0;
-        float x = 0;
-        float y = 0;
-        float rotation = 0;
-        boolean drawable = true;
-        boolean keepAspectRatio = false;
-
-        Array<Description> children = new Array<Description>();
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getTextureName() {
-            return textureName;
-        }
-
-        public void setTextureName(String textureName) {
-            this.textureName = textureName;
-        }
-
-        public float getFrameDuration() {
-            return frameDuration;
-        }
-
-        public void setFrameDuration(float frameDuration) {
-            this.frameDuration = frameDuration;
-        }
-
-        public Animation.PlayMode getPlayMode() {
-            return playMode;
-        }
-
-        public void setPlayMode(Animation.PlayMode playMode) {
-            this.playMode = playMode;
-        }
-
-        public float getWidth() {
-            return width;
-        }
-
-        public void setWidth(float width) {
-            this.width = width;
-        }
-
-        public float getHeight() {
-            return height;
-        }
-
-        public void setHeight(float height) {
-            this.height = height;
-        }
-
-        public float getX() {
-            return x;
-        }
-
-        public void setX(float x) {
-            this.x = x;
-        }
-
-        public float getY() {
-            return y;
-        }
-
-        public void setY(float y) {
-            this.y = y;
-        }
-
-        public float getRotation() {
-            return rotation;
-        }
-
-        public void setRotation(float rotation) {
-            this.rotation = rotation;
-        }
-
-        public boolean isDrawable() {
-            return drawable;
-        }
-
-        public void setDrawable(boolean drawable) {
-            this.drawable = drawable;
-        }
-
-        public boolean isKeepAspectRatio() {
-            return keepAspectRatio;
-        }
-
-        public void setKeepAspectRatio(boolean keepAspectRatio) {
-            this.keepAspectRatio = keepAspectRatio;
-        }
-
-        public Array<Description> getChildren() {
-            return children;
-        }
-
-        public void setChildren(Array<Description> children) {
-            this.children = children;
-        }
-    };
-
 
     String textureName = "";
     float frameDuration = 0.02f;
@@ -163,7 +51,7 @@ public class AnimatedActorGroup extends Group {
         updateTextures();
     }
 
-    public AnimatedActorGroup( Description desc ) {
+    public AnimatedActorGroup( AagDescription desc ) {
         uploadFromDescription( desc );
     }
 
@@ -214,11 +102,11 @@ public class AnimatedActorGroup extends Group {
     // ================================================================
 
 
-    public Description getDescription() {
+    public AagDescription getDescription() {
 
-        Description desc = new Description();
+        AagDescription desc = new AagDescription();
 
-        Array<Description> children = desc.getChildren();
+        Array<AagDescription> children = desc.getChildren();
 
         for ( Actor a : getChildren() ) {
             if ( a instanceof AnimatedActorGroup ) {
@@ -242,13 +130,13 @@ public class AnimatedActorGroup extends Group {
         return desc;
     }
 
-    public void uploadFromDescription( Description desc ) {
+    public void uploadFromDescription( AagDescription desc ) {
 
         Actor[] old_children = getChildren().toArray();
         for ( Actor a : old_children)
             removeActor( a );
 
-        for ( Description d : desc.getChildren() )
+        for ( AagDescription d : desc.getChildren() )
             addChild( new AnimatedActorGroup( d ) );
 
         setName( desc.getName() );

@@ -4,7 +4,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.utils.Array;
-import org.skr.PhysModelEditor.PhysModel;
+import org.skr.physmodel.BodyItem;
+import org.skr.physmodel.PhysModel;
 
 import javax.swing.*;
 
@@ -47,7 +48,7 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
         }
     }
 
-    PhysModel.BodyItem bodyItem;
+    BodyItem bodyItem;
 
 
     public BodyPropertiesTableModel(JTree modelJTree) {
@@ -55,11 +56,11 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
     }
 
 
-    public PhysModel.BodyItem getBodyItem() {
+    public BodyItem getBodyItem() {
         return bodyItem;
     }
 
-    public void setBodyItem(PhysModel.BodyItem bodyItem) {
+    public void setBodyItem( BodyItem bodyItem) {
         this.bodyItem = bodyItem;
     }
 

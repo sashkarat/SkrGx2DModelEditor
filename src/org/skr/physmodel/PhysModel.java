@@ -1,4 +1,4 @@
-package org.skr.PhysModelEditor;
+package org.skr.physmodel;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
@@ -8,6 +8,9 @@ import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.SerializationException;
+import org.skr.physmodel.animatedactorgroup.AagDescription;
+import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
+import org.skr.PhysModelEditor.PhysWorld;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -25,9 +28,6 @@ public class PhysModel {
         EdgeShape es = new EdgeShape();
         ChainShape chs = new ChainShape();
 
-        
-
-
         /*
 
         public Shape shape;
@@ -40,43 +40,12 @@ public class PhysModel {
 
     }
 
-    static public class BodyDescription {
-        BodyDef bodyDef = new BodyDef();
-        String name = "";
-        AnimatedActorGroup.Description aagDescription = null;
-
-        //TODO: add fixtures
-
-        public BodyDef getBodyDef() {
-            return bodyDef;
-        }
-
-        public void setBodyDef(BodyDef bodyDef) {
-            this.bodyDef = bodyDef;
-        }
-
-        public AnimatedActorGroup.Description getAagDescription() {
-            return aagDescription;
-        }
-
-        public void setAagDescription(AnimatedActorGroup.Description aagDescription) {
-            this.aagDescription = aagDescription;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-    }
 
     static  public class Description {
 
         String name = "";
-        AnimatedActorGroup.Description backgroundAagDesc = null;
-        Array<BodyDescription> bodiesDesc = null;
+        AagDescription backgroundAagDesc = null;
+        Array<BodyItemDescription> bodiesDesc = null;
 
         public String getName() {
             return name;
@@ -86,53 +55,22 @@ public class PhysModel {
             this.name = name;
         }
 
-        public AnimatedActorGroup.Description getBackgroundAagDesc() {
+        public AagDescription getBackgroundAagDesc() {
             return backgroundAagDesc;
         }
 
-        public void setBackgroundAagDesc(AnimatedActorGroup.Description backgroundAagDesc) {
+        public void setBackgroundAagDesc(AagDescription backgroundAagDesc) {
             this.backgroundAagDesc = backgroundAagDesc;
         }
 
-        public Array<BodyDescription> getBodyDescriptions() {
+        public Array<BodyItemDescription> getBodyDescriptions() {
             return bodiesDesc;
         }
 
-        public void setBodiesDesc( Array<BodyDescription> bodiesDesc ) {
+        public void setBodiesDesc( Array<BodyItemDescription> bodiesDesc ) {
             this.bodiesDesc = bodiesDesc;
         }
 
-    }
-
-    public class BodyItem {
-        String name = "";
-        Body body = null;
-
-        AnimatedActorGroup aagBackground;
-
-        public Body getBody() {
-            return body;
-        }
-
-        public void setBody(Body body) {
-            this.body = body;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public AnimatedActorGroup getAagBackground() {
-            return aagBackground;
-        }
-
-        public void setAagBackground(AnimatedActorGroup aagBackground) {
-            this.aagBackground = aagBackground;
-        }
     }
 
     private String name = "";
@@ -160,11 +98,11 @@ public class PhysModel {
         }
         bodyItems.clear();
 
-        Array<BodyDescription> bodiesDesc = desc.getBodyDescriptions();
+        Array<BodyItemDescription> bodiesDesc = desc.getBodyDescriptions();
 
         if ( bodiesDesc != null ) {
 
-            for (BodyDescription bd : bodiesDesc) {
+            for (BodyItemDescription bd : bodiesDesc) {
                 BodyItem bi = addBodyItem( bd.getName(), bd.bodyDef );
                 //TODO: process fixtures
                 if (bd.aagDescription != null) {
@@ -189,7 +127,7 @@ public class PhysModel {
         }
 
         if ( bodyItems.size != 0 ) {
-            Array<BodyDescription> bdesc = new Array<BodyDescription>();
+            Array<BodyItemDescription> bdesc = new Array<BodyItemDescription>();
             fillUpBodyDescriptions(bdesc);
             desc.setBodiesDesc(bdesc);
         }
@@ -198,10 +136,10 @@ public class PhysModel {
     }
 
 
-    void fillUpBodyDescriptions(Array<BodyDescription> bodyDescriptions) {
+    void fillUpBodyDescriptions(Array<BodyItemDescription> bodyDescriptions) {
 
         for(BodyItem bi : bodyItems) {
-            BodyDescription bd = new BodyDescription();
+            BodyItemDescription bd = new BodyItemDescription();
             bd.setName( bi.getName() );
             BodyDef bdef = getBodyDefFromBody( bi.body );
             bd.setBodyDef( bdef );
@@ -359,7 +297,8 @@ public class PhysModel {
         }
 
         if ( ok ) {
-            Gdx.app.log("PhysModel.loadFromFile", "Model \"" + physModel.getName() + "\"; File: \"" + fileHandle + "\" OK");
+            Gdx.app.log("PhysModel.loadFromFile", "Model \"" + physModel.getName() +
+                    "\"; File: \"" + fileHandle + "\" OK");
         }
     }
 

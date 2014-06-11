@@ -26,130 +26,141 @@
             <properties/>
             <border type="etched"/>
             <children>
-              <vspacer id="17685">
+              <scrollpane id="6fce0">
                 <constraints>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-                  <gridbag weightx="0.0" weighty="0.0"/>
-                </constraints>
-              </vspacer>
-              <splitpane id="24ded">
-                <constraints>
-                  <grid row="0" column="0" row-span="2" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
-                    <preferred-size width="200" height="200"/>
-                  </grid>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                   <gridbag weightx="1.0" weighty="1.0"/>
                 </constraints>
-                <properties>
-                  <orientation value="0"/>
-                  <resizeWeight value="0.4"/>
-                </properties>
+                <properties/>
                 <border type="none"/>
                 <children>
-                  <grid id="13ec9" layout-manager="GridBagLayout">
-                    <constraints>
-                      <splitpane position="left"/>
-                    </constraints>
-                    <properties/>
-                    <border type="etched" title="Model"/>
-                    <children>
-                      <component id="7c1c8" class="javax.swing.JTree" binding="treePhysModel">
-                        <constraints>
-                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="50"/>
-                          </grid>
-                          <gridbag weightx="1.0" weighty="1.0"/>
-                        </constraints>
-                        <properties/>
-                      </component>
-                      <grid id="c8f35" binding="panelProperties" layout-manager="BorderLayout" hgap="0" vgap="0">
-                        <constraints>
-                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                          <gridbag weightx="0.0" weighty="0.0"/>
-                        </constraints>
-                        <properties/>
-                        <border type="etched" title="Properites"/>
-                        <children>
-                          <component id="3c7d9" class="javax.swing.JTable" binding="tableProperties">
-                            <constraints border-constraint="Center"/>
-                            <properties>
-                              <rowSelectionAllowed value="false"/>
-                            </properties>
-                          </component>
-                        </children>
-                      </grid>
-                      <grid id="94e98" layout-manager="GridBagLayout">
-                        <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                          <gridbag weightx="0.0" weighty="0.0"/>
-                        </constraints>
-                        <properties/>
-                        <border type="etched"/>
-                        <children>
-                          <component id="11116" class="javax.swing.JButton" binding="btnAddNode">
-                            <constraints>
-                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                              <gridbag weightx="0.0" weighty="0.0"/>
-                            </constraints>
-                            <properties>
-                              <text value="+"/>
-                            </properties>
-                          </component>
-                          <hspacer id="e08e6">
-                            <constraints>
-                              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                              <gridbag weightx="1.0" weighty="0.0"/>
-                            </constraints>
-                          </hspacer>
-                          <hspacer id="717cf">
-                            <constraints>
-                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                              <gridbag weightx="0.0" weighty="0.0"/>
-                            </constraints>
-                          </hspacer>
-                          <component id="951fb" class="javax.swing.JButton" binding="btnRemNode">
-                            <constraints>
-                              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                              <gridbag weightx="0.0" weighty="0.0"/>
-                            </constraints>
-                            <properties>
-                              <text value="-"/>
-                            </properties>
-                          </component>
-                        </children>
-                      </grid>
-                    </children>
-                  </grid>
-                  <grid id="833dd" layout-manager="GridBagLayout">
-                    <constraints>
-                      <splitpane position="right"/>
-                    </constraints>
+                  <grid id="657ed" layout-manager="GridBagLayout">
+                    <constraints/>
                     <properties/>
                     <border type="none"/>
                     <children>
-                      <tabbedpane id="612e5" binding="tabbedPane1" default-binding="true">
+                      <splitpane id="24ded">
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
                             <preferred-size width="200" height="200"/>
                           </grid>
                           <gridbag weightx="1.0" weighty="1.0"/>
                         </constraints>
-                        <properties/>
-                        <border type="etched"/>
+                        <properties>
+                          <orientation value="0"/>
+                          <resizeWeight value="0.4"/>
+                        </properties>
+                        <border type="none"/>
                         <children>
-                          <grid id="51e5b" layout-manager="GridBagLayout">
+                          <grid id="13ec9" layout-manager="GridBagLayout">
                             <constraints>
-                              <tabbedpane title="Untitled"/>
+                              <splitpane position="left"/>
+                            </constraints>
+                            <properties/>
+                            <border type="etched" title="Model"/>
+                            <children>
+                              <component id="7c1c8" class="javax.swing.JTree" binding="treePhysModel">
+                                <constraints>
+                                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                                    <preferred-size width="150" height="50"/>
+                                  </grid>
+                                  <gridbag weightx="1.0" weighty="1.0"/>
+                                </constraints>
+                                <properties/>
+                              </component>
+                              <grid id="c8f35" binding="panelProperties" layout-manager="BorderLayout" hgap="0" vgap="0">
+                                <constraints>
+                                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                                  <gridbag weightx="0.0" weighty="0.0"/>
+                                </constraints>
+                                <properties/>
+                                <border type="etched" title="Properites"/>
+                                <children>
+                                  <component id="3c7d9" class="javax.swing.JTable" binding="tableProperties">
+                                    <constraints border-constraint="Center"/>
+                                    <properties>
+                                      <rowSelectionAllowed value="false"/>
+                                    </properties>
+                                  </component>
+                                </children>
+                              </grid>
+                              <grid id="94e98" layout-manager="GridBagLayout">
+                                <constraints>
+                                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                                  <gridbag weightx="0.0" weighty="0.0"/>
+                                </constraints>
+                                <properties/>
+                                <border type="etched"/>
+                                <children>
+                                  <component id="11116" class="javax.swing.JButton" binding="btnAddNode">
+                                    <constraints>
+                                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                      <gridbag weightx="0.0" weighty="0.0"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="+"/>
+                                    </properties>
+                                  </component>
+                                  <hspacer id="e08e6">
+                                    <constraints>
+                                      <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                      <gridbag weightx="1.0" weighty="0.0"/>
+                                    </constraints>
+                                  </hspacer>
+                                  <hspacer id="717cf">
+                                    <constraints>
+                                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                      <gridbag weightx="0.0" weighty="0.0"/>
+                                    </constraints>
+                                  </hspacer>
+                                  <component id="951fb" class="javax.swing.JButton" binding="btnRemNode">
+                                    <constraints>
+                                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                      <gridbag weightx="0.0" weighty="0.0"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="-"/>
+                                    </properties>
+                                  </component>
+                                </children>
+                              </grid>
+                            </children>
+                          </grid>
+                          <grid id="833dd" layout-manager="GridBagLayout">
+                            <constraints>
+                              <splitpane position="right"/>
                             </constraints>
                             <properties/>
                             <border type="none"/>
-                            <children/>
+                            <children>
+                              <tabbedpane id="612e5" binding="tabbedPane1" default-binding="true">
+                                <constraints>
+                                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                                    <preferred-size width="200" height="200"/>
+                                  </grid>
+                                  <gridbag weightx="1.0" weighty="1.0"/>
+                                </constraints>
+                                <properties/>
+                                <border type="etched"/>
+                                <children>
+                                  <grid id="51e5b" layout-manager="GridBagLayout">
+                                    <constraints>
+                                      <tabbedpane title="Untitled"/>
+                                    </constraints>
+                                    <properties/>
+                                    <border type="none"/>
+                                    <children/>
+                                  </grid>
+                                </children>
+                              </tabbedpane>
+                            </children>
                           </grid>
                         </children>
-                      </tabbedpane>
+                      </splitpane>
                     </children>
                   </grid>
                 </children>
-              </splitpane>
+              </scrollpane>
             </children>
           </grid>
           <grid id="378a3" layout-manager="GridBagLayout">

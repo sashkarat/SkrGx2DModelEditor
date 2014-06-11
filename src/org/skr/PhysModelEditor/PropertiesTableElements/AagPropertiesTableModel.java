@@ -2,7 +2,7 @@ package org.skr.PhysModelEditor.PropertiesTableElements;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.utils.Array;
-import org.skr.PhysModelEditor.AnimatedActorGroup;
+import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
 import org.skr.PhysModelEditor.GdxApplication;
 
 import javax.swing.*;
