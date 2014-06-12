@@ -28,6 +28,8 @@ public class PhysModel {
         EdgeShape es = new EdgeShape();
         ChainShape chs = new ChainShape();
 
+        
+
         /*
 
         public Shape shape;

@@ -13,10 +13,8 @@ import javax.swing.tree.DefaultTreeModel;
 
 public abstract  class PropertiesBaseTableModel extends AbstractTableModel {
 
-    public class Property {
-
+    public static class Property {
     }
-
 
     public enum PropertyType {
         STRING,
@@ -25,9 +23,7 @@ public abstract  class PropertiesBaseTableModel extends AbstractTableModel {
         SELECTOR
     }
 
-
     JTree modelJTree;
-
 
     public PropertiesBaseTableModel(JTree modelJTree) {
         this.modelJTree = modelJTree;
@@ -94,7 +90,6 @@ public abstract  class PropertiesBaseTableModel extends AbstractTableModel {
 
         if ( columnIndex != 1)
             return;
-
 
         setProperty( aValue, rowIndex );
 

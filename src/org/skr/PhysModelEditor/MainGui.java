@@ -8,6 +8,7 @@ import org.skr.PhysModelEditor.PropertiesTableElements.*;
 import org.skr.physmodel.BodyItem;
 import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
 import org.skr.physmodel.PhysModel;
+import org.skr.physmodel.animatedactorgroup.FixtureSet;
 
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
@@ -55,11 +56,12 @@ public class MainGui extends JFrame {
     private AagPropertiesTableModel aagPropertiesTableModel;
     private BodyPropertiesTableModel bodyPropertiesTableModel;
     private PropertiesCellEditor propertiesCellEditor;
+    private FixtureSetPropertiesTableModel fixtureSetPropertiesTableModel;
 
 
     public static final class NodeInfo {
         public enum Type {
-            ROOT, AAG, BODY;
+            ROOT, AAG, BODY_ITEM, FIXTURE_SET;
         }
 
         public Object object;
@@ -86,11 +88,14 @@ public class MainGui extends JFrame {
                         AnimatedActorGroup ag = (AnimatedActorGroup) object;
                         return "Actor: " + ag.getName();
                     }
-                case BODY:
+                case BODY_ITEM:
                     if ( object != null ) {
                         BodyItem bi = ( BodyItem ) object;
                         return "Body: " + bi.getName();
                     }
+                case FIXTURE_SET:
+                    FixtureSet fs = ( FixtureSet ) object;
+                    return "FixtureSet: " + fs.getName();
             }
 
             return "";
@@ -115,6 +120,7 @@ public class MainGui extends JFrame {
         physModelPropertiesTableModel = new PhysModelPropertiesTableModel( treePhysModel );
         aagPropertiesTableModel = new AagPropertiesTableModel( treePhysModel );
         bodyPropertiesTableModel = new BodyPropertiesTableModel( treePhysModel );
+        fixtureSetPropertiesTableModel = new FixtureSetPropertiesTableModel( treePhysModel );
 
         JTableHeader th = tableProperties.getTableHeader();
         panelProperties.add(th, BorderLayout.NORTH);
@@ -364,7 +370,7 @@ public class MainGui extends JFrame {
             case ROOT:
 
                 if ( model.getBackgroundActor() == null ) {
-                    int res = showAddNodeSelectorDialog();
+                    int res = showRootAddNodeSelectorDialog();
 
                     if ( res == 1 ) {
                         addNewBody( node );
@@ -386,10 +392,22 @@ public class MainGui extends JFrame {
                 addNewAag( node );
                 break;
 
-            case BODY:
-                addNewAag( node );
+            case BODY_ITEM:
+                BodyItem bi = ( BodyItem ) ni.object;
+                if ( bi.getAagBackground() != null ) {
+                    addNewFixtureSet( node );
+                } else {
+                    int res = showBodyAddNodeSelectorDialog();
+                    if ( res == 0 ) {
+                        addNewAag(node);
+                    } else if ( res == 1) {
+                        addNewFixtureSet( node );
+                    }
+                }
                 break;
 
+            case FIXTURE_SET:
+                return;
             default:
                 tableProperties.setModel( null );
         }
@@ -400,7 +418,7 @@ public class MainGui extends JFrame {
 
     void addNewBody( DefaultMutableTreeNode parentNode ) {
         BodyItem bi = model.addNewBodyItem("noname");
-        parentNode.add( new DefaultMutableTreeNode( new NodeInfo(bi, NodeInfo.Type.BODY ) ) );
+        parentNode.add( new DefaultMutableTreeNode( new NodeInfo(bi, NodeInfo.Type.BODY_ITEM) ) );
     }
 
 
@@ -427,7 +445,7 @@ public class MainGui extends JFrame {
                 parentAg.addChild( newAg );
                 parentNode.add( new DefaultMutableTreeNode( new NodeInfo( newAg, NodeInfo.Type.AAG ) ) );
                 break;
-            case BODY:
+            case BODY_ITEM:
                 if ( ni.object == null )
                     return;
                 BodyItem bi = (BodyItem) ni.object;
@@ -443,9 +461,25 @@ public class MainGui extends JFrame {
 
     }
 
-    int showAddNodeSelectorDialog() {
+    void addNewFixtureSet(DefaultMutableTreeNode parentNode) {
+        NodeInfo ni = (NodeInfo) parentNode.getUserObject();
+        BodyItem bi = ( BodyItem ) ni.object;
+        FixtureSet fs = bi.addNewFixtureSet("noname");
+        parentNode.add( new DefaultMutableTreeNode( new NodeInfo( fs, NodeInfo.Type.FIXTURE_SET)) );
+    }
+
+    int showRootAddNodeSelectorDialog() {
 
         Object [] options = { "Background Actor ", "Body" };
+
+        int n = JOptionPane.showOptionDialog( this, "Select new node ", "Node Selector",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null,
+                options, options[1] );
+        return n;
+    }
+
+    int showBodyAddNodeSelectorDialog() {
+        Object [] options = { "Background Actor ", "Fixture Set" };
 
         int n = JOptionPane.showOptionDialog( this, "Select new node ", "Node Selector",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null,
@@ -479,18 +513,25 @@ public class MainGui extends JFrame {
                     AnimatedActorGroup parentAg = (AnimatedActorGroup) niParent.object;
                     AnimatedActorGroup ag = (AnimatedActorGroup) ni.object;
                     parentAg.removeChild( ag );
-                } else if ( niParent.type == NodeInfo.Type.BODY ) {
+                } else if ( niParent.type == NodeInfo.Type.BODY_ITEM) {
                     BodyItem bi = ( BodyItem ) niParent.object;
                     bi.setAagBackground( null );
                 }
 
                 break;
-            case BODY:
-                if ( niParent.type != NodeInfo.Type.ROOT )
-                    return;
+            case BODY_ITEM: {
                 BodyItem bi = (BodyItem) ni.object;
-                model.removeBody( bi );
+                model.removeBody(bi);
+
                 break;
+            }
+
+            case FIXTURE_SET: {
+                BodyItem bi = (BodyItem) niParent.object;
+                bi.removeFixtureSet( (FixtureSet) ni.object );
+
+                break;
+            }
         }
         md.removeNodeFromParent( node );
         md.nodeStructureChanged( parentNode );
@@ -512,20 +553,29 @@ public class MainGui extends JFrame {
 
         switch ( ni.type ) {
             case ROOT:
-                tableProperties.setModel(physModelPropertiesTableModel);
+                tableProperties.setModel( physModelPropertiesTableModel );
                 break;
+
             case AAG:
                 aagPropertiesTableModel.setAag((AnimatedActorGroup) ni.object);
-                tableProperties.setModel(aagPropertiesTableModel);
+                tableProperties.setModel( aagPropertiesTableModel );
                 tableProperties.updateUI();
                 break;
 
-            case BODY:
+            case BODY_ITEM:
                 BodyItem bi = ( BodyItem ) ni.object;
                 bodyPropertiesTableModel.setBodyItem( bi );
                 tableProperties.setModel( bodyPropertiesTableModel );
                 tableProperties.updateUI();
                 break;
+
+            case FIXTURE_SET:
+                FixtureSet fs = ( FixtureSet ) ni.object;
+                fixtureSetPropertiesTableModel.setFixtureSet( fs );
+                tableProperties.setModel( fixtureSetPropertiesTableModel );
+                tableProperties.updateUI();
+                break;
+
             default:
         }
 
@@ -584,7 +634,7 @@ public class MainGui extends JFrame {
         if ( model.getBodyItems() != null ) {
 
             for ( BodyItem bi : model.getBodyItems() ) {
-                DefaultMutableTreeNode bodyNode = new DefaultMutableTreeNode( new NodeInfo( bi, NodeInfo.Type.BODY) );
+                DefaultMutableTreeNode bodyNode = new DefaultMutableTreeNode( new NodeInfo( bi, NodeInfo.Type.BODY_ITEM) );
 
                 if ( bi.getAagBackground() != null ) {
                     DefaultMutableTreeNode aagNode = new DefaultMutableTreeNode(

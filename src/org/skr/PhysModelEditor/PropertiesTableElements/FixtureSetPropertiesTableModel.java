@@ -11,19 +11,25 @@ import java.util.Properties;
 /**
  * Created by rat on 11.06.14.
  */
-public class FixtureSetTableModel extends PropertiesBaseTableModel {
+public class FixtureSetPropertiesTableModel extends PropertiesBaseTableModel {
 
 
-    private enum Properties_ {
+    private enum Properties_  {
 
         Name(PropertyType.STRING),
-        Type(PropertyType.SELECTOR);
+        Type(PropertyType.SELECTOR),
+        Friction(PropertyType.NUMBER),
+        Restitution(PropertyType.NUMBER),
+        Density(PropertyType.NUMBER),
+        FixturesCount(PropertyType.NUMBER);
 
         private PropertyType propertyType;
 
         Properties_(PropertyType propertyType) {
             this.propertyType = propertyType;
         }
+
+
 
         static Properties_[] values = Properties_.values();
         static Array<String> shapeTypeNames = new Array<String>();
@@ -35,7 +41,7 @@ public class FixtureSetTableModel extends PropertiesBaseTableModel {
 
     private FixtureSet fixtureSet;
 
-    public FixtureSetTableModel(JTree modelJTree) {
+    public FixtureSetPropertiesTableModel(JTree modelJTree) {
         super(modelJTree);
     }
 
@@ -90,6 +96,8 @@ public class FixtureSetTableModel extends PropertiesBaseTableModel {
             return false;
         if ( property == Properties_.Type && fixtureSet.getFixtures().size != 0 )
             return false;
+        if ( property == Properties_.FixturesCount )
+            return false;
         return true;
     }
 
@@ -109,6 +117,14 @@ public class FixtureSetTableModel extends PropertiesBaseTableModel {
                 return fixtureSet.getName();
             case Type:
                 return fixtureSet.getShapeType().toString();
+            case Friction:
+                return fixtureSet.getFriction();
+            case Restitution:
+                fixtureSet.getRestitution();
+            case Density:
+                return fixtureSet.getDensity();
+            case FixturesCount:
+                return fixtureSet.getFixtures().size;
         }
         return null;
     }
@@ -125,6 +141,15 @@ public class FixtureSetTableModel extends PropertiesBaseTableModel {
                 break;
             case Type:
                 fixtureSet.setShapeType( Shape.Type.values()[ (Integer) aValue] );
+                break;
+            case Friction:
+                fixtureSet.setFriction( (Float) aValue );
+                break;
+            case Restitution:
+                fixtureSet.setRestitution( (Float) aValue );
+                break;
+            case Density:
+                fixtureSet.setDensity( (Float) aValue );
                 break;
         }
     }
