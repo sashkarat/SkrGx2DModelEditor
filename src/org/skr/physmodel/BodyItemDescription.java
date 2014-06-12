@@ -1,6 +1,7 @@
 package org.skr.physmodel;
 
 import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.utils.Array;
 import org.skr.physmodel.animatedactorgroup.AagDescription;
 
 /**
@@ -10,8 +11,8 @@ public class BodyItemDescription {
     BodyDef bodyDef = new BodyDef();
     String name = "";
     AagDescription aagDescription = null;
+    Array< FixtureSetDescription > fixtureSetDescriptions = new Array<FixtureSetDescription>();
 
-    //TODO: add fixtures
 
     public BodyDef getBodyDef() {
         return bodyDef;
@@ -35,5 +36,13 @@ public class BodyItemDescription {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Array<FixtureSetDescription> getFixtureSetDescriptions() {
+        return fixtureSetDescriptions;
+    }
+
+    public void setFixtureSetDescriptions(Array<FixtureSetDescription> fixtureSetDescriptions) {
+        this.fixtureSetDescriptions = fixtureSetDescriptions;
     }
 }

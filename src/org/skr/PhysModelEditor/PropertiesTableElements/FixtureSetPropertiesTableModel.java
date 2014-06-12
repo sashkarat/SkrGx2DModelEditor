@@ -1,12 +1,10 @@
 package org.skr.PhysModelEditor.PropertiesTableElements;
 
-import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Shape;
 import com.badlogic.gdx.utils.Array;
-import org.skr.physmodel.animatedactorgroup.FixtureSet;
+import org.skr.physmodel.FixtureSet;
 
 import javax.swing.*;
-import java.util.Properties;
 
 /**
  * Created by rat on 11.06.14.

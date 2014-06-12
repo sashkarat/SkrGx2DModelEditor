@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import org.skr.physmodel.FixtureSet;
 
 /**
  * Created by rat on 02.06.14.
@@ -19,6 +20,7 @@ public class EditorScreen implements Screen, InputProcessor {
     private  OrthographicCamera camera;
     private  PhysModelRenderer modelRenderer;
     private  ActorController actorController;
+    private  FixtureController fixtureController;
     private  Controller currentController = null;
 
     public EditorScreen() {
@@ -30,6 +32,7 @@ public class EditorScreen implements Screen, InputProcessor {
         stage.addActor( modelRenderer );
 
         actorController = new ActorController( stage );
+        fixtureController = new FixtureController( stage );
 
     }
 
@@ -50,6 +53,13 @@ public class EditorScreen implements Screen, InputProcessor {
             a.setUserObject( actorController );
             actorController.setActor( a );
             currentController = actorController;
+            return;
+        }
+
+        if ( object instanceof FixtureSet ) {
+            FixtureSet fs = ( FixtureSet ) object;
+
+            currentController = fixtureController;
         }
 
     }

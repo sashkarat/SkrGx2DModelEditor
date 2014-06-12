@@ -145,7 +145,12 @@ public class PhysModel {
             bd.setName( bi.getName() );
             BodyDef bdef = getBodyDefFromBody( bi.body );
             bd.setBodyDef( bdef );
-            //TODO: process fixtures
+
+            for ( FixtureSet fs : bi.getFixtureSets() ) {
+                bd.getFixtureSetDescriptions().add( fs.getDescription() );
+            }
+
+
             if ( bi.aagBackground != null ) {
                 bd.setAagDescription( bi.aagBackground.getDescription() );
             }
@@ -153,25 +158,6 @@ public class PhysModel {
             bodyDescriptions.add( bd );
         }
     }
-
-/*
-        Name(PropertyType.STRING),
-        Type(PropertyType.SELECTOR),
-        PositionX(PropertyType.NUMBER),
-        PositionY(PropertyType.NUMBER),
-        Angle(PropertyType.NUMBER),
-        LinearVelX(PropertyType.NUMBER),
-        LinearVelY(PropertyType.NUMBER),
-        AngularVel(PropertyType.NUMBER),
-        LinearDumping(PropertyType.NUMBER),
-        AngularDumping(PropertyType.NUMBER),
-        AllowSleep(PropertyType.BOOLEAN),
-        Awake(PropertyType.BOOLEAN),
-        FixedRot(PropertyType.BOOLEAN),
-        Bullet(PropertyType.BOOLEAN),
-        Active(PropertyType.BOOLEAN),
-        GravityScale(PropertyType.NUMBER);
- */
 
     public BodyDef getBodyDefFromBody( Body body ) {
 

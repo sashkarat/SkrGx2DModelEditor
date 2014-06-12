@@ -8,7 +8,7 @@ import org.skr.PhysModelEditor.PropertiesTableElements.*;
 import org.skr.physmodel.BodyItem;
 import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
 import org.skr.physmodel.PhysModel;
-import org.skr.physmodel.animatedactorgroup.FixtureSet;
+import org.skr.physmodel.FixtureSet;
 
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;

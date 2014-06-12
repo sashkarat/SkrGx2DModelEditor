@@ -3,7 +3,6 @@ package org.skr.physmodel;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.utils.Array;
 import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
-import org.skr.physmodel.animatedactorgroup.FixtureSet;
 
 /**
  * Created by rat on 11.06.14.
@@ -36,6 +35,14 @@ public class BodyItem {
 
     public void setAagBackground(AnimatedActorGroup aagBackground) {
         this.aagBackground = aagBackground;
+    }
+
+    public Array<FixtureSet> getFixtureSets() {
+        return fixtureSets;
+    }
+
+    public void setFixtureSets(Array<FixtureSet> fixtureSets) {
+        this.fixtureSets = fixtureSets;
     }
 
     public FixtureSet addNewFixtureSet( String name ) {
