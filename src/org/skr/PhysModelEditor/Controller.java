@@ -155,8 +155,8 @@ public abstract  class Controller  {
     }
 
     public void render() {
-        shapeRenderer.setProjectionMatrix( stage.getSpriteBatch().getProjectionMatrix() );
-        shapeRenderer.setTransformMatrix( stage.getSpriteBatch().getTransformMatrix() );
+        shapeRenderer.setProjectionMatrix( stage.getBatch().getProjectionMatrix() );
+        shapeRenderer.setTransformMatrix( stage.getBatch().getTransformMatrix() );
         translateRendererToObject();
         draw();
     }

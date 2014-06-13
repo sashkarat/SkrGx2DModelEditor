@@ -13,6 +13,10 @@ import javax.swing.tree.DefaultTreeModel;
 
 public abstract  class PropertiesBaseTableModel extends AbstractTableModel {
 
+    public interface PropertiesChangedListener {
+        public void changed();
+    }
+
     public static class Property {
     }
 
@@ -24,11 +28,16 @@ public abstract  class PropertiesBaseTableModel extends AbstractTableModel {
     }
 
     JTree modelJTree;
+    PropertiesChangedListener propertiesChangedListener;
+
 
     public PropertiesBaseTableModel(JTree modelJTree) {
         this.modelJTree = modelJTree;
     }
 
+    public void setPropertiesChangedListener(PropertiesChangedListener propertiesChangedListener) {
+        this.propertiesChangedListener = propertiesChangedListener;
+    }
 
     protected void fireJTree() {
 
@@ -92,6 +101,9 @@ public abstract  class PropertiesBaseTableModel extends AbstractTableModel {
             return;
 
         setProperty( aValue, rowIndex );
+
+        if ( propertiesChangedListener != null )
+            propertiesChangedListener.changed();
 
         fireJTree();
     }

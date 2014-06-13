@@ -9,22 +9,30 @@ import org.skr.physmodel.FixtureSetDescription;
  * Created by rat on 12.06.14.
  */
 
-public class FixtureController extends Controller {
+public class ShapeController extends Controller {
 
     FixtureSetDescription fd;
+    Vector2 bodyPos;
+    float bodyAngle;
 
-    protected FixtureController(Stage stage) {
+    protected ShapeController(Stage stage) {
         super(stage);
     }
 
 
     public void loadFromFixtureSet( FixtureSet fixtureSet ) {
         fd = fixtureSet.getDescription();
+        bodyPos = fixtureSet.getBody().getPosition();
+        bodyAngle = fixtureSet.getBody().getAngle();
     }
 
     @Override
     protected void translateRendererToObject() {
-
+        if ( fd == null )
+            return;
+        Vector2 pos =  PhysWorld.get().physToView( bodyPos );
+        shapeRenderer.translate( pos.x, pos.y , 0);
+        shapeRenderer.rotate(0, 0, 1, bodyAngle);
     }
 
     @Override

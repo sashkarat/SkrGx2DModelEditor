@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -20,8 +21,9 @@ public class EditorScreen implements Screen, InputProcessor {
     private  OrthographicCamera camera;
     private  PhysModelRenderer modelRenderer;
     private  ActorController actorController;
-    private  FixtureController fixtureController;
+    private ShapeController shapeController;
     private  Controller currentController = null;
+    private ShapeRenderer shapeRenderer;
 
     public EditorScreen() {
         ScreenViewport vp = new ScreenViewport();
@@ -30,9 +32,10 @@ public class EditorScreen implements Screen, InputProcessor {
         camera.position.set(0, 0, 0);
         modelRenderer = new PhysModelRenderer();
         stage.addActor( modelRenderer );
+        shapeRenderer = new ShapeRenderer();
 
         actorController = new ActorController( stage );
-        fixtureController = new FixtureController( stage );
+        shapeController = new ShapeController( stage );
 
     }
 
@@ -58,8 +61,8 @@ public class EditorScreen implements Screen, InputProcessor {
 
         if ( object instanceof FixtureSet ) {
             FixtureSet fs = ( FixtureSet ) object;
-
-            currentController = fixtureController;
+            shapeController.loadFromFixtureSet( fs );
+            currentController = shapeController;
         }
 
     }
@@ -73,6 +76,11 @@ public class EditorScreen implements Screen, InputProcessor {
         Gdx.gl20.glClearColor(0, 0.1f, 0.05f, 1);
         Gdx.gl.glClear(Gdx.gl20.GL_COLOR_BUFFER_BIT | Gdx.gl20.GL_DEPTH_BUFFER_BIT);
 
+        shapeRenderer.setProjectionMatrix( stage.getBatch().getProjectionMatrix() );
+        shapeRenderer.setTransformMatrix( stage.getBatch().getTransformMatrix() );
+
+        drawGrid();
+
         stage.act( delta );
         stage.draw();
 
@@ -80,6 +88,53 @@ public class EditorScreen implements Screen, InputProcessor {
             currentController.render();
         }
 
+    }
+
+    void drawGrid() {
+
+        float gridX = 10;
+        float gridY = 10;
+
+        int gridW = 100;
+        int gridH = 100;
+
+        float fromX = - gridW/2 * gridX;
+        float fromY = - gridH/2 * gridY;
+
+        float x1,y1,x2,y2;
+
+        shapeRenderer.setColor( 0.2f, 0.2f, 0.2f, 1f);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+
+        y1 = fromY;
+        y2 = fromY + gridH * gridY - gridY;
+        for ( int i = 0; i < gridW; i++) {
+            x1 = fromX + i * gridX;
+            x2 = x1;
+            shapeRenderer.line( x1, y1, x2, y2 );
+        }
+
+        x1 = fromX;
+        x2 = fromX + gridW * gridX - gridX;
+        for ( int j = 0; j < gridH; j++) {
+            y1 = fromY + j * gridY;
+            y2 = y1;
+            shapeRenderer.line( x1, y1, x2, y2 );
+        }
+
+        shapeRenderer.setColor( 0.5f, 0.5f, 0.5f, 1);
+
+        x1 = fromX;
+        x2 = fromX + gridW * gridX - gridX;
+        y1 = y2 = 0;
+        shapeRenderer.line( x1, y1, x2, y2 );
+
+        x1 = x2 = 0;
+        y1 = fromY;
+        y2 = fromY + gridH * gridY - gridY;
+        shapeRenderer.line( x1, y1, x2, y2 );
+
+        shapeRenderer.end();
     }
 
     @Override

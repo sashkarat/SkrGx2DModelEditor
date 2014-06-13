@@ -33,7 +33,7 @@ public class MainGui extends JFrame {
 
 
     private JPanel rootPanel;
-    private JPanel gdxPannel;
+    private JPanel gdxPanel;
     private JTree treePhysModel;
     private JTabbedPane tabbedPaneEditors;
     private JButton btnNewModel;
@@ -49,7 +49,22 @@ public class MainGui extends JFrame {
     private JButton btnRemNode;
     private JPanel panelShapeEditor;
     private JPanel panelJointEditor;
-    private JButton button1;
+    private JButton btnAddShape;
+    private JTextField tfNewShapePosX;
+    private JTextField tfNewShapePosY;
+    private JTextField tfShapePosX;
+    private JTextField tfShapePosY;
+    private JButton btnSetControlPointPosition;
+    private JButton btnDeleteShape;
+    private JCheckBox chbLooped;
+    private JCheckBox chbAutoTessellate;
+    private JPanel panelControllerPosition;
+    private JPanel panelShapes;
+    private JPanel panelShapeOptions;
+    private JButton btnUpdateFixtures;
+    private JPanel panelRadius;
+    private JTextField tfRadius;
+    private JButton btnSetRadius;
 
     private GdxApplication gApp;
     private String currentModelFileName = "";
@@ -114,7 +129,7 @@ public class MainGui extends JFrame {
 
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setContentPane(rootPanel);
-        gdxPannel.add(gdxCanvas.getCanvas(), BorderLayout.CENTER);
+        gdxPanel.add(gdxCanvas.getCanvas(), BorderLayout.CENTER);
         pack();
         setSize(1280, 800);
         addWindowListener( new MainGuiWindowListener() );
@@ -124,6 +139,13 @@ public class MainGui extends JFrame {
         aagPropertiesTableModel = new AagPropertiesTableModel( treePhysModel );
         bodyPropertiesTableModel = new BodyPropertiesTableModel( treePhysModel );
         fixtureSetPropertiesTableModel = new FixtureSetPropertiesTableModel( treePhysModel );
+
+        fixtureSetPropertiesTableModel.setPropertiesChangedListener( new PropertiesBaseTableModel.PropertiesChangedListener() {
+            @Override
+            public void changed() {
+                updateShapeEditorFeatures(fixtureSetPropertiesTableModel.getFixtureSet());
+            }
+        });
 
         JTableHeader th = tableProperties.getTableHeader();
         panelProperties.add(th, BorderLayout.NORTH);
@@ -205,7 +227,7 @@ public class MainGui extends JFrame {
         treePhysModel.addTreeSelectionListener(new TreeSelectionListener() {
             @Override
             public void valueChanged(TreeSelectionEvent e) {
-                processTreeSelection( e );
+                processTreeSelection(e);
             }
         });
         btnAddNode.addActionListener(new ActionListener() {
@@ -220,19 +242,56 @@ public class MainGui extends JFrame {
                 removeNode();
             }
         });
-        button1.addActionListener(new ActionListener() {
+        btnAddShape.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Gdx.app.log("MainGui", "test");
+                addNewShape();
+            }
+        });
+        btnDeleteShape.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deleteShape();
+            }
+        });
+        btnSetControlPointPosition.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setControlPointPosition();
+            }
+        });
+        chbLooped.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //TODO: chbLooped
+            }
+        });
+        chbAutoTessellate.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //TODO: chbAutoTessellate
+            }
+        });
+        btnUpdateFixtures.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateFixtures();
+            }
+        });
+        btnSetRadius.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setRadius();
             }
         });
     }
-
 
     void uploadGuiFromSettings() {
 
         tfTextureAtlasFile.setText( ApplicationSettings.get().getTextureAtlasFile() );
     }
+
+
 
     void selectTextureAtlasFile() {
 
@@ -243,7 +302,7 @@ public class MainGui extends JFrame {
         if ( res != JFileChooser.APPROVE_OPTION )
             return;
 
-        tfTextureAtlasFile.setText( fch.getSelectedFile().getAbsolutePath() );
+        tfTextureAtlasFile.setText(fch.getSelectedFile().getAbsolutePath());
 
         uploadTextureAtlas();
     }
@@ -263,7 +322,7 @@ public class MainGui extends JFrame {
             }
         });
 
-        ApplicationSettings.get().setTextureAtlasFile( tfTextureAtlasFile.getText() );
+        ApplicationSettings.get().setTextureAtlasFile(tfTextureAtlasFile.getText());
     }
 
     void onAtlasLoaded( TextureAtlas atlas ) {
@@ -423,7 +482,7 @@ public class MainGui extends JFrame {
         }
 
         md.nodeChanged( node );
-        md.nodeStructureChanged( node );
+        md.nodeStructureChanged(node);
     }
 
     void addNewBody( DefaultMutableTreeNode parentNode ) {
@@ -475,7 +534,7 @@ public class MainGui extends JFrame {
         NodeInfo ni = (NodeInfo) parentNode.getUserObject();
         BodyItem bi = ( BodyItem ) ni.object;
         FixtureSet fs = bi.addNewFixtureSet("noname");
-        parentNode.add( new DefaultMutableTreeNode( new NodeInfo( fs, NodeInfo.Type.FIXTURE_SET)) );
+        parentNode.add(new DefaultMutableTreeNode(new NodeInfo(fs, NodeInfo.Type.FIXTURE_SET)));
     }
 
     int showRootAddNodeSelectorDialog() {
@@ -589,7 +648,7 @@ public class MainGui extends JFrame {
                 tableProperties.updateUI();
                 tabbedPaneEditors.add( "Shape Editor", panelShapeEditor );
                 setGuiElementEnable( panelShapeEditor, true );
-
+                updateShapeEditorFeatures( fs );
                 break;
 
             default:
@@ -671,7 +730,6 @@ public class MainGui extends JFrame {
 
     }
 
-
     private void actorChangedByController(Actor actor) {
         if ( actor instanceof AnimatedActorGroup )
             aagPropertiesTableModel.actorChanged( (AnimatedActorGroup) actor );
@@ -685,6 +743,48 @@ public class MainGui extends JFrame {
             parent.add( nd );
             loadTreeNodeForAag(nd);
         }
+    }
+
+    void updateShapeEditorFeatures(FixtureSet fixtureSet) {
+        chbAutoTessellate.setEnabled( false );
+        chbLooped.setEnabled( false );
+        setGuiElementEnable( panelRadius, false );
+
+        switch ( fixtureSet.getShapeType() ) {
+
+            case Circle:
+                setGuiElementEnable( panelRadius, true );
+                break;
+            case Edge:
+                break;
+            case Polygon:
+                chbAutoTessellate.setEnabled( true );
+                break;
+            case Chain:
+                chbLooped.setEnabled( true );
+                break;
+        }
+
+    }
+
+    void addNewShape() {
+
+    }
+
+    void deleteShape() {
+
+    }
+
+    void setControlPointPosition() {
+
+    }
+
+    void setRadius() {
+
+    }
+
+    void updateFixtures() {
+
     }
 
 }
