@@ -49,7 +49,7 @@ public class GdxApplication extends Game {
 
         setScreen( editorScreen );
 
-        PhysWorld.create();
+        PhysWorld.create( 100 );
 
     }
 

@@ -20,6 +20,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class PhysModel {
 
+    //That is test section. It does nothing.
+
     static {
         FixtureDef fd;
 
@@ -27,19 +29,6 @@ public class PhysModel {
         PolygonShape ps = new PolygonShape();
         EdgeShape es = new EdgeShape();
         ChainShape chs = new ChainShape();
-
-        
-
-        /*
-
-        public Shape shape;
-        public float friction = 0.2f;
-        public float restitution = 0;
-        public float density = 0;
-        public boolean isSensor = false;
-
-        */
-
     }
 
 
@@ -106,7 +95,14 @@ public class PhysModel {
 
             for (BodyItemDescription bd : bodiesDesc) {
                 BodyItem bi = addBodyItem( bd.getName(), bd.bodyDef );
-                //TODO: process fixtures
+
+                for ( FixtureSetDescription fsd : bd.getFixtureSetDescriptions() ) {
+                    FixtureSet fs = new FixtureSet(bi.getBody());
+                    bi.getFixtureSets().add( fs.loadFromDescription( fsd) );
+                }
+
+
+
                 if (bd.aagDescription != null) {
                     bi.setAagBackground(new AnimatedActorGroup(bd.getAagDescription()));
                 }

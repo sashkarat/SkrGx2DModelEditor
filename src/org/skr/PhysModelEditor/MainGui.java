@@ -35,7 +35,7 @@ public class MainGui extends JFrame {
     private JPanel rootPanel;
     private JPanel gdxPannel;
     private JTree treePhysModel;
-    private JTabbedPane tabbedPane1;
+    private JTabbedPane tabbedPaneEditors;
     private JButton btnNewModel;
     private JButton btnLoadModel;
     private JButton btnSaveModel;
@@ -47,6 +47,9 @@ public class MainGui extends JFrame {
     private JPanel panelProperties;
     private JButton btnAddNode;
     private JButton btnRemNode;
+    private JPanel panelShapeEditor;
+    private JPanel panelJointEditor;
+    private JButton button1;
 
     private GdxApplication gApp;
     private String currentModelFileName = "";
@@ -144,7 +147,8 @@ public class MainGui extends JFrame {
         treePhysModel.setShowsRootHandles( true );
 
 
-        setElementDisabled(mainSplitPanel, false);
+        setGuiElementEnable(mainSplitPanel, false);
+        tabbedPaneEditors.removeAll();
 
 
         Gdx.app.postRunnable( new Runnable() {
@@ -216,6 +220,12 @@ public class MainGui extends JFrame {
                 removeNode();
             }
         });
+        button1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Gdx.app.log("MainGui", "test");
+            }
+        });
     }
 
 
@@ -268,7 +278,7 @@ public class MainGui extends JFrame {
         model.setName("noname");
         model.uploadAtlas();
 
-        setElementDisabled(mainSplitPanel, true);
+        setGuiElementEnable(mainSplitPanel, true);
 
         modelToGui();
     }
@@ -299,7 +309,7 @@ public class MainGui extends JFrame {
         model = PhysModel.loadFromFile( Gdx.files.absolute( fl.getAbsolutePath()) );
         model.uploadAtlas();
 
-        setElementDisabled(mainSplitPanel, true);
+        setGuiElementEnable(mainSplitPanel, true);
 
         modelToGui();
 
@@ -537,9 +547,12 @@ public class MainGui extends JFrame {
         md.nodeStructureChanged( parentNode );
     }
 
+
+
     void processTreeSelection( TreeSelectionEvent e) {
 
         propertiesCellEditor.cancelCellEditing();
+        tabbedPaneEditors.removeAll();
 
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePhysModel.getLastSelectedPathComponent();
 
@@ -574,6 +587,9 @@ public class MainGui extends JFrame {
                 fixtureSetPropertiesTableModel.setFixtureSet( fs );
                 tableProperties.setModel( fixtureSetPropertiesTableModel );
                 tableProperties.updateUI();
+                tabbedPaneEditors.add( "Shape Editor", panelShapeEditor );
+                setGuiElementEnable( panelShapeEditor, true );
+
                 break;
 
             default:
@@ -594,16 +610,14 @@ public class MainGui extends JFrame {
     }
 
 
-    //    ============= utils =========
-
-    private void setElementDisabled ( Container c, boolean state) {
+    private void setGuiElementEnable(Container c, boolean state) {
 
         Component [] cl = c.getComponents();
 
         for ( int i = 0; i < cl.length; i++) {
 
             if ( cl[i] instanceof Container) {
-                setElementDisabled( (Container) cl[i], state );
+                setGuiElementEnable((Container) cl[i], state);
             } else {
                 cl[i].setEnabled( state );
             }
@@ -634,13 +648,20 @@ public class MainGui extends JFrame {
         if ( model.getBodyItems() != null ) {
 
             for ( BodyItem bi : model.getBodyItems() ) {
-                DefaultMutableTreeNode bodyNode = new DefaultMutableTreeNode( new NodeInfo( bi, NodeInfo.Type.BODY_ITEM) );
+                DefaultMutableTreeNode bodyNode = new DefaultMutableTreeNode(
+                        new NodeInfo( bi, NodeInfo.Type.BODY_ITEM) );
 
                 if ( bi.getAagBackground() != null ) {
                     DefaultMutableTreeNode aagNode = new DefaultMutableTreeNode(
                             new NodeInfo( bi.getAagBackground(), NodeInfo.Type.AAG) );
                     loadTreeNodeForAag( aagNode );
                     bodyNode.add( aagNode );
+                }
+
+                for ( FixtureSet fs: bi.getFixtureSets() ) {
+                    DefaultMutableTreeNode fsNode = new DefaultMutableTreeNode(
+                            new NodeInfo( fs, NodeInfo.Type.FIXTURE_SET) );
+                    bodyNode.add( fsNode );
                 }
 
                 root.add( bodyNode );

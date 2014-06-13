@@ -101,7 +101,6 @@ public class FixtureSet {
     }
 
     private ShapeDescription getShapeDescription(Fixture fixture) {
-        Array < Vector2 > vertices = new Array<Vector2>();
 
         ShapeDescription shd = new ShapeDescription();
         Shape shape = fixture.getShape();
@@ -116,23 +115,13 @@ public class FixtureSet {
             case Edge:
 
                 EdgeShape esh = ( EdgeShape ) shape;
-                shd.setHasVertex0(esh.hasVertex0());
-                shd.setHasVertex3(esh.hasVertex3());
 
-                shd.getVertices().add( new Vector2() );
-                shd.getVertices().add( new Vector2() );
                 shd.getVertices().add( new Vector2() );
                 shd.getVertices().add(new Vector2());
 
-                esh.getVertex1( shd.getVertices().get(1)  );
-                esh.getVertex2( shd.getVertices().get(2) );
-                if ( esh.hasVertex0() ) {
-                    esh.getVertex0( shd.getVertices().get(0) );
-                }
-                if ( esh.hasVertex3() ) {
-                    esh.getVertex3( shd.getVertices().get(3) );
-                }
-                break;
+                esh.getVertex1( shd.getVertices().get(0)  );
+                esh.getVertex2( shd.getVertices().get(1) );
+                   break;
 
             case Polygon:
 
@@ -172,6 +161,21 @@ public class FixtureSet {
             desc.getShapeDescriptions().add( shd );
         }
         return desc;
+    }
+
+    public FixtureSet loadFromDescription( FixtureSetDescription desc ) {
+
+        setName( desc.getName() );
+        setDensity( desc.getDensity() );
+        setRestitution( desc.getRestitution() );
+        setFriction( desc.getFriction() );
+        setShapeType( desc.getShapeType() );
+
+        for ( ShapeDescription shd : desc.getShapeDescriptions() ) {
+            fixtures.add( createFixture( shd ) );
+        }
+
+        return this;
     }
 
     public Fixture updateFixture(Fixture oldFixture, ShapeDescription shd ) {
@@ -227,11 +231,7 @@ public class FixtureSet {
     private Shape createEdgeShape( ShapeDescription shd ) {
 
         EdgeShape sh = new EdgeShape();
-        sh.set( shd.getVertices().get(1),  shd.getVertices().get(2) );
-        if ( shd.isHasVertex0() )
-            sh.setVertex0( shd.getVertices().get(0) );
-        if ( shd.isHasVertex3() )
-            sh.setVertex3(shd.getVertices().get(3));
+        sh.set( shd.getVertices().get(0),  shd.getVertices().get(1) );
         return sh;
     }
 

@@ -12,8 +12,7 @@ public class ShapeDescription {
     float radius = 0.1f;
     Vector2 position = new Vector2();
     boolean isLooped = false;
-    boolean hasVertex0 = false;
-    boolean hasVertex3 = false;
+
 
     public Array<Vector2> getVertices() {
         return vertices;
@@ -47,19 +46,4 @@ public class ShapeDescription {
         this.isLooped = isLooped;
     }
 
-    public boolean isHasVertex0() {
-        return hasVertex0;
-    }
-
-    public void setHasVertex0(boolean hasVertex0) {
-        this.hasVertex0 = hasVertex0;
-    }
-
-    public boolean isHasVertex3() {
-        return hasVertex3;
-    }
-
-    public void setHasVertex3(boolean hasVertex3) {
-        this.hasVertex3 = hasVertex3;
-    }
 }
