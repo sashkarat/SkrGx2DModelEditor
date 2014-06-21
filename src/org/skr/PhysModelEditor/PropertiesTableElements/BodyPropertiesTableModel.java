@@ -19,25 +19,31 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
 
         Name(PropertyType.STRING),
         Type(PropertyType.SELECTOR),
-        PositionX(PropertyType.NUMBER),
-        PositionY(PropertyType.NUMBER),
-        Angle(PropertyType.NUMBER),
-        LinearVelX(PropertyType.NUMBER),
-        LinearVelY(PropertyType.NUMBER),
-        AngularVel(PropertyType.NUMBER),
-        LinearDumping(PropertyType.NUMBER),
-        AngularDumping(PropertyType.NUMBER),
+        PositionX(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        PositionY(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        Angle(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        LinearVelX(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        LinearVelY(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        AngularVel(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        LinearDumping(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        AngularDumping(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         AllowSleep(PropertyType.BOOLEAN),
         Awake(PropertyType.BOOLEAN),
         FixedRot(PropertyType.BOOLEAN),
         Bullet(PropertyType.BOOLEAN),
         Active(PropertyType.BOOLEAN),
-        GravityScale(PropertyType.NUMBER);
+        GravityScale(PropertyType.NUMBER, DataRole.PHYS_COORDINATES);
 
         private PropertyType propertyType;
+        private DataRole dataRole = DataRole.DEFAULT;
 
         Properties_(PropertyType propertyType) {
             this.propertyType = propertyType;
+        }
+
+        Properties_(PropertyType propertyType, DataRole dataRole) {
+            this.propertyType = propertyType;
+            this.dataRole = dataRole;
         }
 
         static Properties_[] values = Properties_.values();
@@ -54,6 +60,7 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
     public BodyPropertiesTableModel(JTree modelJTree) {
         super(modelJTree);
     }
+
 
 
     public BodyItem getBodyItem() {
@@ -90,6 +97,13 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
         Properties_ property = Properties_.values[rowIndex];
         return property.propertyType;
     }
+
+    @Override
+    public DataRole getDataRole(int rowIndex) {
+        Properties_ property = Properties_.values[rowIndex];
+        return property.dataRole;
+    }
+
 
     @Override
     public int getPropertiesCount() {

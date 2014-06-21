@@ -10,6 +10,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import org.skr.PhysModelEditor.controller.*;
 import org.skr.physmodel.FixtureSet;
 
 /**
@@ -20,9 +21,12 @@ public class EditorScreen implements Screen, InputProcessor {
     private  Stage stage;
     private  OrthographicCamera camera;
     private  PhysModelRenderer modelRenderer;
-    private  ActorController actorController;
-    private ShapeController shapeController;
-    private  Controller currentController = null;
+    private ActorController actorController;
+    private CircleShapeController circleShapeController;
+    private EdgeShapeController edgeShapeController;
+    private ChainShapeController chainShapeController;
+    private PolygonShapeController polygonShapeController;
+    private Controller currentController = null;
     private ShapeRenderer shapeRenderer;
 
     public EditorScreen() {
@@ -35,7 +39,10 @@ public class EditorScreen implements Screen, InputProcessor {
         shapeRenderer = new ShapeRenderer();
 
         actorController = new ActorController( stage );
-        shapeController = new ShapeController( stage );
+        circleShapeController = new CircleShapeController( stage );
+        edgeShapeController = new EdgeShapeController( stage );
+        chainShapeController = new ChainShapeController( stage );
+        polygonShapeController = new PolygonShapeController( stage );
 
     }
 
@@ -44,7 +51,9 @@ public class EditorScreen implements Screen, InputProcessor {
     }
 
 
-    public void setSelectedObject( Object object ) {
+    public void setModelObject(Object object) {
+
+        currentController = null;
 
         if ( actorController.getActor() != null ) {
             actorController.getActor().setUserObject( null );
@@ -61,14 +70,41 @@ public class EditorScreen implements Screen, InputProcessor {
 
         if ( object instanceof FixtureSet ) {
             FixtureSet fs = ( FixtureSet ) object;
-            shapeController.loadFromFixtureSet( fs );
-            currentController = shapeController;
+
+            switch ( fs.getShapeType() ) {
+
+                case Circle:
+                    circleShapeController.loadFromFixtureSet( fs );
+                    currentController = circleShapeController;
+                    break;
+                case Edge:
+                    edgeShapeController.loadFromFixtureSet( fs );
+                    currentController = edgeShapeController;
+                    break;
+                case Polygon:
+                    polygonShapeController.loadFromFixtureSet( fs );
+                    currentController = polygonShapeController;
+                    break;
+                case Chain:
+                    chainShapeController.loadFromFixtureSet( fs );
+                    currentController = chainShapeController;
+                    break;
+            }
+
         }
 
     }
 
     public ActorController getActorController() {
         return actorController;
+    }
+
+    public ShapeController getCurrentShapeController() {
+        if ( currentController == null )
+            return null;
+        if ( ! (circleShapeController instanceof ShapeController) )
+            return null;
+        return (ShapeController) currentController;
     }
 
     @Override
@@ -85,7 +121,10 @@ public class EditorScreen implements Screen, InputProcessor {
         stage.draw();
 
         if ( currentController  != null ) {
+
+            currentController.setCameraZoom(camera.zoom);
             currentController.render();
+
         }
 
     }

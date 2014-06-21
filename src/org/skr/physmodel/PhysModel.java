@@ -97,7 +97,7 @@ public class PhysModel {
                 BodyItem bi = addBodyItem( bd.getName(), bd.bodyDef );
 
                 for ( FixtureSetDescription fsd : bd.getFixtureSetDescriptions() ) {
-                    FixtureSet fs = new FixtureSet(bi.getBody());
+                    FixtureSet fs = new FixtureSet( bi );
                     bi.getFixtureSets().add( fs.loadFromDescription( fsd) );
                 }
 
@@ -281,7 +281,7 @@ public class PhysModel {
         }
 
         if ( ok ) {
-            Gdx.app.log("PhysModel.loadFromFile", "Model \"" + physModel.getName() +
+            Gdx.app.log("PhysModel.saveToFile", "Model \"" + physModel.getName() +
                     "\"; File: \"" + fileHandle + "\" OK");
         }
     }

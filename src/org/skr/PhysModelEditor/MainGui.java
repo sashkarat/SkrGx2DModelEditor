@@ -3,9 +3,14 @@ package org.skr.PhysModelEditor;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl.LwjglAWTCanvas;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.physics.box2d.Shape;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import org.skr.PhysModelEditor.PropertiesTableElements.*;
+import org.skr.PhysModelEditor.controller.CircleShapeController;
+import org.skr.PhysModelEditor.controller.Controller;
+import org.skr.PhysModelEditor.controller.ShapeController;
 import org.skr.physmodel.BodyItem;
+import org.skr.physmodel.ShapeDescription;
 import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
 import org.skr.physmodel.PhysModel;
 import org.skr.physmodel.FixtureSet;
@@ -52,8 +57,8 @@ public class MainGui extends JFrame {
     private JButton btnAddShape;
     private JTextField tfNewShapePosX;
     private JTextField tfNewShapePosY;
-    private JTextField tfShapePosX;
-    private JTextField tfShapePosY;
+    private JTextField tfControlPointX;
+    private JTextField tfControlPointY;
     private JButton btnSetControlPointPosition;
     private JButton btnDeleteShape;
     private JCheckBox chbLooped;
@@ -140,10 +145,12 @@ public class MainGui extends JFrame {
         bodyPropertiesTableModel = new BodyPropertiesTableModel( treePhysModel );
         fixtureSetPropertiesTableModel = new FixtureSetPropertiesTableModel( treePhysModel );
 
-        fixtureSetPropertiesTableModel.setPropertiesChangedListener( new PropertiesBaseTableModel.PropertiesChangedListener() {
+
+        fixtureSetPropertiesTableModel.setShapeTypeListener( new FixtureSetPropertiesTableModel.ShapeTypeListener() {
             @Override
-            public void changed() {
-                updateShapeEditorFeatures(fixtureSetPropertiesTableModel.getFixtureSet());
+            public void changed(FixtureSet fixtureSet) {
+                updateShapeEditorFeatures( fixtureSet );
+                GdxApplication.get().getEditorScreen().setModelObject( fixtureSet );
             }
         });
 
@@ -153,7 +160,8 @@ public class MainGui extends JFrame {
         tableProperties.setDefaultEditor(
                 PropertiesBaseTableModel.Property.class,
                 propertiesCellEditor );
-
+        tableProperties.setDefaultRenderer(PropertiesBaseTableModel.Property.class,
+                new PropertiesTableCellRenderer() );
 
         ApplicationSettings.load();
         uploadGuiFromSettings();
@@ -184,6 +192,23 @@ public class MainGui extends JFrame {
                             }
                         }
                 );
+            }
+        });
+
+        ShapeController.setStaticShapeControllerListener( new ShapeController.ShapeControllerListener() {
+            @Override
+            public void controlPointChanged(ShapeDescription shapeDescription, Controller.ControlPoint controlPoint) {
+                shapeControlPointChanged( shapeDescription, controlPoint);
+            }
+
+            @Override
+            public void positionChanged(ShapeDescription shapeDescription) {
+                shapePositionChanged( shapeDescription );
+            }
+
+            @Override
+            public void radiusChanged(ShapeDescription shapeDescription) {
+                shapeRadiusChanged( shapeDescription );
             }
         });
 
@@ -251,19 +276,26 @@ public class MainGui extends JFrame {
         btnDeleteShape.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                deleteShape();
+                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                if ( shapeController == null )
+                    return;
+                deleteShape( shapeController );
             }
         });
         btnSetControlPointPosition.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                setControlPointPosition();
+                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                if ( shapeController == null )
+                    return;
+                setControlPointPosition( shapeController );
             }
         });
         chbLooped.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //TODO: chbLooped
+                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                setLooped( chbLooped.isSelected(), shapeController );
             }
         });
         chbAutoTessellate.addActionListener(new ActionListener() {
@@ -275,13 +307,19 @@ public class MainGui extends JFrame {
         btnUpdateFixtures.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                updateFixtures();
+                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                if ( shapeController == null )
+                    return;
+                updateFixtures( shapeController );
             }
         });
         btnSetRadius.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                setRadius();
+                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                if ( shapeController == null )
+                    return;
+                setRadius( shapeController );
             }
         });
     }
@@ -654,18 +692,7 @@ public class MainGui extends JFrame {
             default:
         }
 
-        GdxApplication.get().getEditorScreen().setSelectedObject( ni.object );
-    }
-
-
-    public static void main(String [] args) {
-        SwingUtilities.invokeLater( new Runnable() {
-            @Override
-            public void run() {
-                MainGui instance = new MainGui();
-                instance.setVisible(true);
-         }
-        });
+        GdxApplication.get().getEditorScreen().setModelObject(ni.object);
     }
 
 
@@ -768,23 +795,91 @@ public class MainGui extends JFrame {
     }
 
     void addNewShape() {
+        ShapeController shc = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+        if ( shc == null )
+            return;
+
+        try {
+            float x = Float.valueOf(tfNewShapePosX.getText());
+            float y = Float.valueOf(tfNewShapePosY.getText());
+
+            if ( shc instanceof CircleShapeController ) {
+                ((CircleShapeController) shc).setDefaultRadius( Float.valueOf( tfRadius.getText() ));
+            }
+
+            shc.addNewShape(x, y);
+
+        } catch ( NumberFormatException e ) {
+            Gdx.app.log("MainGui.addNewShape()", "Exception: " + e.getMessage() );
+        }
 
     }
 
-    void deleteShape() {
-
+    void deleteShape( ShapeController controller ) {
+        controller.deleteCurrentShape();
     }
 
-    void setControlPointPosition() {
-
+    void setControlPointPosition( ShapeController controller ) {
+        try {
+            float x = Float.valueOf(tfControlPointX.getText());
+            float y = Float.valueOf(tfControlPointY.getText());
+            controller.setControlPointPosition(x, y);
+        } catch ( NumberFormatException e ) {
+            Gdx.app.error("MainGui.setControlPointPosition", e.getMessage() );
+        }
     }
 
-    void setRadius() {
-
+    void setRadius( ShapeController controller ) {
+        try {
+            float r = Float.valueOf(tfRadius.getText());
+            controller.setRadius(r);
+        } catch ( NumberFormatException e ) {
+            Gdx.app.error("MainGui.setRadius", e.getMessage() );
+        }
     }
 
-    void updateFixtures() {
-
+    void updateFixtures( ShapeController controller ) {
+        FixtureSet fs = fixtureSetPropertiesTableModel.getFixtureSet();
+        fs.createFixtures( controller.getFixtureSetDescription().getShapeDescriptions() );
+        fixtureSetPropertiesTableModel.fireTableDataChanged();
     }
 
+    void shapeControlPointChanged( ShapeDescription shapeDescription, Controller.ControlPoint cp ) {
+
+        float x = PhysWorld.get().toPhys( cp.getX() );
+        float y = PhysWorld.get().toPhys( cp.getY() );
+        tfControlPointX.setText( String.valueOf( x ) );
+        tfControlPointY.setText( String.valueOf( y ) );
+
+        if ( fixtureSetPropertiesTableModel.getFixtureSet().getShapeType() == Shape.Type.Circle ) {
+            tfRadius.setText( String.valueOf( shapeDescription.getRadius() ) );
+        }
+    }
+
+    void shapePositionChanged( ShapeDescription shapeDescription ) {
+        // does nothing
+    }
+
+    void shapeRadiusChanged( ShapeDescription shapeDescription ) {
+        tfRadius.setText( String.valueOf( shapeDescription.getRadius() ) );
+    }
+
+    void setLooped(boolean state, ShapeController controller) {
+        controller.setLooped( state );
+    }
+
+
+
+
+    //======================= main ================================
+
+    public static void main(String [] args) {
+        SwingUtilities.invokeLater( new Runnable() {
+            @Override
+            public void run() {
+                MainGui instance = new MainGui();
+                instance.setVisible(true);
+            }
+        });
+    }
 }

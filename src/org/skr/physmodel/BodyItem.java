@@ -1,14 +1,19 @@
 package org.skr.physmodel;
 
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Matrix3;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.utils.Array;
+import org.skr.PhysModelEditor.PhysWorld;
 import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
 
 /**
  * Created by rat on 11.06.14.
  */
-public class BodyItem {
-    String name = "";
+public class BodyItem extends Group {
     Body body = null;
     AnimatedActorGroup aagBackground;
     Array< FixtureSet > fixtureSets = new Array<FixtureSet>();
@@ -21,20 +26,17 @@ public class BodyItem {
         this.body = body;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public AnimatedActorGroup getAagBackground() {
         return aagBackground;
     }
 
     public void setAagBackground(AnimatedActorGroup aagBackground) {
+
+        if ( this.aagBackground != null  )
+            removeActor( this.aagBackground );
         this.aagBackground = aagBackground;
+
+        addActor( aagBackground );
     }
 
     public Array<FixtureSet> getFixtureSets() {
@@ -46,7 +48,7 @@ public class BodyItem {
     }
 
     public FixtureSet addNewFixtureSet( String name ) {
-        FixtureSet fs = new FixtureSet( body );
+        FixtureSet fs = new FixtureSet( this );
         fs.setName( name );
         fixtureSets.add( fs );
         return fs;
@@ -58,6 +60,40 @@ public class BodyItem {
             return;
         fixtureSets.removeIndex( indexOf );
         fixtureSet.removeAllFixtures();
+    }
+
+    public void updateTransform() {
+        if ( body == null )
+            return;
+        Vector2 pos = PhysWorld.get().physToView( body.getPosition() );
+        float angle = body.getAngle();
+        setPosition( pos.x, pos.y );
+        setRotation(MathUtils.radiansToDegrees * angle );
+
+    }
+
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+    }
+
+    @Override
+    public void draw(Batch batch, float parentAlpha) {
+        updateTransform();
+        super.draw(batch, parentAlpha);
+    }
+
+
+    static final Matrix3 mtx = new Matrix3();
+
+    public static Vector2 stageToBodyItemLocal( BodyItem bodyItem, Vector2 coord ) {
+        mtx.idt();
+
+        mtx.translate( bodyItem.getX(), bodyItem.getY() );
+        mtx.rotate( bodyItem.getRotation() );
+
+        coord.mul( mtx.inv() );
+        return coord;
     }
 
 }

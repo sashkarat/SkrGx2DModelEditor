@@ -11,23 +11,30 @@ import javax.swing.*;
  */
 public class FixtureSetPropertiesTableModel extends PropertiesBaseTableModel {
 
+    public interface ShapeTypeListener {
+        public void changed( FixtureSet fixtureSet );
+    }
 
     private enum Properties_  {
 
         Name(PropertyType.STRING),
         Type(PropertyType.SELECTOR),
-        Friction(PropertyType.NUMBER),
-        Restitution(PropertyType.NUMBER),
-        Density(PropertyType.NUMBER),
-        FixturesCount(PropertyType.NUMBER);
+        Friction(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        Restitution(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        Density(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        FixturesCount(PropertyType.NUMBER, DataRole.PHYS_COORDINATES);
 
         private PropertyType propertyType;
+        private DataRole dataRole = DataRole.DEFAULT;
 
         Properties_(PropertyType propertyType) {
             this.propertyType = propertyType;
         }
 
-
+        Properties_(PropertyType propertyType, DataRole dataRole) {
+            this.propertyType = propertyType;
+            this.dataRole = dataRole;
+        }
 
         static Properties_[] values = Properties_.values();
         static Array<String> shapeTypeNames = new Array<String>();
@@ -36,6 +43,8 @@ public class FixtureSetPropertiesTableModel extends PropertiesBaseTableModel {
                 shapeTypeNames.add( Shape.Type.values()[i].toString() );
         }
     }
+
+    private ShapeTypeListener shapeTypeListener;
 
     private FixtureSet fixtureSet;
 
@@ -49,6 +58,10 @@ public class FixtureSetPropertiesTableModel extends PropertiesBaseTableModel {
 
     public void setFixtureSet(FixtureSet fixtureSet) {
         this.fixtureSet = fixtureSet;
+    }
+
+    public void setShapeTypeListener(ShapeTypeListener shapeTypeListener) {
+        this.shapeTypeListener = shapeTypeListener;
     }
 
     @Override
@@ -80,6 +93,11 @@ public class FixtureSetPropertiesTableModel extends PropertiesBaseTableModel {
     @Override
     public PropertyType getPropertyType(int rowIndex) {
         return Properties_.values[rowIndex].propertyType;
+    }
+
+    @Override
+    public DataRole getDataRole(int rowIndex) {
+        return Properties_.values[rowIndex].dataRole;
     }
 
     @Override
@@ -138,7 +156,13 @@ public class FixtureSetPropertiesTableModel extends PropertiesBaseTableModel {
                 fixtureSet.setName( (String) aValue );
                 break;
             case Type:
+
+                Shape.Type oldType = fixtureSet.getShapeType();
                 fixtureSet.setShapeType( Shape.Type.values()[ (Integer) aValue] );
+
+                if ( oldType != fixtureSet.getShapeType() && shapeTypeListener != null )
+                    shapeTypeListener.changed( fixtureSet );
+
                 break;
             case Friction:
                 fixtureSet.setFriction( (Float) aValue );

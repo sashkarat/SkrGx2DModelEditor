@@ -27,6 +27,12 @@ public abstract  class PropertiesBaseTableModel extends AbstractTableModel {
         SELECTOR
     }
 
+    public enum DataRole {
+        DEFAULT,
+        VIEW_COORDINATES,
+        PHYS_COORDINATES
+    }
+
     JTree modelJTree;
     PropertiesChangedListener propertiesChangedListener;
 
@@ -46,6 +52,7 @@ public abstract  class PropertiesBaseTableModel extends AbstractTableModel {
             md.nodeChanged( (DefaultMutableTreeNode) modelJTree.getLastSelectedPathComponent() );
         }
     }
+
 
 
     @Override
@@ -106,11 +113,15 @@ public abstract  class PropertiesBaseTableModel extends AbstractTableModel {
             propertiesChangedListener.changed();
 
         fireJTree();
+
     }
+
+
 
     public abstract int getCurrentSelectorIndex( int rowIndex );
     public abstract Array<String> getSelectorArray( int rowIndex );
     public abstract PropertyType getPropertyType( int rowIndex );
+    public abstract DataRole getDataRole( int rowIndex );
     public abstract int getPropertiesCount();
     public abstract  boolean isPropertyEditable( int rowIndex);
     public abstract Object getPropertyName( int rowIndex );

@@ -35,7 +35,7 @@ public class ShapeDescription {
     }
 
     public void setPosition(Vector2 position) {
-        this.position = position;
+        this.position.set( position );
     }
 
     public boolean isLooped() {

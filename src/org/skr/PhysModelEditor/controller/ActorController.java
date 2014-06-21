@@ -1,4 +1,4 @@
-package org.skr.PhysModelEditor;
+package org.skr.PhysModelEditor.controller;
 
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -14,15 +14,48 @@ import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
 public class ActorController extends Controller implements AnimatedActorGroup.RenderableUserObject {
 
 
+    public enum CpType {
+        FREE,
+        CENTER,
+        BOTTOM_LEFT,
+        BOTTOM_RIGHT,
+        TOP_RIGHT,
+        TOP_LEFT
+    }
+
+    public static class ActorControlPoint extends ControlPoint {
+        private CpType type = CpType.FREE;
+
+        public ActorControlPoint(CpType type) {
+            super( null );
+            this.type = type;
+        }
+
+        public ActorControlPoint(Object object, CpType type) {
+            super(object);
+            this.type = type;
+        }
+
+        public CpType getType() {
+            return type;
+        }
+
+        public void setType(CpType type) {
+            this.type = type;
+        }
+    }
+
+
     Actor actor;
 
-    protected ActorController(Stage stage) {
+    public ActorController(Stage stage) {
         super(stage);
-        controlPoints.add( new ControlPoint(CpType.BOTTOM_LEFT) );
-        controlPoints.add( new ControlPoint(CpType.BOTTOM_RIGHT) );
-        controlPoints.add( new ControlPoint(CpType.TOP_RIGHT) );
-        controlPoints.add( new ControlPoint(CpType.TOP_LEFT) );
-        controlPoints.add( new ControlPoint(CpType.CENTER) );
+
+        controlPoints.add( new ActorControlPoint(CpType.BOTTOM_LEFT) );
+        controlPoints.add( new ActorControlPoint(CpType.BOTTOM_RIGHT) );
+        controlPoints.add( new ActorControlPoint(CpType.TOP_RIGHT) );
+        controlPoints.add( new ActorControlPoint(CpType.TOP_LEFT) );
+        controlPoints.add( new ActorControlPoint(CpType.CENTER) );
 
     }
 
@@ -62,13 +95,15 @@ public class ActorController extends Controller implements AnimatedActorGroup.Re
     }
 
     @Override
-    protected void updateControlPoint(ControlPoint cp) {
+    protected void updateControlPointFromShape(ControlPoint cp) {
+
+        ActorControlPoint acp = (ActorControlPoint) cp;
 
         if ( this.actor == null ) {
             return;
         }
 
-        switch ( cp.getType() ) {
+        switch ( acp.getType() ) {
             case FREE:
                 break;
             case CENTER:
@@ -96,9 +131,11 @@ public class ActorController extends Controller implements AnimatedActorGroup.Re
         if ( actor == null )
             return;
 
+        ActorControlPoint acp = (ActorControlPoint) cp;
+
         AnimatedActorGroup.rotateStageToLocal( actor,  offsetStage );
 
-        switch ( cp.getType() ) {
+        switch ( acp.getType() ) {
             case FREE:
                 cp.offsetPos( offsetStage.x, offsetStage.y );
                 break;
@@ -130,7 +167,9 @@ public class ActorController extends Controller implements AnimatedActorGroup.Re
     protected void rotateAtControlPoint(ControlPoint cp, float angle) {
         if ( actor == null )
             return;
-        switch ( cp.getType() ) {
+        ActorControlPoint acp = (ActorControlPoint) cp;
+
+        switch ( acp.getType() ) {
             case FREE:
                 break;
             case CENTER:
@@ -165,10 +204,6 @@ public class ActorController extends Controller implements AnimatedActorGroup.Re
         shapeRenderer.translate(actor.getX(), actor.getY(), 0);
         shapeRenderer.rotate( 0, 0, 1, actor.getRotation() );
         shapeRenderer.setColor( 1, 0.8f, 0.5f, 1);
-
-
-        float zoom = ( (OrthographicCamera) stage.getCamera() ).zoom;
-        setCameraZoom(zoom);
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line );
         shapeRenderer.rect( - actor.getWidth() / 2 ,  - actor.getHeight() / 2,

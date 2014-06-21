@@ -327,11 +327,12 @@ public class AnimatedActorGroup extends Group {
     }
 
     static final Stack<Actor> actorsTmpStack = new Stack<Actor>();
+    static final Matrix3 mtx = new Matrix3();
+
 
     public static Vector2 stageToActorLocal(Actor actor, Vector2 stageSpaceCoordinates) {
 
-        Matrix3 mtx = new Matrix3();
-
+        mtx.idt();
         actorsTmpStack.clear();
 
         Actor act = actor;

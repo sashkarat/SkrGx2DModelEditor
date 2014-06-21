@@ -37,6 +37,11 @@ public class PhysModelPropertiesTableModel extends PropertiesBaseTableModel {
         return PropertyType.STRING;
     }
 
+    @Override
+    public DataRole getDataRole(int rowIndex) {
+        return DataRole.DEFAULT;
+    }
+
     public void  setModel( PhysModel model ) {
         this.model = model;
     }

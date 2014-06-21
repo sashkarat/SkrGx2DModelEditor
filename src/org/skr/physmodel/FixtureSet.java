@@ -15,12 +15,17 @@ public class FixtureSet {
     public float restitution = 0;
     public float density = 0.1f;
 
+    BodyItem bodyItem;
+
 
     Array< Fixture> fixtures = new Array<Fixture>();
-    Body body;
 
-    public FixtureSet( Body body) {
-        this.body = body;
+    public FixtureSet( BodyItem bodyItem ) {
+        this.bodyItem = bodyItem;
+    }
+
+    public BodyItem getBodyItem() {
+        return bodyItem;
     }
 
     public Shape.Type getShapeType() {
@@ -75,12 +80,13 @@ public class FixtureSet {
     }
 
     public Body getBody() {
-        return body;
+        return bodyItem.getBody();
     }
 
     public void removeAllFixtures() {
+
         for ( Fixture f : fixtures ) {
-            body.destroyFixture( f );
+            bodyItem.getBody().destroyFixture(f);
         }
         fixtures.clear();
     }
@@ -171,29 +177,25 @@ public class FixtureSet {
         setFriction( desc.getFriction() );
         setShapeType( desc.getShapeType() );
 
-        for ( ShapeDescription shd : desc.getShapeDescriptions() ) {
-            fixtures.add( createFixture( shd ) );
-        }
+        createFixtures( desc.getShapeDescriptions() );
 
         return this;
     }
 
-    public Fixture updateFixture(Fixture oldFixture, ShapeDescription shd ) {
-        int indexOf = fixtures.indexOf( oldFixture, true );
-        if ( indexOf < 0)
-            return oldFixture;
-        body.destroyFixture( oldFixture );
+    public void createFixtures( Array< ShapeDescription> shapeDescriptions ) {
 
-        Fixture fixture = createFixture ( shd );
-        fixtures.set(indexOf, fixture);
+        removeAllFixtures();
 
-        return fixture;
+        for ( ShapeDescription shd : shapeDescriptions ) {
+            fixtures.add( createFixture( shd ) );
+        }
     }
+
 
     public Fixture createFixture ( ShapeDescription shd ) {
         FixtureDef fixtureDef = new FixtureDef();
 
-        Shape shape = new CircleShape();
+        Shape shape = null;
 
         switch ( shapeType ) {
             case Circle:
@@ -215,7 +217,7 @@ public class FixtureSet {
         fixtureDef.restitution = restitution;
         fixtureDef.shape = shape;
 
-        return body.createFixture( fixtureDef );
+        return bodyItem.getBody().createFixture(fixtureDef);
 
     }
 
@@ -243,10 +245,18 @@ public class FixtureSet {
 
     private Shape createChainShape( ShapeDescription shd ) {
         ChainShape sh = new ChainShape();
+
+        Vector2 [] vertices = new Vector2[ shd.getVertices().size ];
+
+        int i = 0;
+        for ( Vector2 v : shd.getVertices() )
+            vertices[ i++ ] = v;
+
+
         if ( shd.isLooped() ) {
-            sh.createLoop( shd.getVertices().toArray() );
+            sh.createLoop( vertices );
         } else {
-            sh.createChain( shd.getVertices().toArray() );
+            sh.createChain( vertices );
         }
         return sh;
     }

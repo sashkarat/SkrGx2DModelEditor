@@ -159,6 +159,15 @@ public class AagPropertiesTableModel extends PropertiesBaseTableModel {
         return propTypes[ rowIndex ];
     }
 
+    @Override
+    public DataRole getDataRole(int rowIndex) {
+        if ( rowIndex >= propTypes.length )
+            return DataRole.DEFAULT;
+        if ( propTypes[ rowIndex ] == PropertyType.NUMBER )
+            return DataRole.VIEW_COORDINATES;
+        return DataRole.DEFAULT;
+    }
+
     public void setAag(AnimatedActorGroup aag) {
         this.aag = aag;
     }
