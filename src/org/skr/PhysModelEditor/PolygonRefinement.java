@@ -1,6 +1,6 @@
 package org.skr.PhysModelEditor;
 
-import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
@@ -40,11 +40,16 @@ public class PolygonRefinement {
             this.vertexA = vertexA;
             this.vertexB = vertexB;
             this.type = type;
+            updateVector();
         }
 
         public Edge(Vertex vertexA, Vertex vertexB ) {
             this.vertexA = vertexA;
             this.vertexB = vertexB;
+        }
+
+        public EdgeType getType() {
+            return type;
         }
 
         public boolean isConnected() {
@@ -89,6 +94,16 @@ public class PolygonRefinement {
             return false;
         }
 
+        @Override
+        public boolean equals(Object obj) {
+            if (  !(obj instanceof Edge) )
+                return super.equals(obj);
+            Edge e = (Edge) obj;
+            if ( e.getVertexA() == vertexA)
+                if ( e.getVertexB() == vertexB )
+                    return true;
+            return false;
+        }
 
         @Override
         public String toString() {
@@ -105,7 +120,7 @@ public class PolygonRefinement {
         private Edge inputBorder;
         private Edge outputBorder;
         private Array< Edge > inputEdges = new Array<Edge>();
-        private Array< Edge > outputEdge = new Array<Edge>();
+        private Array< Edge > outputEdges = new Array<Edge>();
 
 
         private void updateEdge( Edge edge ) {
@@ -121,7 +136,7 @@ public class PolygonRefinement {
                 updateEdge( e );
             }
 
-            for ( Edge e: outputEdge ) {
+            for ( Edge e: outputEdges ) {
                 updateEdge( e );
             }
 
@@ -156,8 +171,8 @@ public class PolygonRefinement {
             return inputEdges;
         }
 
-        public Array<Edge> getOutputEdge() {
-            return outputEdge;
+        public Array<Edge> getOutputEdges() {
+            return outputEdges;
         }
 
         public boolean isEdgeConnected( Edge edge ) {
@@ -194,6 +209,34 @@ public class PolygonRefinement {
             removeOutputBorder();
             this.outputBorder = outputBorder;
             this.outputBorder.setVertexB( this );
+        }
+
+        public boolean addInputEdge( Edge edge ) {
+            if ( edge.getType() == EdgeType.BORDER )
+                return false;
+
+            if ( inputEdges.contains( edge, true ) )
+                return false;
+
+            if ( !edge.isVertexB( this) )
+                edge.setVertexB( this );
+            inputEdges.add( edge );
+
+            return true;
+        }
+
+        public boolean addOutputEdge ( Edge edge ) {
+            if ( edge.getType() == EdgeType.BORDER )
+                return false;
+
+            if ( outputEdges.contains( edge, true ) )
+                return false;
+
+            if ( !edge.isVertexA(this) )
+                edge.setVertexA(this);
+            outputEdges.add( edge );
+
+            return true;
         }
 
         @Override
@@ -292,6 +335,7 @@ public class PolygonRefinement {
 
     Vertices borderVertices = new Vertices();
     Array< Edge > borderEdges = new Array<Edge>();
+    Array< Edge > internalEdges = new Array<Edge>();
 
 
     public PolygonRefinement() {
@@ -301,6 +345,7 @@ public class PolygonRefinement {
     public void reset() {
         borderVertices.clear();
         borderEdges.clear();
+        internalEdges.clear();
     }
 
 
@@ -332,10 +377,118 @@ public class PolygonRefinement {
         return borderEdges;
     }
 
-    public void refine() {
-        borderEdges.clear();
-        createBorderEdges();
+    public Array<Edge> getInternalEdges() {
+        return internalEdges;
     }
 
+    private class TraceInfo {
+        public Edge nearestEdge = null;
+        public float distance;
+    }
+
+    private TraceInfo traceEdge(Edge edge, Vector2 rayPoint, Array<Edge> edges, TraceInfo traceInfo) {
+        final Vector2 iPoint = new Vector2();
+        if ( traceInfo == null ) {
+            traceInfo = new TraceInfo();
+            traceInfo.distance = 1e20f;
+        }
+        for ( Edge e : edges ) {
+            if ( e == edge )
+                continue;
+            if ( e.getVertexB() == edge.getVertexA() )
+                continue;
+            if ( e.getVertexA() == edge.getVertexB() )
+                continue;
+            if ( e.getVertexA() == edge.getVertexA() )
+                continue;
+            if ( e.getVertexB() == edge.getVertexB() )
+                continue;
+
+            boolean res = Intersector.intersectSegments( edge.getVertexA().getPoint(), rayPoint,
+                    e.getVertexA().getPoint(), e.getVertexB().getPoint(), iPoint );
+            if ( !res )
+                continue;
+            float d = edge.getVertexA().getPoint().dst( iPoint );
+            if ( d >= traceInfo.distance )
+                continue;
+            traceInfo.distance = d;
+            traceInfo.nearestEdge = e;
+        }
+        return traceInfo;
+    }
+
+    private Edge traceInputBorder( Edge border ) {
+
+        final Vector2 rayPoint = new Vector2();
+
+        rayPoint.set(border.getVector());
+        rayPoint.scl(1e20f);
+        rayPoint.add(border.getVertexA().getPoint());
+
+        TraceInfo trInfo = traceEdge(border, rayPoint, borderEdges, null);
+
+        if ( trInfo.nearestEdge == null ) {
+            return null;
+        }
+        Edge intersectedEdge = trInfo.nearestEdge;
+        Edge edge = new Edge( border.getVertexB(), intersectedEdge.getVertexB(), EdgeType.INTERNAL );
+
+        trInfo = traceEdge( edge, edge.getVertexB().getPoint(), borderEdges, null );
+
+        if ( trInfo.nearestEdge == null ) {
+            return edge;
+        }
+
+        if ( trInfo.nearestEdge.equals( intersectedEdge ) )
+            return edge;
+
+        edge = new Edge( border.getVertexB(), trInfo.nearestEdge.getVertexA(), EdgeType.INTERNAL);
+        return edge;
+    }
+
+
+    private void trace() {
+
+        for ( int i = 0; i < borderVertices.getCount(); i++) {
+            Vertex v = borderVertices.get(i);
+
+            Edge inputBorder = v.getInputBorder();
+            Edge outputBorder = v.getOutputBorder();
+            if ( inputBorder == null || outputBorder == null ) {
+                System.err.println("PolygonRefinement.trace ERROR: vertex without border");
+                return;
+            }
+
+            if ( isConvex( inputBorder.getVector(), outputBorder.getVector() ) )
+                continue;
+            System.out.println("\nPolygonRefinement.trace: concave vertex: " + v + " InputBorder: " + inputBorder);
+            Edge newEdge = traceInputBorder( inputBorder );
+
+            if ( newEdge == null ) {
+                System.out.println("PolygonRefinement.trace: WARNING. Tracing concave vertex failed. ");
+                continue;
+            }
+
+            newEdge.getVertexA().addOutputEdge( newEdge );
+            newEdge.getVertexB().addInputEdge( newEdge );
+
+            internalEdges.add( newEdge );
+        }
+    }
+
+    private void parseInternalEdges() {
+        Array< Edge > revEdges = new Array<Edge>();
+
+
+
+    }
+
+    public void refine() {
+        borderEdges.clear();
+        internalEdges.clear();
+        createBorderEdges();
+        trace();
+        parseInternalEdges();
+    }
 
 }
