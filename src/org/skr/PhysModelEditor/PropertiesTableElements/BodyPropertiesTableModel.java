@@ -1,5 +1,6 @@
 package org.skr.PhysModelEditor.PropertiesTableElements;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -72,6 +73,12 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
     }
 
 
+    public void bodyItemChanged( BodyItem bodyItem ) {
+        if ( bodyItem == this.bodyItem ) {
+            fireTableDataChanged();
+        }
+    }
+
     //==========================================================
 
     @Override
@@ -138,17 +145,17 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
             case PositionY:
                 return body.getPosition().y;
             case Angle:
-                return body.getAngle();
+                return MathUtils.radiansToDegrees * body.getAngle();
             case LinearVelX:
                 return body.getLinearVelocity().x;
             case LinearVelY:
                 return body.getLinearVelocity().y;
             case AngularVel:
-                return body.getAngularVelocity();
+                return MathUtils.radiansToDegrees * body.getAngularVelocity();
             case LinearDumping:
                 return body.getLinearDamping();
             case AngularDumping:
-                return body.getAngularDamping();
+                return MathUtils.radiansToDegrees * body.getAngularDamping();
             case AllowSleep:
                 return body.isSleepingAllowed();
             case Awake:
@@ -196,7 +203,7 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
                 break;
             case Angle:
                 tmp = body.getPosition();
-                body.setTransform( tmp, (Float) aValue );
+                body.setTransform( tmp, MathUtils.degreesToRadians * (Float) aValue );
                 break;
             case LinearVelX:
                 tmp = body.getLinearVelocity();
@@ -209,13 +216,13 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
                 body.setLinearVelocity( tmp );
                 break;
             case AngularVel:
-                body.setAngularVelocity( (Float) aValue );
+                body.setAngularVelocity( MathUtils.degreesToRadians * (Float) aValue );
                 break;
             case LinearDumping:
                 body.setLinearDamping( (Float) aValue );
                 break;
             case AngularDumping:
-                body.setAngularVelocity( (Float) aValue );
+                body.setAngularDamping( MathUtils.degreesToRadians *  (Float) aValue );
                 break;
             case AllowSleep:
                 body.setSleepingAllowed( (Boolean) aValue );

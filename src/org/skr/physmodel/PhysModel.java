@@ -37,6 +37,7 @@ public class PhysModel {
         String name = "";
         AagDescription backgroundAagDesc = null;
         Array<BodyItemDescription> bodiesDesc = null;
+        Array<JointItemDescription> jointsDesc = null;
 
         public String getName() {
             return name;
@@ -62,11 +63,19 @@ public class PhysModel {
             this.bodiesDesc = bodiesDesc;
         }
 
+        public Array<JointItemDescription> getJointsDesc() {
+            return jointsDesc;
+        }
+
+        public void setJointsDesc(Array<JointItemDescription> jointsDesc) {
+            this.jointsDesc = jointsDesc;
+        }
     }
 
     private String name = "";
     private AnimatedActorGroup backgroundActor;
     private Array<BodyItem> bodyItems = new Array<BodyItem>();
+    private Array<JointItem> jointItems = new Array<JointItem>();
 
     public PhysModel() {
     }
@@ -94,14 +103,12 @@ public class PhysModel {
         if ( bodiesDesc != null ) {
 
             for (BodyItemDescription bd : bodiesDesc) {
-                BodyItem bi = addBodyItem( bd.getName(), bd.bodyDef );
+                BodyItem bi = addBodyItem( bd.getName(), bd.bodyDef, bd.getId() );
 
                 for ( FixtureSetDescription fsd : bd.getFixtureSetDescriptions() ) {
                     FixtureSet fs = new FixtureSet( bi );
                     bi.getFixtureSets().add( fs.loadFromDescription( fsd) );
                 }
-
-
 
                 if (bd.aagDescription != null) {
                     bi.setAagBackground(new AnimatedActorGroup(bd.getAagDescription()));
@@ -110,6 +117,16 @@ public class PhysModel {
             }
         }
 
+        Array<JointItemDescription> jointsDesc = desc.getJointsDesc();
+
+        if ( jointsDesc != null ) {
+            for ( JointItemDescription jd : jointsDesc ) {
+                JointItem ji = JointItem.createFromDescription( jd, this );
+                if ( ji != null ) {
+                    jointItems.add(ji);
+                }
+            }
+        }
 
     }
 
@@ -130,6 +147,12 @@ public class PhysModel {
             desc.setBodiesDesc(bdesc);
         }
 
+        if ( jointItems.size != 0 ) {
+            Array<JointItemDescription> jdesc = new Array<JointItemDescription>();
+            fillUpJointDescriptions( jdesc );
+            desc.setJointsDesc( jdesc );
+        }
+
         return desc;
     }
 
@@ -141,17 +164,25 @@ public class PhysModel {
             bd.setName( bi.getName() );
             BodyDef bdef = getBodyDefFromBody( bi.body );
             bd.setBodyDef( bdef );
+            bd.setId( bi.getId() );
 
             for ( FixtureSet fs : bi.getFixtureSets() ) {
                 bd.getFixtureSetDescriptions().add( fs.getDescription() );
             }
-
 
             if ( bi.aagBackground != null ) {
                 bd.setAagDescription( bi.aagBackground.getDescription() );
             }
 
             bodyDescriptions.add( bd );
+        }
+    }
+
+    void fillUpJointDescriptions( Array<JointItemDescription> jointItemDescriptions) {
+        for ( JointItem ji : jointItems ) {
+            JointItemDescription jd = JointItem.createJointItemDescription( ji, this );
+            if ( jd != null )
+                jointItemDescriptions.add( jd );
         }
     }
 
@@ -206,11 +237,11 @@ public class PhysModel {
 
     public BodyItem addNewBodyItem(String name) {
         BodyDef bd = new BodyDef();
-        return addBodyItem( name, bd );
+        return addBodyItem( name, bd, -1 );
     }
 
-    public BodyItem addBodyItem( String name, BodyDef bodyDef ) {
-        BodyItem bi = new BodyItem();
+    public BodyItem addBodyItem( String name, BodyDef bodyDef, int id ) {
+        BodyItem bi = new BodyItem( id );
         bi.setName( name );
         Body body = PhysWorld.getWorld().createBody( bodyDef );
         bi.setBody( body );
@@ -238,6 +269,39 @@ public class PhysModel {
         PhysWorld.getWorld().destroyBody( bodyItem.body );
         //TODO: check joint list
 
+    }
+
+
+    public BodyItem findBodyItem( int id ) {
+        for ( BodyItem bi : bodyItems) {
+            if ( bi.getId() == id )
+                return bi;
+        }
+        return null;
+    }
+
+    public BodyItem findBodyItem( Body body ) {
+        for ( BodyItem bi : bodyItems) {
+            if ( bi.getBody() == body )
+                return bi;
+        }
+        return null;
+    }
+
+    public JointItem findJointItem( int id ) {
+        for ( JointItem ji : jointItems ) {
+            if ( ji.getId() == id)
+                return ji;
+        }
+        return null;
+    }
+
+    public JointItem findJointItem( Joint joint) {
+        for ( JointItem ji : jointItems ) {
+            if ( ji.getJoint() == joint )
+                return ji;
+        }
+        return null;
     }
 
 

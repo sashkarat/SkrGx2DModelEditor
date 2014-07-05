@@ -95,7 +95,7 @@ public class ActorController extends Controller implements AnimatedActorGroup.Re
     }
 
     @Override
-    protected void updateControlPointFromShape(ControlPoint cp) {
+    protected void updateControlPointFromObject(ControlPoint cp) {
 
         ActorControlPoint acp = (ActorControlPoint) cp;
 

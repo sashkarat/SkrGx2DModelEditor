@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import org.skr.PhysModelEditor.controller.*;
+import org.skr.physmodel.BodyItem;
 import org.skr.physmodel.FixtureSet;
 
 /**
@@ -22,6 +23,7 @@ public class EditorScreen implements Screen, InputProcessor {
     private  OrthographicCamera camera;
     private  PhysModelRenderer modelRenderer;
     private ActorController actorController;
+    private BodyItemController bodyItemController;
     private CircleShapeController circleShapeController;
     private EdgeShapeController edgeShapeController;
     private ChainShapeController chainShapeController;
@@ -39,6 +41,7 @@ public class EditorScreen implements Screen, InputProcessor {
         shapeRenderer = new ShapeRenderer();
 
         actorController = new ActorController( stage );
+        bodyItemController = new BodyItemController( stage );
         circleShapeController = new CircleShapeController( stage );
         edgeShapeController = new EdgeShapeController( stage );
         chainShapeController = new ChainShapeController( stage );
@@ -59,6 +62,13 @@ public class EditorScreen implements Screen, InputProcessor {
             actorController.getActor().setUserObject( null );
         }
 
+        if ( object instanceof BodyItem ) {
+            BodyItem bi = ( BodyItem ) object;
+            bodyItemController.setBodyItem( bi );
+            currentController = bodyItemController;
+            return;
+        }
+
         if ( object instanceof Actor ) {
 
             Actor a = (Actor) object;
@@ -67,6 +77,8 @@ public class EditorScreen implements Screen, InputProcessor {
             currentController = actorController;
             return;
         }
+
+
 
         if ( object instanceof FixtureSet ) {
             FixtureSet fs = ( FixtureSet ) object;
@@ -99,6 +111,10 @@ public class EditorScreen implements Screen, InputProcessor {
         return actorController;
     }
 
+    public BodyItemController getBodyItemController() {
+        return bodyItemController;
+    }
+
     public ShapeController getCurrentShapeController() {
         if ( currentController == null )
             return null;
@@ -119,6 +135,8 @@ public class EditorScreen implements Screen, InputProcessor {
 
         stage.act( delta );
         stage.draw();
+
+        PhysWorld.get().debugRender( stage );
 
         if ( currentController  != null ) {
 

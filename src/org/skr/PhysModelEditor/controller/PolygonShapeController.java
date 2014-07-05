@@ -18,6 +18,28 @@ public class PolygonShapeController extends ShapeController {
 
     private static final Color firstColor  = new Color( 1f, 1, 0, 1);
 
+
+    private static Array<Vector2> newPhysPolygon( Array<Vector2> viewPolygon ) {
+        Array<Vector2> physPolygon = new Array<Vector2>();
+
+        for ( Vector2 point : viewPolygon ) {
+            Vector2 phP = new Vector2( point );
+            physPolygon.add(PhysWorld.get().toPhys(phP));
+        }
+
+        return physPolygon;
+    }
+
+    private static Array<Vector2> newViewPolygon( Array<Vector2> physPolygon) {
+        Array<Vector2> viewPolygon = new Array<Vector2>();
+
+        for ( Vector2 point : physPolygon ) {
+            Vector2 vP = new Vector2( point );
+            viewPolygon.add( PhysWorld.get().toView( vP ) );
+        }
+        return viewPolygon;
+    }
+
     ShapeDescription shd;
     boolean autoTessellate = false;
     Array< Array<Vector2> > polygons = null;
@@ -45,13 +67,24 @@ public class PolygonShapeController extends ShapeController {
     @Override
     protected void createControlPoints() {
 
+        controlPoints.clear();
+
+        if ( fixtureSetDescription.getShapeDescriptions().size == 0 ) {
+            this.shd = null;
+            return;
+        }
+
+
         Array< Array<Vector2> > polygons = new Array<Array<Vector2>>();
 
         for ( ShapeDescription shd : fixtureSetDescription.getShapeDescriptions() ) {
-            polygons.add( shd.getVertices() );
+            polygons.add( newViewPolygon( shd.getVertices() ) );
         }
 
         Array< Vector2 > border = PolygonRefinement.mergePolygons( polygons );
+
+        if ( border == null )
+            return;
 
         if ( border.size == 0 )
             return;
@@ -60,7 +93,7 @@ public class PolygonShapeController extends ShapeController {
 
         shd = new ShapeDescription();
         fixtureSetDescription.getShapeDescriptions().add(shd);
-        controlPoints.clear();
+
 
         PolygonControlPoint cp = new PolygonControlPoint(shd);
         cp.setPos( border.first().x, border.first().y );
@@ -148,7 +181,7 @@ public class PolygonShapeController extends ShapeController {
     }
 
     @Override
-    protected void updateControlPointFromShape(ControlPoint cp) {
+    protected void updateControlPointFromObject(ControlPoint cp) {
         // does nothing
     }
 
@@ -239,7 +272,7 @@ public class PolygonShapeController extends ShapeController {
 
         for ( Array<Vector2> polygon :  polygons ) {
             ShapeDescription shdesc = new ShapeDescription();
-            shdesc.setVertices( polygon );
+            shdesc.setVertices( newPhysPolygon( polygon ) );
             fixtureSetDescription.getShapeDescriptions().add( shdesc );
         }
 
@@ -271,5 +304,10 @@ public class PolygonShapeController extends ShapeController {
         polygons = PolygonRefinement.cutPolygon( border );
 
         updateFixtureSetDescription();
+    }
+
+    @Override
+    public void flush() {
+        tessellatePolygon();
     }
 }

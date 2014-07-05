@@ -594,6 +594,9 @@ public class PolygonRefinement {
 
     private static Array<Vector2> mergeAll( Array< Array<Vector2> > polygons ) {
 
+        if ( polygons.size == 0 )
+            return null;
+
         Array<Vector2> merged = polygons.get(0);
         polygons.removeIndex(0);
 

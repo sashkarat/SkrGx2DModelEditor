@@ -73,7 +73,7 @@ public class CircleShapeController extends ShapeController{
     private static final Vector2 tmpV = new Vector2();
 
     @Override
-    protected void updateControlPointFromShape(ControlPoint cp) {
+    protected void updateControlPointFromObject(ControlPoint cp) {
         CircleControlPoint controlPoint = ( CircleControlPoint ) cp;
         ShapeDescription shapeDescription = (ShapeDescription) controlPoint.getObject();
         tmpV.set( shapeDescription.getPosition() );

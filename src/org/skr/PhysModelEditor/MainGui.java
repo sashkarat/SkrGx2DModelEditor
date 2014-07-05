@@ -85,7 +85,7 @@ public class MainGui extends JFrame {
 
     public static final class NodeInfo {
         public enum Type {
-            ROOT, AAG, BODY_ITEM, FIXTURE_SET;
+            ROOT, AAG, BODY_ITEM, FIXTURE_SET, JOINT_ITEM;
         }
 
         public Object object;
@@ -190,6 +190,21 @@ public class MainGui extends JFrame {
                             @Override
                             public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
                                 actorChangedByController( (Actor) controlledObject  );
+                            }
+                        }
+                );
+            }
+        });
+
+
+        Gdx.app.postRunnable( new Runnable() {
+            @Override
+            public void run() {
+                GdxApplication.get().getEditorScreen().getBodyItemController().setControlPointListener(
+                        new Controller.controlPointListener() {
+                            @Override
+                            public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
+                                bodyItemChangedByController( (BodyItem) controlledObject  );
                             }
                         }
                 );
@@ -658,6 +673,7 @@ public class MainGui extends JFrame {
 
         propertiesCellEditor.cancelCellEditing();
         tabbedPaneEditors.removeAll();
+        setGuiElementEnable( panelShapeEditor, false );
 
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePhysModel.getLastSelectedPathComponent();
 
@@ -765,6 +781,10 @@ public class MainGui extends JFrame {
 
     }
 
+    private void bodyItemChangedByController( BodyItem bodyItem ) {
+        bodyPropertiesTableModel.bodyItemChanged( bodyItem );
+    }
+
     private void actorChangedByController(Actor actor) {
         if ( actor instanceof AnimatedActorGroup )
             aagPropertiesTableModel.actorChanged( (AnimatedActorGroup) actor );
@@ -851,6 +871,9 @@ public class MainGui extends JFrame {
 
 
     void updateFixtures( ShapeController controller ) {
+
+        controller.flush();
+
         FixtureSet fs = fixtureSetPropertiesTableModel.getFixtureSet();
         fs.createFixtures( controller.getFixtureSetDescription().getShapeDescriptions() );
         fixtureSetPropertiesTableModel.fireTableDataChanged();

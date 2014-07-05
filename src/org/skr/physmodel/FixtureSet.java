@@ -216,8 +216,9 @@ public class FixtureSet {
         fixtureDef.friction = friction;
         fixtureDef.restitution = restitution;
         fixtureDef.shape = shape;
+        Fixture fixture = bodyItem.getBody().createFixture( fixtureDef );
 
-        return bodyItem.getBody().createFixture(fixtureDef);
+        return fixture;
 
     }
 

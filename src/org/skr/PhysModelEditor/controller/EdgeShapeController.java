@@ -106,7 +106,7 @@ public class EdgeShapeController extends ShapeController {
     }
 
     @Override
-    protected void updateControlPointFromShape( ControlPoint cp ) {
+    protected void updateControlPointFromObject(ControlPoint cp) {
         EdgeControlPoint ecp = (EdgeControlPoint) cp;
         ShapeDescription shd = getShapeDescription( cp );
 

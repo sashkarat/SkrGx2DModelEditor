@@ -157,6 +157,10 @@ public abstract class ShapeController extends Controller {
         // dumb
     }
 
+    public void flush() {
+        // dumb
+    }
+
     @Override
     protected Object getControlledObject() {
         return fixtureSetDescription;
@@ -199,7 +203,7 @@ public abstract class ShapeController extends Controller {
             return;
         ShapeDescription shd = (ShapeDescription) selectedControlPoint.getObject();
         shd.setRadius( physR );
-        updateControlPointFromShape(selectedControlPoint);
+        updateControlPointFromObject(selectedControlPoint);
     }
 
     public void setLooped( boolean state ) {

@@ -13,7 +13,6 @@ public class ShapeDescription {
     Vector2 position = new Vector2();
     boolean isLooped = false;
 
-
     public Array<Vector2> getVertices() {
         return vertices;
     }

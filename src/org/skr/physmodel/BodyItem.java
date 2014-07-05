@@ -13,9 +13,28 @@ import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
 /**
  * Created by rat on 11.06.14.
  */
-public class BodyItem extends Group {
+public class BodyItem extends PhysItem {
+
+    private static int g_id = -1;
+
+    private int id = -1;
+
+    public BodyItem( int id ) {
+        if ( id < 0 ) {
+            this.id = ++g_id;
+        } else {
+            this.id = id;
+            if ( g_id < id )
+                g_id = id;
+        }
+    }
+
+    public int getId() {
+        return id;
+    }
+
     Body body = null;
-    AnimatedActorGroup aagBackground;
+
     Array< FixtureSet > fixtureSets = new Array<FixtureSet>();
 
     public Body getBody() {
@@ -24,19 +43,6 @@ public class BodyItem extends Group {
 
     public void setBody(Body body) {
         this.body = body;
-    }
-
-    public AnimatedActorGroup getAagBackground() {
-        return aagBackground;
-    }
-
-    public void setAagBackground(AnimatedActorGroup aagBackground) {
-
-        if ( this.aagBackground != null  )
-            removeActor( this.aagBackground );
-        this.aagBackground = aagBackground;
-
-        addActor( aagBackground );
     }
 
     public Array<FixtureSet> getFixtureSets() {
@@ -82,7 +88,6 @@ public class BodyItem extends Group {
         updateTransform();
         super.draw(batch, parentAlpha);
     }
-
 
     static final Matrix3 mtx = new Matrix3();
 

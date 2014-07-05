@@ -94,11 +94,11 @@ public class ChainShapeController extends  ShapeController{
     }
 
     @Override
-    protected void updateControlPointFromShape(ControlPoint cp) {
+    protected void updateControlPointFromObject(ControlPoint cp) {
         ChainControlPoint ccp = (ChainControlPoint) cp;
         Vector2 vertex = ccp.getVertex();
         cp.setPos( PhysWorld.get().toView( vertex.x), PhysWorld.get().toView( vertex.y )  );
-//        Gdx.app.log("ChainShapeController.updateControlPointFromShape",
+//        Gdx.app.log("ChainShapeController.updateControlPointFromObject",
 //                "ID:" + cp.getId() + " Pos: " + cp.getX() + " " + cp.getY() + " vertex: " + vertex );
     }
 

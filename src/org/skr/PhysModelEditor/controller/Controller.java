@@ -188,7 +188,7 @@ public abstract  class Controller  {
     protected abstract void translateRendererToObject();
     protected abstract void draw();
     protected abstract Vector2 stageToObject( Vector2 stageCoord );
-    protected abstract void updateControlPointFromShape(ControlPoint cp);
+    protected abstract void updateControlPointFromObject(ControlPoint cp);
     protected abstract void moveControlPoint( ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage );
     protected abstract void rotateAtControlPoint(ControlPoint cp, float angle);
     protected abstract Object getControlledObject();
@@ -196,7 +196,7 @@ public abstract  class Controller  {
     protected void drawControlPoints() {
         for( ControlPoint cp : controlPoints ) {
             if ( !cp.isSelected() )
-                updateControlPointFromShape(cp);
+                updateControlPointFromObject(cp);
             cp.draw( shapeRenderer );
         }
     }

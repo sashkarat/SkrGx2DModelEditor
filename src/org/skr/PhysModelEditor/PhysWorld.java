@@ -1,18 +1,18 @@
 package org.skr.PhysModelEditor;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
-import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.utils.Array;
 
 /**
  * Created by rat on 08.06.14.
  */
 public class PhysWorld {
 
-    private class WorldDebugRenderer extends Box2DDebugRenderer {
+    static private class WorldDebugRenderer extends Box2DDebugRenderer {
         Matrix4 box2dProjection = new Matrix4();
 
 
@@ -35,7 +35,27 @@ public class PhysWorld {
             float y = body.getWorldCenter().y;
             renderer.rect( x - 0.004f, y - 0.004f, 0.008f, 0.008f);
 
+//            Array<Fixture> fixtureList = body.getFixtureList();
+//
+//            for ( Fixture fixture : fixtureList ) {
+//                if ( fixture.getType() == Shape.Type.Polygon ) {
+//                    drawPolygonShape( (PolygonShape) fixture.getShape() );
+//                }
+//            }
         }
+
+//        private static Vector2 aV = new Vector2();
+//        private static Vector2 bV = new Vector2();
+//
+//        protected void drawPolygonShape( PolygonShape psh ) {
+//            int c = psh.getVertexCount();
+//            for ( int i = 0; i < c; i++ ) {
+//                psh.getVertex( i,  aV );
+//                psh.getVertex( (i+1) % c, bV);
+//
+//                renderer.line(aV, bV);
+//            }
+//        }
     }
 
     World world;
@@ -52,7 +72,7 @@ public class PhysWorld {
         world = new World( gravity, true);
         instance = this;
         this.scale = scale;
-        debugRenderer = new WorldDebugRenderer(true, true, false, false, false, true);
+        debugRenderer = new WorldDebugRenderer(true, true, false, true, true, true);
     }
 
 
