@@ -128,7 +128,7 @@ public class ChainShapeController extends  ShapeController{
     }
 
     @Override
-    protected void onLeftCtrlClicked(Vector2 localCoord, Vector2 stageCoord) {
+    protected void addControlPoint( Vector2 localCoord ) {
 
         if ( controlPoints.size == 0 )
             return;
@@ -145,7 +145,7 @@ public class ChainShapeController extends  ShapeController{
     }
 
     @Override
-    protected void onLeftCtrlShiftClicked(Vector2 localCoord, Vector2 stageCoord) {
+    protected void removeControlPoint( Vector2 localCoord ) {
 
         if ( controlPoints.size < 2 )
             return;
@@ -164,15 +164,9 @@ public class ChainShapeController extends  ShapeController{
 
         ShapeDescription shd = getShapeDescription( cp );
 
-        int indexOf = shd.getVertices().indexOf( cp.getVertex(), true);
-        if ( indexOf >= 0 ) {
-            shd.getVertices().removeIndex( indexOf );
-        }
+        shd.getVertices().removeValue( cp.getVertex(), true);
 
-        indexOf = controlPoints.indexOf( cp, true );
-
-        if ( indexOf >= 0 )
-            controlPoints.removeIndex( indexOf );
+        removeControlPoint( cp );
 
     }
 

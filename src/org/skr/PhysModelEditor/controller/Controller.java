@@ -153,6 +153,12 @@ public abstract  class Controller  {
     }
 
 
+    protected ControlPoint getControlPoint( int index ) {
+        if ( controlPoints.size == 0 )
+            return null;
+        return controlPoints.get( index % controlPoints.size);
+    }
+
     public Controller.controlPointListener getControlPointListener() {
         return controlPointListener;
     }
@@ -196,10 +202,7 @@ public abstract  class Controller  {
     }
 
     protected void removeControlPoint( ControlPoint cp ) {
-        int indexOf = controlPoints.indexOf( cp, true );
-        if ( indexOf < 0 )
-            return;
-        controlPoints.removeIndex( indexOf );
+        controlPoints.removeValue( cp, true );
     }
 
 
@@ -231,13 +234,10 @@ public abstract  class Controller  {
         return false;
     }
 
-    protected void onLeftCtrlClicked ( Vector2 localCoord, Vector2 stageCoord ) {
+    protected void onMouseClicked( Vector2 localCoord, Vector2 stageCoord ) {
         // dumb
     }
 
-    protected void onLeftCtrlShiftClicked(Vector2 localCoord, Vector2 stageCoord) {
-        // dumb
-    }
 
     private final Vector2 downLocalPos = new Vector2();
     private final Vector2 downStagePos = new Vector2();
@@ -327,16 +327,7 @@ public abstract  class Controller  {
 
 
         if ( !mouseMoved ) {
-
-            if ( Gdx.input.isKeyPressed( Input.Keys.CONTROL_LEFT ) ) {
-
-                if ( Gdx.input.isKeyPressed( Input.Keys.SHIFT_LEFT) ) {
-                    onLeftCtrlShiftClicked(localCoord, stageCoord);
-                } else {
-                    onLeftCtrlClicked( localCoord, stageCoord );
-                }
-            }
-
+            onMouseClicked( localCoord, stageCoord);
         }
 
         mouseMoved = false;

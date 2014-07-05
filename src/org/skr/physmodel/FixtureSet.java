@@ -239,7 +239,12 @@ public class FixtureSet {
 
     private Shape createPolygonShape( ShapeDescription shd ) {
         PolygonShape sh = new PolygonShape();
-        sh.set( shd.getVertices().toArray() );
+        Vector2 [] vertices = new Vector2[ shd.getVertices().size ];
+        int i = 0;
+        for ( Vector2 v : shd.getVertices() )
+            vertices[ i++ ] = v;
+
+        sh.set( vertices );
         return sh;
     }
 
@@ -247,11 +252,9 @@ public class FixtureSet {
         ChainShape sh = new ChainShape();
 
         Vector2 [] vertices = new Vector2[ shd.getVertices().size ];
-
         int i = 0;
         for ( Vector2 v : shd.getVertices() )
             vertices[ i++ ] = v;
-
 
         if ( shd.isLooped() ) {
             sh.createLoop( vertices );

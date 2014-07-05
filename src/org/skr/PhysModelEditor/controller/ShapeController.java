@@ -1,5 +1,7 @@
 package org.skr.PhysModelEditor.controller;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -131,6 +133,31 @@ public abstract class ShapeController extends Controller {
     }
 
     @Override
+    protected void onMouseClicked(Vector2 localCoord, Vector2 stageCoord) {
+        boolean leftCtrl = Gdx.input.isKeyPressed( Input.Keys.CONTROL_LEFT );
+        boolean leftShift = Gdx.input.isKeyPressed( Input.Keys.SHIFT_LEFT );
+        boolean leftAlt = Gdx.input.isKeyPressed( Input.Keys.ALT_LEFT );
+
+        if ( leftShift && !leftAlt && !leftCtrl) {
+            addControlPoint( localCoord );
+        } else if ( !leftShift && leftAlt && !leftCtrl) {
+            removeControlPoint( localCoord );
+        }
+    }
+
+    protected void addControlPoint( Vector2 localCoord ) {
+        // dumb
+    }
+
+    protected void removeControlPoint( Vector2 localCoord ) {
+        // dumb
+    }
+
+    public void tessellatePolygon() {
+        // dumb
+    }
+
+    @Override
     protected Object getControlledObject() {
         return fixtureSetDescription;
     }
@@ -150,6 +177,12 @@ public abstract class ShapeController extends Controller {
         if ( fixtureSetDescription == null )
             return;
         ShapeDescription shd = createNewShape( x, y );
+
+        if ( shd == null )
+            return;
+
+        if ( fixtureSetDescription.getShapeDescriptions().contains(shd, true) )
+            return;
         fixtureSetDescription.getShapeDescriptions().add( shd );
     }
 
@@ -177,9 +210,14 @@ public abstract class ShapeController extends Controller {
         // dumb
     }
 
+    protected void shapeDeleted( ShapeDescription shd ) {
+        // dumb
+    }
+
     private static final Array< ControlPoint > cpTmp = new Array<ControlPoint>();
 
     public void deleteCurrentShape() {
+
         if ( selectedControlPoint == null )
             return;
         ShapeDescription shd = getShapeDescription( selectedControlPoint );
@@ -195,10 +233,10 @@ public abstract class ShapeController extends Controller {
             removeControlPoint( cp );
 
         selectedControlPoint = null;
-        int indexOf = fixtureSetDescription.getShapeDescriptions().indexOf( shd, true );
-        if ( indexOf < 0 )
-            return;
-        fixtureSetDescription.getShapeDescriptions().removeIndex( indexOf );
+
+        if ( fixtureSetDescription.getShapeDescriptions().removeValue( shd, true) ) {
+            shapeDeleted( shd );
+        }
 
     }
 

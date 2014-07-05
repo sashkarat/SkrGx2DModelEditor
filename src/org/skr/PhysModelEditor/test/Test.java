@@ -11,7 +11,6 @@ public class Test {
 
     public static void test1() {
 
-        PolygonRefinement pr = new PolygonRefinement();
         Vector2 [] border = {
                 new Vector2(0, -4),
                 new Vector2(4, -1),
@@ -26,24 +25,21 @@ public class Test {
 
         Array< Vector2 > borderArray = new Array<Vector2>( border );
 
-        pr.reset();
-        pr.setBorderVertices(borderArray);
+        System.out.println("Border: " + borderArray );
 
-        System.out.println("Border: " + pr.getBorderVertices() );
+        Array< Array<Vector2> > polygons;
+        polygons = PolygonRefinement.cutPolygon( borderArray );
 
+        System.out.println("Number: " + polygons.size );
 
-        boolean isCcw = PolygonRefinement.isCcwDirection( pr.getBorderVertices() );
-        System.out.println(" Is ccw: " + isCcw );
+        for ( Array<Vector2> polygon : polygons) {
+            System.out.println("  Polygon: " + polygon );
+        }
 
-        pr.refine();
-
-        System.out.println("\n\nBorderEdges: " + pr.getBorderEdges() );
-        System.out.println("Interanl Edges: " + pr.getInternalEdges() );
     }
 
     public static void test2() {
 
-        PolygonRefinement pr = new PolygonRefinement();
         Vector2 [] border = {
                 new Vector2(-10,  -3),
                 new Vector2(  1,   3),
@@ -58,24 +54,74 @@ public class Test {
 
         Array< Vector2 > borderArray = new Array<Vector2>( border );
 
-        pr.reset();
-        pr.setBorderVertices(borderArray);
+        System.out.println(" \n **** Border: " + borderArray );
 
-        System.out.println(" \n **** Border: " + pr.getBorderVertices() );
+        Array< Array<Vector2> > polygons;
+
+        polygons = PolygonRefinement.cutPolygon( borderArray );
+
+        System.out.println("Number: " + polygons.size );
+
+        for ( Array<Vector2> polygon : polygons) {
+            System.out.println("  Polygon: " + polygon );
+        }
 
 
-        boolean isCcw = PolygonRefinement.isCcwDirection( pr.getBorderVertices() );
-        System.out.println(" Is ccw: " + isCcw );
+        Array<Vector2> mergedPolygon = PolygonRefinement.mergePolygons( polygons );
 
-        pr.refine();
+        System.out.println("Merged polygon: " + mergedPolygon );
 
-        System.out.println("\n\nBorderEdges: " + pr.getBorderEdges() );
-        System.out.println("Interanl Edges: " + pr.getInternalEdges() );
+
+    }
+
+    public static void test3() {
+
+        Vector2 [] border = {
+                new Vector2( -1,  -1),
+                new Vector2(  1,  -1),
+                new Vector2(  2,   1),
+                new Vector2(  1, 0.5f),
+                new Vector2(  1,   2),
+                new Vector2(-0.5f, 2),
+                new Vector2(-0.5f, 0.5f),
+                new Vector2( -2,   1)
+        };
+
+        Array< Vector2 > borderArray = new Array<Vector2>( border );
+
+        System.out.println(" \n **** Border: " + borderArray );
+
+        Array< Array<Vector2> > polygons;
+
+        polygons = PolygonRefinement.cutPolygon( borderArray );
+
+        System.out.println("Number: " + polygons.size );
+
+        for ( Array<Vector2> polygon : polygons) {
+            System.out.println("  Polygon: " + polygon );
+        }
+
+
+        Array<Vector2> mergedPolygon = PolygonRefinement.mergePolygons( polygons );
+
+        System.out.println("Merged polygon: " + mergedPolygon );
+
+
     }
 
     public static void main(String[] args ) {
-        test1();
-        test2();
+
+//        Vector2 vA = new Vector2( 2, -5 );
+//        Vector2 vB = new Vector2( -4, 6);
+////        Vector2 vB = new Vector2( vA ).rotate(90);
+//
+//        float d = vB.rotate(  - vA.angle() ).angle();
+//
+//        System.out.println( "a: " + d);
+
+//        test1();
+//        test2();
+        test3();
     }
 
 }

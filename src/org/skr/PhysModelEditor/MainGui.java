@@ -70,6 +70,7 @@ public class MainGui extends JFrame {
     private JPanel panelRadius;
     private JTextField tfRadius;
     private JButton btnSetRadius;
+    private JButton btnTessellatePolygon;
 
     private GdxApplication gApp;
     private String currentModelFileName = "";
@@ -301,7 +302,8 @@ public class MainGui extends JFrame {
         chbAutoTessellate.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //TODO: chbAutoTessellate
+                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                setAutoTessellate( chbAutoTessellate.isSelected(), shapeController );
             }
         });
         btnUpdateFixtures.addActionListener(new ActionListener() {
@@ -322,10 +324,16 @@ public class MainGui extends JFrame {
                 setRadius( shapeController );
             }
         });
+        btnTessellatePolygon.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                tessellatePolygon( shapeController );
+            }
+        });
     }
 
     void uploadGuiFromSettings() {
-
         tfTextureAtlasFile.setText( ApplicationSettings.get().getTextureAtlasFile() );
     }
 
@@ -774,6 +782,7 @@ public class MainGui extends JFrame {
 
     void updateShapeEditorFeatures(FixtureSet fixtureSet) {
         chbAutoTessellate.setEnabled( false );
+        btnTessellatePolygon.setEnabled( false );
         chbLooped.setEnabled( false );
         setGuiElementEnable( panelRadius, false );
 
@@ -786,6 +795,7 @@ public class MainGui extends JFrame {
                 break;
             case Polygon:
                 chbAutoTessellate.setEnabled( true );
+                btnTessellatePolygon.setEnabled( true );
                 break;
             case Chain:
                 chbLooped.setEnabled( true );
@@ -838,6 +848,8 @@ public class MainGui extends JFrame {
         }
     }
 
+
+
     void updateFixtures( ShapeController controller ) {
         FixtureSet fs = fixtureSetPropertiesTableModel.getFixtureSet();
         fs.createFixtures( controller.getFixtureSetDescription().getShapeDescriptions() );
@@ -868,8 +880,18 @@ public class MainGui extends JFrame {
         controller.setLooped( state );
     }
 
+    void setAutoTessellate( final boolean state, final ShapeController controller ) {
+        Gdx.app.postRunnable( new Runnable() {
+            @Override
+            public void run() {
+                controller.setAutoTessellate( state );
+            }
+        });
+    }
 
-
+    void tessellatePolygon( ShapeController controller ) {
+        controller.tessellatePolygon();
+    }
 
     //======================= main ================================
 
