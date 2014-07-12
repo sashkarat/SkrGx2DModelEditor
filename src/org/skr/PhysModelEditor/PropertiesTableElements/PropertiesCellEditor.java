@@ -87,6 +87,8 @@ public class PropertiesCellEditor extends AbstractCellEditor implements TableCel
 
         PropertiesBaseTableModel.PropertyType ptype = bmodel.getPropertyType( row );
 
+        if ( ptype == null )
+            return null;
 
         switch ( ptype ) {
 

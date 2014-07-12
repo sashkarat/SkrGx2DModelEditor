@@ -1,6 +1,5 @@
 package org.skr.PhysModelEditor.controller;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -17,6 +16,7 @@ import org.skr.physmodel.ShapeDescription;
 public class PolygonShapeController extends ShapeController {
 
     private static final Color firstColor  = new Color( 1f, 1, 0, 1);
+    private static float minimalDist = 0.0505f;
 
 
     private static Array<Vector2> newPhysPolygon( Array<Vector2> viewPolygon ) {
@@ -177,6 +177,7 @@ public class PolygonShapeController extends ShapeController {
 
     @Override
     protected void updateShapeFromControlPoint(ControlPoint cp) {
+        checkMinimalDistance( cp );
         // does nothing
     }
 
@@ -196,10 +197,10 @@ public class PolygonShapeController extends ShapeController {
 
     @Override
     protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
-        ShapeDescription shapeDescription = getShapeDescription( cp );
+        ShapeDescription shapeDescription = getShapeDescription(cp);
         cp.offsetPos( offsetLocal.x, offsetLocal.y );
         updateShapeFromControlPoint( cp );
-        notifyListenerControlPointChanged( shapeDescription, cp );
+        notifyListenerControlPointChanged(shapeDescription, cp);
         if ( autoTessellate )
             tessellatePolygon();
     }
@@ -219,6 +220,7 @@ public class PolygonShapeController extends ShapeController {
 
         PolygonControlPoint cp = new PolygonControlPoint( shd );
         cp.setPos( localCoord.x, localCoord.y );
+        checkMinimalDistance( cp );
 
         if ( selectedControlPoint == null ) {
             controlPoints.add(cp);
@@ -309,5 +311,36 @@ public class PolygonShapeController extends ShapeController {
     @Override
     public void flush() {
         tessellatePolygon();
+    }
+
+    private static final Vector2 tva = new Vector2();
+    private static final Vector2 tvb = new Vector2();
+
+    void checkMinimalDistance( ControlPoint cp ) {
+
+        tvb.set( cp.getX(), cp.getY() );
+        float md2 = PhysWorld.get().toView( minimalDist );
+
+        md2 *= md2;
+
+        for ( ControlPoint cpA : controlPoints ) {
+            if ( cpA == cp )
+                continue;
+            tva.set( cpA.getX(), cpA.getY() );
+
+            if ( tva.dst2(tvb) >= md2 )
+                continue;
+
+            offsetPointToMinimalDistance( tva, tvb, PhysWorld.get().toView( minimalDist ) );
+            cp.setPos( tvb.x, tvb.y );
+        }
+    }
+
+    private static final Vector2 tv = new Vector2();
+
+    private static void offsetPointToMinimalDistance( Vector2 vA, Vector2 vB, float minimalDst ) {
+        tv.set( vB ).sub( vA );
+        tv.nor().scl( minimalDst );
+        vB.set( vA).add( tv );
     }
 }

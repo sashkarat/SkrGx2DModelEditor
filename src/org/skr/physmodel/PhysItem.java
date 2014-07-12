@@ -31,4 +31,9 @@ public class PhysItem extends Group {
 
         addActor( aagBackground );
     }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

@@ -45,11 +45,12 @@ public class GdxApplication extends Game {
     @Override
     public void create() {
 
+        PhysWorld.create( 100 );
+
         editorScreen = new EditorScreen();
         currentScreen = editorScreen;
         setScreen( editorScreen );
 
-        PhysWorld.create( 100 );
 
     }
 

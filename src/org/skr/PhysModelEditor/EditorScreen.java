@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import org.skr.PhysModelEditor.controller.*;
 import org.skr.physmodel.BodyItem;
 import org.skr.physmodel.FixtureSet;
+import org.skr.physmodel.PhysModel;
 
 /**
  * Created by rat on 02.06.14.
@@ -28,6 +29,7 @@ public class EditorScreen implements Screen, InputProcessor {
     private EdgeShapeController edgeShapeController;
     private ChainShapeController chainShapeController;
     private PolygonShapeController polygonShapeController;
+    private AnchorPointController anchorPointController;
     private Controller currentController = null;
     private ShapeRenderer shapeRenderer;
 
@@ -46,6 +48,7 @@ public class EditorScreen implements Screen, InputProcessor {
         edgeShapeController = new EdgeShapeController( stage );
         chainShapeController = new ChainShapeController( stage );
         polygonShapeController = new PolygonShapeController( stage );
+        anchorPointController = new AnchorPointController( stage );
 
     }
 
@@ -103,6 +106,11 @@ public class EditorScreen implements Screen, InputProcessor {
                     break;
             }
 
+            return;
+        }
+
+        if ( object instanceof PhysModel ) {
+            currentController = anchorPointController;
         }
 
     }
@@ -113,6 +121,10 @@ public class EditorScreen implements Screen, InputProcessor {
 
     public BodyItemController getBodyItemController() {
         return bodyItemController;
+    }
+
+    public AnchorPointController getAnchorPointController() {
+        return anchorPointController;
     }
 
     public ShapeController getCurrentShapeController() {

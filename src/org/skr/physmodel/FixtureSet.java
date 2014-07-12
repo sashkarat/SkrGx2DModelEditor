@@ -1,5 +1,6 @@
 package org.skr.physmodel;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
@@ -246,6 +247,10 @@ public class FixtureSet {
             vertices[ i++ ] = v;
 
         sh.set( vertices );
+
+        Gdx.app.log("FixtureSet.createPolygonShape","SHD::vertices: " + shd.getVertices().size +
+                " Array::size: " + vertices.length + " i: " + i + " SH:: vertices: " + sh.getVertexCount() );
+
         return sh;
     }
 

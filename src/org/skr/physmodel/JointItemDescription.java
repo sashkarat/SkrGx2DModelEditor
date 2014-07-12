@@ -15,6 +15,7 @@ public class JointItemDescription extends PhysItemDescription {
     int bodyAId = -1;
     int bodyBId = -1;
     boolean collideConnected = false;
+    float length = 0;
     Vector2 anchorA = new Vector2();
     Vector2 anchorB = new Vector2();
     float maxForce = 1;
@@ -81,6 +82,14 @@ public class JointItemDescription extends PhysItemDescription {
 
     public void setCollideConnected(boolean collideConnected) {
         this.collideConnected = collideConnected;
+    }
+
+    public float getLength() {
+        return length;
+    }
+
+    public void setLength(float length) {
+        this.length = length;
     }
 
     public Vector2 getAnchorA() {

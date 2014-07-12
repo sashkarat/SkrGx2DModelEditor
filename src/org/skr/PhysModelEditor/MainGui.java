@@ -3,17 +3,15 @@ package org.skr.PhysModelEditor;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl.LwjglAWTCanvas;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.physics.box2d.Shape;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import org.skr.PhysModelEditor.PropertiesTableElements.*;
 import org.skr.PhysModelEditor.controller.CircleShapeController;
 import org.skr.PhysModelEditor.controller.Controller;
 import org.skr.PhysModelEditor.controller.ShapeController;
-import org.skr.physmodel.BodyItem;
-import org.skr.physmodel.ShapeDescription;
+import org.skr.physmodel.*;
 import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
-import org.skr.physmodel.PhysModel;
-import org.skr.physmodel.FixtureSet;
 
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
@@ -53,7 +51,7 @@ public class MainGui extends JFrame {
     private JButton btnAddNode;
     private JButton btnRemNode;
     private JPanel panelShapeEditor;
-    private JPanel panelJointEditor;
+    private JPanel panelJointCreator;
     private JButton btnAddShape;
     private JTextField tfNewShapePosX;
     private JTextField tfNewShapePosY;
@@ -71,6 +69,18 @@ public class MainGui extends JFrame {
     private JTextField tfRadius;
     private JButton btnSetRadius;
     private JButton btnTessellatePolygon;
+    private JComboBox comboBodyASelector;
+    private JComboBox comboBodyBSelector;
+    private JTextField tfAnchorA_X;
+    private JTextField tfAnchorA_Y;
+    private JPanel jointTypePanel;
+    private JComboBox comboJointType;
+    private JTextField tfAnchorB_Y;
+    private JTextField tfAnchorB_X;
+    private JButton btnSetAnchorA;
+    private JButton btnSetAnchorB;
+    private JButton btnCreateJoint;
+    private JCheckBox chbCollideConnected;
 
     private GdxApplication gApp;
     private String currentModelFileName = "";
@@ -120,6 +130,9 @@ public class MainGui extends JFrame {
                 case FIXTURE_SET:
                     FixtureSet fs = ( FixtureSet ) object;
                     return "FixtureSet: " + fs.getName();
+                case JOINT_ITEM:
+                    JointItem ji = (JointItem) object;
+                    return "Joint: " + ji.getName();
             }
 
             return "";
@@ -182,14 +195,14 @@ public class MainGui extends JFrame {
         tabbedPaneEditors.removeAll();
 
 
-        Gdx.app.postRunnable( new Runnable() {
+        Gdx.app.postRunnable(new Runnable() {
             @Override
             public void run() {
                 GdxApplication.get().getEditorScreen().getActorController().setControlPointListener(
                         new Controller.controlPointListener() {
                             @Override
                             public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
-                                actorChangedByController( (Actor) controlledObject  );
+                                actorChangedByController((Actor) controlledObject);
                             }
                         }
                 );
@@ -204,10 +217,23 @@ public class MainGui extends JFrame {
                         new Controller.controlPointListener() {
                             @Override
                             public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
-                                bodyItemChangedByController( (BodyItem) controlledObject  );
+                                bodyItemChangedByController((BodyItem) controlledObject);
                             }
                         }
                 );
+            }
+        });
+
+        Gdx.app.postRunnable( new Runnable() {
+            @Override
+            public void run() {
+                GdxApplication.get().getEditorScreen().getAnchorPointController().setControlPointListener(
+                        new Controller.controlPointListener() {
+                            @Override
+                            public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
+                                loadAnchorPointsPosition();
+                            }
+                        });
             }
         });
 
@@ -227,6 +253,12 @@ public class MainGui extends JFrame {
                 shapeRadiusChanged( shapeDescription );
             }
         });
+
+
+        for (JointDef.JointType jt : JointDef.JointType.values() ) {
+            comboJointType.addItem( jt );
+        }
+
 
         uploadTextureAtlas();
 
@@ -344,6 +376,18 @@ public class MainGui extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
                 tessellatePolygon( shapeController );
+            }
+        });
+        btnSetAnchorA.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
+        btnSetAnchorB.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
             }
         });
     }
@@ -673,7 +717,8 @@ public class MainGui extends JFrame {
 
         propertiesCellEditor.cancelCellEditing();
         tabbedPaneEditors.removeAll();
-        setGuiElementEnable( panelShapeEditor, false );
+
+        setGuiElementEnable(panelShapeEditor, false);
 
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePhysModel.getLastSelectedPathComponent();
 
@@ -688,6 +733,9 @@ public class MainGui extends JFrame {
         switch ( ni.type ) {
             case ROOT:
                 tableProperties.setModel( physModelPropertiesTableModel );
+                tabbedPaneEditors.add("Joint creator", panelJointCreator );
+                resetJointCreatorGui();
+                setGuiElementEnable( panelJointCreator, true);
                 break;
 
             case AAG:
@@ -746,7 +794,7 @@ public class MainGui extends JFrame {
         }
 
         DefaultMutableTreeNode root = new DefaultMutableTreeNode( new NodeInfo( model, NodeInfo.Type.ROOT ) );
-        treePhysModel.setModel( new DefaultTreeModel( root ) );
+        treePhysModel.setModel(new DefaultTreeModel(root));
 
         if ( model.getBackgroundActor() != null ) {
             DefaultMutableTreeNode aagNode = new DefaultMutableTreeNode(
@@ -789,6 +837,7 @@ public class MainGui extends JFrame {
         if ( actor instanceof AnimatedActorGroup )
             aagPropertiesTableModel.actorChanged( (AnimatedActorGroup) actor );
     }
+
 
     private void loadTreeNodeForAag(DefaultMutableTreeNode parent) {
         AnimatedActorGroup parentAag = (AnimatedActorGroup) ((NodeInfo)parent.getUserObject()).object;
@@ -915,6 +964,32 @@ public class MainGui extends JFrame {
     void tessellatePolygon( ShapeController controller ) {
         controller.tessellatePolygon();
     }
+
+
+    void resetJointCreatorGui() {
+        comboBodyASelector.removeAllItems();
+        comboBodyBSelector.removeAllItems();
+        for ( BodyItem bi : model.getBodyItems() ) {
+            comboBodyASelector.addItem( bi );
+            comboBodyBSelector.addItem( bi );
+        }
+
+        tfAnchorA_X.setText("");
+        tfAnchorA_Y.setText("");
+        tfAnchorB_X.setText("");
+        tfAnchorB_Y.setText("");
+
+        loadAnchorPointsPosition();
+    }
+
+    void loadAnchorPointsPosition() {
+        JointItemDescription jdesc = GdxApplication.get().getEditorScreen().getAnchorPointController().getDescription();
+        tfAnchorA_X.setText("" + jdesc.getAnchorA().x );
+        tfAnchorA_Y.setText("" + jdesc.getAnchorA().y );
+        tfAnchorB_X.setText("" + jdesc.getAnchorB().x );
+        tfAnchorB_Y.setText("" + jdesc.getAnchorB().y );
+    }
+
 
     //======================= main ================================
 

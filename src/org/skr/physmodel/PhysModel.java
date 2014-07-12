@@ -121,7 +121,7 @@ public class PhysModel {
 
         if ( jointsDesc != null ) {
             for ( JointItemDescription jd : jointsDesc ) {
-                JointItem ji = JointItem.createFromDescription( jd, this );
+                JointItem ji = JointItemFactory.createFromDescription( jd, this );
                 if ( ji != null ) {
                     jointItems.add(ji);
                 }
@@ -180,7 +180,7 @@ public class PhysModel {
 
     void fillUpJointDescriptions( Array<JointItemDescription> jointItemDescriptions) {
         for ( JointItem ji : jointItems ) {
-            JointItemDescription jd = JointItem.createJointItemDescription( ji, this );
+            JointItemDescription jd = ji.createJointItemDescription();
             if ( jd != null )
                 jointItemDescriptions.add( jd );
         }
@@ -230,6 +230,10 @@ public class PhysModel {
 
     public Array<BodyItem> getBodyItems() {
         return bodyItems;
+    }
+
+    public Array<JointItem> getJointItems() {
+        return jointItems;
     }
 
     // =======================================================
