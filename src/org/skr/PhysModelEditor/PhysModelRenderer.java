@@ -37,11 +37,16 @@ public class PhysModelRenderer extends Group {
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
-        if ( model == null )
-            return;
 
-        if ( model.getWorld() != world )
+
+        if ( model == null ) {
             return;
+        }
+
+        if ( model.getWorld() != world ) {
+            return;
+        }
+
 
         for (BodyItem bi :  model.getBodyItems() ) {
             bi.draw( batch, parentAlpha );
@@ -54,7 +59,6 @@ public class PhysModelRenderer extends Group {
             return;
         for ( BodyItem bi : model.getBodyItems() )
             bi.act( delta );
-
     }
 
 

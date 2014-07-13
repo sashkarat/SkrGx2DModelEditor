@@ -40,31 +40,15 @@ public class DistanceJointItem extends JointItem {
         jd.collideConnected = desc.isCollideConnected();
         jd.dampingRatio = desc.getDampingRatio();
         jd.frequencyHz = desc.getFrequencyHz();
-        jd.length = desc.getLength();
 
         return jd;
     }
 
     @Override
     public void fillUpJointItemDescription(JointItemDescription desc) {
-        BodyItem bi = getModel().findBodyItem( joint.getBodyA() );
-        if ( bi == null)
-            return;
-
-        int bodyAId = bi.getId();
-
-        bi = getModel().findBodyItem( joint.getBodyB() );
-        if ( bi == null )
-            return;
-
-        int bodyBId = bi.getId();
-        desc.setCollideConnected( joint.getCollideConnected() );
-        desc.setBodyAId( bodyAId );
-        desc.setBodyBId( bodyBId );
         desc.setDampingRatio(joint.getDampingRatio());
         desc.setFrequencyHz( joint.getFrequency() );
         desc.setLength( joint.getLength() );
-
     }
 
     @Override

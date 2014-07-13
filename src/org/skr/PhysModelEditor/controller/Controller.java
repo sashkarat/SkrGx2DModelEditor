@@ -25,12 +25,20 @@ public abstract  class Controller  {
         private Object object = null;
         private Color color;
         private int id = -1;
+        private boolean visible = true;
 
         public ControlPoint( Object object) {
             this.object = object;
             this.id = idc++;
         }
 
+        public boolean isVisible() {
+            return visible;
+        }
+
+        public void setVisible(boolean visible) {
+            this.visible = visible;
+        }
 
         public float getX() {
             return x;
@@ -197,6 +205,8 @@ public abstract  class Controller  {
         for( ControlPoint cp : controlPoints ) {
             if ( !cp.isSelected() )
                 updateControlPointFromObject(cp);
+            if ( !cp.isVisible() )
+                continue;
             cp.draw( shapeRenderer );
         }
     }
@@ -224,7 +234,7 @@ public abstract  class Controller  {
 
         for ( ControlPoint cp : controlPoints) {
 
-            if ( cp.contains( coords ) ) {
+            if ( cp.contains( coords ) && cp.isVisible() ) {
                 cp.setSelected( true );
                 selectedControlPoint = cp;
                 return true;
@@ -333,4 +343,11 @@ public abstract  class Controller  {
         mouseMoved = false;
     }
 
+    protected void setControlPointVisible( ControlPoint cp, boolean state ) {
+        cp.setVisible( state );
+        if ( cp.isSelected() ) {
+            selectedControlPoint = null;
+            cp.setSelected( false );
+        }
+    }
 }

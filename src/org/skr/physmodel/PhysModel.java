@@ -390,6 +390,19 @@ public class PhysModel {
         return  filter;
     }
 
+    public static void destroyPhysics( PhysModel model ) {
+        for ( JointItem ji : model.jointItems ) {
+            model.getWorld().destroyJoint( ji.getJoint() );
+        }
+
+        for ( BodyItem bi : model.bodyItems ) {
+            model.getWorld().destroyBody( bi.getBody() );
+        }
+
+        model.jointItems.clear();
+        model.bodyItems.clear();
+    }
+
     // =======================================================
 
 }

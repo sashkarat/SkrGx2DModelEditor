@@ -105,8 +105,16 @@ public class PhysWorld {
         debugRenderer.render(primaryWorld, stage, scale);
     }
 
+    public void debugRenderTestWorld( Stage stage ) {
+        debugRenderer.render(testWorld, stage, scale);
+    }
+
     public void step() {
        primaryWorld.step(timing, 8, 8);
+    }
+
+    public void stepTestWorld() {
+        testWorld.step(timing, 8, 8);
     }
 
     public float toView(float v) {

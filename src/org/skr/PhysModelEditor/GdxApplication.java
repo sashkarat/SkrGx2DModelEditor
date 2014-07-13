@@ -19,6 +19,7 @@ public class GdxApplication extends Game {
     TextureAtlas atlas;
     Array<String> regions = new Array<String>();
     EditorScreen editorScreen;
+    SimulationScreen simulationScreen;
     Screen currentScreen;
 
 
@@ -48,6 +49,7 @@ public class GdxApplication extends Game {
         PhysWorld.create( 100 );
 
         editorScreen = new EditorScreen();
+        simulationScreen = new SimulationScreen();
         currentScreen = editorScreen;
         setScreen( editorScreen );
 
@@ -56,6 +58,18 @@ public class GdxApplication extends Game {
 
     public EditorScreen getEditorScreen() {
         return editorScreen;
+    }
+
+    public SimulationScreen getSimulationScreen() {
+        return simulationScreen;
+    }
+
+    public void toggleEditorScreen() {
+        setScreen( editorScreen );
+    }
+
+    public void toggleSimulationScreen() {
+        setScreen(simulationScreen);
     }
 
     @Override

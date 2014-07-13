@@ -8,6 +8,7 @@ import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.physics.box2d.Shape;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
+import com.sun.org.apache.xerces.internal.impl.xpath.XPath;
 import org.skr.PhysModelEditor.PropertiesTableElements.*;
 import org.skr.PhysModelEditor.controller.AnchorPointController;
 import org.skr.PhysModelEditor.controller.CircleShapeController;
@@ -84,7 +85,23 @@ public class MainGui extends JFrame {
     private JButton btnSetAnchorB;
     private JButton btnCreateJoint;
     private JCheckBox chbCollideConnected;
-    private JCheckBox chbEnableSimulation;
+    private JCheckBox chbSimulation;
+    private JPanel panelModelGui;
+    private JPanel panelSimulationControls;
+    private JCheckBox chbPauseSimulation;
+    private JButton btnSimulationStep;
+    private JButton btnSimulationRestart;
+    private JCheckBox chbDisplayGrid;
+    private JCheckBox chbDebugRender;
+    private JPanel panelAnchorB;
+    private JPanel panelAnchorA;
+    private JPanel panelCollideConnected;
+    private JPanel panelBodySelector;
+    private JPanel panelJointCreatorFeatures;
+    private JPanel panelAxis;
+    private JButton btnSetAxis;
+    private JTextField tfAxis_Y;
+    private JTextField tfAxis_X;
 
     private GdxApplication gApp;
     private String currentModelFileName = "";
@@ -149,6 +166,7 @@ public class MainGui extends JFrame {
 
     MainGui() {
 
+        setGuiElementEnable( panelSimulationControls, false);
 
         gApp = new GdxApplication();
         final LwjglAWTCanvas gdxCanvas = new LwjglAWTCanvas( gApp );
@@ -405,10 +423,55 @@ public class MainGui extends JFrame {
                 createJoint();
             }
         });
-        chbEnableSimulation.addActionListener(new ActionListener() {
+
+        chbSimulation.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                GdxApplication.get().getEditorScreen().setSimulationEnabled( chbEnableSimulation.isSelected() );
+                toggleScreen();
+            }
+        });
+
+        btnSimulationStep.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doSimulationStep();
+            }
+        });
+        btnSimulationRestart.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                restartSimulation();
+            }
+        });
+        chbPauseSimulation.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                toggleSimulationPause();
+            }
+        });
+        chbDisplayGrid.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                toggleGrid();
+            }
+        });
+        chbDebugRender.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                toggleDebugRender();
+            }
+        });
+        comboJointType.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateJointCreatorPanelFeatures();
+            }
+        });
+        btnSetAxis.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setAnchorPointFromGui( AnchorPointController.AnchorControlPoint.AcpType.typeAxis );
             }
         });
     }
@@ -781,6 +844,7 @@ public class MainGui extends JFrame {
                 tabbedPaneEditors.add("Joint creator", panelJointCreator );
                 resetJointCreatorGui();
                 setGuiElementEnable( panelJointCreator, true);
+                updateJointCreatorPanelFeatures();
                 break;
 
             case AAG:
@@ -1025,8 +1089,6 @@ public class MainGui extends JFrame {
     }
 
 
-
-
     void resetJointCreatorGui() {
         comboBodyASelector.removeAllItems();
         comboBodyBSelector.removeAllItems();
@@ -1039,6 +1101,8 @@ public class MainGui extends JFrame {
         tfAnchorA_Y.setText("");
         tfAnchorB_X.setText("");
         tfAnchorB_Y.setText("");
+        tfAxis_X.setText("");
+        tfAxis_Y.setText("");
 
         loadAnchorPointsPosition();
     }
@@ -1048,6 +1112,8 @@ public class MainGui extends JFrame {
         tfAnchorA_Y.setText("" + jiDesc.getAnchorA().y );
         tfAnchorB_X.setText("" + jiDesc.getAnchorB().x );
         tfAnchorB_Y.setText("" + jiDesc.getAnchorB().y );
+        tfAxis_X.setText(""+jiDesc.getAxis().x);
+        tfAxis_Y.setText("" + jiDesc.getAxis().y);
     }
 
 
@@ -1067,6 +1133,11 @@ public class MainGui extends JFrame {
                 av = jiDesc.getAnchorB();
                 tf_x = tfAnchorB_X;
                 tf_y = tfAnchorB_Y;
+                break;
+            case typeAxis:
+                av = jiDesc.getAxis();
+                tf_x = tfAxis_X;
+                tf_y = tfAxis_Y;
                 break;
         }
 
@@ -1115,6 +1186,133 @@ public class MainGui extends JFrame {
 
         md.nodeChanged( node );
         md.nodeStructureChanged(node);
+
+    }
+
+    void toggleScreen() {
+        boolean simMode = chbSimulation.isSelected();
+
+        if ( simMode ) {
+            setGuiElementEnable( panelModelGui, false);
+            setGuiElementEnable( panelSimulationControls, true);
+        } else {
+            setGuiElementEnable( panelModelGui, true );
+            setGuiElementEnable( panelSimulationControls, false);
+        }
+
+        Gdx.app.postRunnable( new Runnable() {
+            @Override
+            public void run() {
+                boolean simMode = chbSimulation.isSelected();
+                if ( simMode ) {
+                    PhysModel.Description description = model.getDescription();
+                    if ( description == null)
+                        return;
+
+                    GdxApplication.get().getSimulationScreen().setModelDescription( description );
+                    GdxApplication.get().toggleSimulationScreen();
+                    GdxApplication.get().getSimulationScreen().startSimulation();
+
+                } else {
+                    GdxApplication.get().toggleEditorScreen();
+                }
+            }
+        });
+
+    }
+
+    void restartSimulation() {
+        Gdx.app.postRunnable( new Runnable() {
+            @Override
+            public void run() {
+                GdxApplication.get().getSimulationScreen().startSimulation();
+            }
+        });
+    }
+
+    void doSimulationStep() {
+        Gdx.app.postRunnable( new Runnable() {
+
+
+            @Override
+            public void run() {
+                GdxApplication.get().getSimulationScreen().doStep();
+            }
+        });
+    }
+
+    void toggleSimulationPause() {
+        Gdx.app.postRunnable(new Runnable() {
+            @Override
+            public void run() {
+                GdxApplication.get().getSimulationScreen().setPause(chbPauseSimulation.isSelected());
+            }
+        });
+    }
+
+    void toggleGrid() {
+        Gdx.app.postRunnable( new Runnable() {
+            @Override
+            public void run() {
+                boolean state = chbDisplayGrid.isSelected();
+                GdxApplication.get().getEditorScreen().setDisplayGrid( state );
+                GdxApplication.get().getSimulationScreen().setDisplayGrid( state );
+            }
+        });
+    }
+
+    void toggleDebugRender() {
+        Gdx.app.postRunnable( new Runnable() {
+            @Override
+            public void run() {
+                boolean state = chbDebugRender.isSelected();
+                GdxApplication.get().getEditorScreen().setDoDebugRender(state);
+                GdxApplication.get().getSimulationScreen().setDoDebugRender(state);
+            }
+        });
+    }
+
+
+    void updateJointCreatorPanelFeatures() {
+        setGuiElementEnable( panelJointCreatorFeatures, true );
+        setGuiElementEnable( panelAxis, false );
+        JointDef.JointType type = (JointDef.JointType) comboJointType.getSelectedItem();
+        AnchorPointController ctrlr = GdxApplication.get().getEditorScreen().getAnchorPointController();
+
+        switch ( type ) {
+            case Unknown:
+                setGuiElementEnable( panelJointCreatorFeatures, false );
+                ctrlr.setMode(AnchorPointController.Mode.NoPoints);
+                break;
+            case RevoluteJoint:
+                ctrlr.setMode(AnchorPointController.Mode.OnePointMode);
+                setGuiElementEnable( panelAnchorB, false );
+                break;
+            case PrismaticJoint:
+                ctrlr.setMode(AnchorPointController.Mode.OnPointAndAxisMode );
+                setGuiElementEnable( panelAxis, true);
+                setGuiElementEnable( panelAnchorB, false );
+                break;
+            case DistanceJoint:
+                ctrlr.setMode(AnchorPointController.Mode.TwoPointsMode);
+                break;
+            case PulleyJoint:
+                break;
+            case MouseJoint:
+                break;
+            case GearJoint:
+                break;
+            case WheelJoint:
+                break;
+            case WeldJoint:
+                break;
+            case FrictionJoint:
+                break;
+            case RopeJoint:
+                break;
+            case MotorJoint:
+                break;
+        }
 
     }
 

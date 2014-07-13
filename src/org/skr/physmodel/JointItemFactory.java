@@ -7,6 +7,7 @@ import com.badlogic.gdx.physics.box2d.World;
 import org.skr.PhysModelEditor.PhysWorld;
 import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
 import org.skr.physmodel.jointitems.DistanceJointItem;
+import org.skr.physmodel.jointitems.RevoluteJointItem;
 
 /**
  * Created by rat on 06.07.14.
@@ -30,15 +31,15 @@ public class JointItemFactory {
         JointDef jd = ji.createJointDef(desc);
 
         if ( jd == null ) {
-//            Gdx.app.log("JointItemFactory.createFromDescription",
-//                    "Unable to create a JointDef: " + desc.getName() );
+            Gdx.app.log("JointItemFactory.createFromDescription",
+                    "Unable to create a JointDef: " + desc.getName() );
             return null;
         }
 
         Joint joint = world.createJoint( jd );
         if ( joint == null ) {
-//            Gdx.app.log("JointItemFactory.createFromDescription",
-//                    "Unable to create a joint: " + desc.getName() );
+            Gdx.app.log("JointItemFactory.createFromDescription",
+                    "Unable to create a joint: " + desc.getName() );
             return null;
         }
         ji.setJoint( joint );
@@ -53,6 +54,7 @@ public class JointItemFactory {
             case Unknown:
                 break;
             case RevoluteJoint:
+                jointItem = new RevoluteJointItem( id, model );
                 break;
             case PrismaticJoint:
                 break;

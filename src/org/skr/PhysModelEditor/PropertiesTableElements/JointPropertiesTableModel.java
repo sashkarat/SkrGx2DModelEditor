@@ -1,5 +1,6 @@
 package org.skr.PhysModelEditor.PropertiesTableElements;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.utils.Array;
 import org.skr.physmodel.BodyItem;
@@ -94,6 +95,19 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 Property_.DumpingRatio, Property_.FrequencyHz,
                 Property_.Length);
         propMap.put(JointDef.JointType.DistanceJoint, propList );
+
+        // Revolute Joint
+
+        propList = new Array<Property_>();
+        propList.addAll(Property_.Name, Property_.Type,
+                Property_.BodyA, Property_.BodyB, Property_.CollideConnected,
+                Property_.AnchorA_X, Property_.AnchorA_Y,
+                Property_.EnableLimit, Property_.UpperAngle,
+                Property_.LowerAngle, Property_.EnableMotor, Property_.MotorSpeed,
+                Property_.MaxMotorTorque);
+        propMap.put(JointDef.JointType.RevoluteJoint, propList );
+
+
     }
 
 
@@ -358,15 +372,15 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
             case MaxTorque:
                 return jointItem.getMaxTorque();
             case AngularOffset:
-                return jointItem.getAngularOffset();
+                return jointItem.getAngularOffset() * MathUtils.radiansToDegrees;
             case LowerAngle:
-                return jointItem.getLowerAngle();
+                return jointItem.getLowerAngle() * MathUtils.radiansToDegrees;
             case UpperAngle:
-                return jointItem.getUpperAngle();
+                return jointItem.getUpperAngle() * MathUtils.radiansToDegrees;
             case CorrectionFactor:
                 return jointItem.getCorrectionFactor();
             case ReferenceAngle:
-                return jointItem.getReferenceAngle();
+                return jointItem.getReferenceAngle() * MathUtils.radiansToDegrees;
             case LowerTranslation:
                 return jointItem.getLowerTranslation();
             case UpperTranslation:
@@ -449,16 +463,20 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
             case MaxMotorForce:
                 break;
             case MotorSpeed:
+                jointItem.setMotorSpeed((Float) aValue );
                 break;
             case MaxMotorTorque:
+                jointItem.setMaxMotorTorque((Float) aValue);
                 break;
             case MaxTorque:
                 break;
             case AngularOffset:
                 break;
             case LowerAngle:
+                jointItem.setLowerAngle((Float) aValue * MathUtils.degreesToRadians);
                 break;
             case UpperAngle:
+                jointItem.setUpperAngle((Float) aValue * MathUtils.degreesToRadians);
                 break;
             case CorrectionFactor:
                 break;
@@ -469,8 +487,10 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
             case UpperTranslation:
                 break;
             case EnableLimit:
+                jointItem.setEnableLimit((Boolean) aValue );
                 break;
             case EnableMotor:
+                jointItem.setEnableMotor((Boolean) aValue);
                 break;
             case JointA:
                 break;

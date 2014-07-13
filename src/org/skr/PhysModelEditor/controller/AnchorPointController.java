@@ -1,11 +1,11 @@
 package org.skr.PhysModelEditor.controller;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import org.skr.PhysModelEditor.PhysWorld;
 import org.skr.physmodel.JointItemDescription;
-import org.skr.physmodel.jointitems.DistanceJointItem;
 
 /**
  * Created by rat on 12.07.14.
@@ -16,13 +16,19 @@ public class AnchorPointController extends Controller {
 
     JointItemDescription jdesc = new JointItemDescription();
 
-
+    public enum Mode {
+        NoPoints,
+        TwoPointsMode,
+        OnePointMode,
+        OnPointAndAxisMode
+    }
 
     public static class AnchorControlPoint extends ControlPoint {
 
         public enum AcpType {
             typeA,
-            typeB
+            typeB,
+            typeAxis
         }
 
         AcpType type;
@@ -47,6 +53,13 @@ public class AnchorPointController extends Controller {
         controlPoints.add( cp );
         cp.setColor( new Color( 0, 1, 0, 1 ));
         updateControlPointFromObject( cp );
+
+        jdesc.getAxis().set( 0, 1);
+
+        cp = new AnchorControlPoint( jdesc, AnchorControlPoint.AcpType.typeAxis );
+        controlPoints.add( cp );
+        cp.setColor( new Color( 0, 1, 1, 1 ));
+        updateControlPointFromObject( cp );
     }
 
     public AnchorPointController(Stage stage) {
@@ -60,9 +73,19 @@ public class AnchorPointController extends Controller {
         // does nothing
     }
 
+
     @Override
     protected void draw() {
         drawControlPoints();
+        if ( controlPoints.get(2).isVisible() ) {
+            ControlPoint ax = controlPoints.get(2);
+            float x = ax.getX() * 1000;
+            float y = ax.getY() * 1000;
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            shapeRenderer.line( 0,0, x, y );
+            shapeRenderer.line( 0,0, -x, -y );
+            shapeRenderer.end();
+        }
     }
 
     @Override
@@ -86,6 +109,9 @@ public class AnchorPointController extends Controller {
             case typeB:
                 pv = jdesc.getAnchorB();
                 break;
+            case typeAxis:
+                pv = jdesc.getAxis();
+                break;
         }
 
         if ( pv == null )
@@ -103,6 +129,8 @@ public class AnchorPointController extends Controller {
             case typeB:
                 pv = jdesc.getAnchorB();
                 break;
+            case typeAxis:
+                pv = jdesc.getAxis();
         }
 
         if ( pv == null )
@@ -130,5 +158,29 @@ public class AnchorPointController extends Controller {
 
     public JointItemDescription getDescription() {
         return jdesc;
+    }
+
+    public void setMode( Mode mode ) {
+        setControlPointVisible( controlPoints.get(0), true);
+        switch ( mode ) {
+            case NoPoints:
+                setControlPointVisible( controlPoints.get(0), false );
+                setControlPointVisible( controlPoints.get(1), false );
+                setControlPointVisible( controlPoints.get(2), false );
+                break;
+            case TwoPointsMode:
+                setControlPointVisible( controlPoints.get(1), true );
+                setControlPointVisible( controlPoints.get(2), false);
+                break;
+            case OnePointMode:
+                setControlPointVisible( controlPoints.get(1), false );
+                setControlPointVisible( controlPoints.get(2), false);
+                break;
+
+            case OnPointAndAxisMode:
+                setControlPointVisible( controlPoints.get(1), false );
+                setControlPointVisible( controlPoints.get(2), true);
+                break;
+        }
     }
 }

@@ -302,9 +302,16 @@ public abstract class JointItem extends PhysItem {
         jd.setAnchorA( getAnchorA() );
         jd.setAnchorB( getAnchorB() );
         jd.setCollideConnected( isCollideConnected() );
-
-
         jd.setType( joint.getType() );
+        BodyItem bi = getModel().findBodyItem( joint.getBodyA() );
+        if ( bi != null) {
+            jd.setBodyAId( bi.getId() );
+        }
+        bi = getModel().findBodyItem( joint.getBodyB() );
+        if ( bi != null ) {
+            jd.setBodyBId( bi.getId() );
+        }
+
         fillUpJointItemDescription( jd );
 
         if ( getAagBackground() != null ) {
