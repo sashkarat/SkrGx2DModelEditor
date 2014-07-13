@@ -5,7 +5,12 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Matrix3;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -32,6 +37,9 @@ public class EditorScreen implements Screen, InputProcessor {
     private AnchorPointController anchorPointController;
     private Controller currentController = null;
     private ShapeRenderer shapeRenderer;
+    private BitmapFont font;
+    private Batch fontBatch;
+
 
     private boolean simulationEnabled = false;
 
@@ -40,9 +48,11 @@ public class EditorScreen implements Screen, InputProcessor {
         stage = new Stage( vp );
         camera = (OrthographicCamera) stage.getCamera();
         camera.position.set(0, 0, 0);
-        modelRenderer = new PhysModelRenderer();
+        modelRenderer = new PhysModelRenderer( PhysWorld.getPrimaryWorld() );
         stage.addActor( modelRenderer );
         shapeRenderer = new ShapeRenderer();
+        font = new BitmapFont();
+        fontBatch = new SpriteBatch();
 
         actorController = new ActorController( stage );
         bodyItemController = new BodyItemController( stage );
@@ -82,8 +92,6 @@ public class EditorScreen implements Screen, InputProcessor {
             currentController = actorController;
             return;
         }
-
-
 
         if ( object instanceof FixtureSet ) {
             FixtureSet fs = ( FixtureSet ) object;
@@ -158,7 +166,18 @@ public class EditorScreen implements Screen, InputProcessor {
         shapeRenderer.setProjectionMatrix( stage.getBatch().getProjectionMatrix() );
         shapeRenderer.setTransformMatrix( stage.getBatch().getTransformMatrix() );
 
-        drawGrid();
+        int gridDelta = 10;
+
+        if ( camera.zoom > 3 )
+            gridDelta = 100;
+        if ( camera.zoom > 4)
+            gridDelta = 200;
+        if ( camera.zoom < 0.25 )
+            gridDelta = 1;
+
+        drawGrid( gridDelta, gridDelta, gridDelta * 5);
+
+        drawGridText( gridDelta * 10 );
 
         stage.act( delta );
         stage.draw();
@@ -174,51 +193,110 @@ public class EditorScreen implements Screen, InputProcessor {
 
     }
 
-    void drawGrid() {
+    void drawGrid( int deltaX, int deltaY, int delta) {
 
-        float gridX = 10;
-        float gridY = 10;
+        float z = camera.zoom;
 
-        int gridW = 100;
-        int gridH = 100;
+        float w = camera.viewportWidth * z;
+        float h = camera.viewportHeight * z;
 
-        float fromX = - gridW/2 * gridX;
-        float fromY = - gridH/2 * gridY;
+        float x1 = camera.position.x - w / 2;
+        float x2 = x1 + w;
 
-        float x1,y1,x2,y2;
+        float y1 = camera.position.y - h / 2;
+        float y2 = y1 + h;
+
+        int x = ((int) ( x1 / deltaX )) * deltaX;
+        int y = ((int) ( y1 / deltaY )) * deltaY;
 
         shapeRenderer.setColor( 0.2f, 0.2f, 0.2f, 1f);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 
-        y1 = fromY;
-        y2 = fromY + gridH * gridY - gridY;
-        for ( int i = 0; i < gridW; i++) {
-            x1 = fromX + i * gridX;
-            x2 = x1;
-            shapeRenderer.line( x1, y1, x2, y2 );
+        while ( x < x2 ) {
+            shapeRenderer.line(x, y1, x, y2);
+            x+= deltaX;
         }
 
-        x1 = fromX;
-        x2 = fromX + gridW * gridX - gridX;
-        for ( int j = 0; j < gridH; j++) {
-            y1 = fromY + j * gridY;
-            y2 = y1;
-            shapeRenderer.line( x1, y1, x2, y2 );
+        while ( y < y2 ) {
+            shapeRenderer.line( x1, y, x2, y );
+            y+=deltaY;
         }
+
+        x = ((int) ( x1 / deltaX )) * delta;
+        y = ((int) ( y1 / deltaY )) * delta;
+
+        shapeRenderer.setColor( 0.2f, 0.3f, 0, 1);
+
+        while ( x < x2 ) {
+            shapeRenderer.line(x, y1, x, y2);
+            x+= delta;
+        }
+
+        while ( y < y2 ) {
+            shapeRenderer.line( x1, y, x2, y );
+            y+= delta;
+        }
+
 
         shapeRenderer.setColor( 0.5f, 0.5f, 0.5f, 1);
 
-        x1 = fromX;
-        x2 = fromX + gridW * gridX - gridX;
-        y1 = y2 = 0;
-        shapeRenderer.line( x1, y1, x2, y2 );
-
-        x1 = x2 = 0;
-        y1 = fromY;
-        y2 = fromY + gridH * gridY - gridY;
-        shapeRenderer.line( x1, y1, x2, y2 );
+        shapeRenderer.line( 0, y1, 0, y2 );
+        shapeRenderer.line(x1, 0, x2, 0);
 
         shapeRenderer.end();
+
+
+
+//        Gdx.app.log("EditorScreen.drawGrid", "Camera: " + camera.position + " " + camera.viewportWidth);
+    }
+
+    private void drawGridText( int delta ) {
+
+        float z = camera.zoom;
+
+        float w = camera.viewportWidth * z;
+        float h = camera.viewportHeight * z;
+
+        float x1 = camera.position.x - w / 2;
+        float x2 = x1 + w;
+
+        float y1 = camera.position.y - h / 2;
+        float y2 = y1 + h;
+
+        int x = ((int) ( x1 / delta )) * delta;
+        int y = ((int) ( y1 / delta )) * delta;
+
+
+        fontBatch.setProjectionMatrix( camera.projection );
+        fontBatch.getProjectionMatrix().scl( camera.zoom );
+
+        float offsetX =  - camera.position.x ;
+        float offsetY =  - camera.position.y ;
+
+        fontBatch.begin();
+
+        while ( x < x2 ) {
+            font.setColor( 0, 1, 0.2f, 1);
+            font.drawMultiLine( fontBatch, " " + x,
+                    (x + offsetX) / z, (y2 + offsetY) / z - 2 );
+            font.setColor( 0.2f, 0.8f, 1, 1);
+            font.drawMultiLine( fontBatch, " " + PhysWorld.get().toPhys(x),
+                    (x + offsetX) / z, (y1 + offsetY) / z + 20 );
+            x += delta;
+        }
+
+        while ( y < y2 ) {
+            font.setColor( 0, 1, 0.2f, 1);
+            font.drawMultiLine( fontBatch, " " + y,
+                    (x1 + offsetX) / z + 2, (y + offsetY) / z );
+            font.setColor( 0.2f, 0.8f, 1, 1);
+            font.drawMultiLine( fontBatch, " " + PhysWorld.get().toPhys(y),
+                    (x2 + offsetX) / z - 35, (y + offsetY) / z );
+            y+= delta;
+        }
+
+        fontBatch.end();
+
     }
 
     @Override

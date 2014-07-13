@@ -602,7 +602,7 @@ public class PolygonRefinement {
 
 
         int index = 0;
-        int cntr = polygons.size * 4;
+        int cntr = polygons.size * polygons.size * polygons.size;
 
         while ( polygons.size > 0 ) {
             if ( cntr-- <= 0 )

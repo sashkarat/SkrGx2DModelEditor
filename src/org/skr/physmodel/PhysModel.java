@@ -72,18 +72,27 @@ public class PhysModel {
         }
     }
 
+    private final World world;
+
     private String name = "";
     private AnimatedActorGroup backgroundActor;
     private Array<BodyItem> bodyItems = new Array<BodyItem>();
     private Array<JointItem> jointItems = new Array<JointItem>();
 
-    public PhysModel() {
+
+
+    public PhysModel( World world ) {
+        this.world = world;
     }
 
-    public PhysModel( Description description ) {
+    public PhysModel( Description description, World world ) {
+        this.world = world;
         uploadFromDescription( description );
     }
 
+    public World getWorld() {
+        return this.world;
+    }
 
     public void uploadFromDescription( Description desc) {
         setName( desc.getName() );
@@ -94,7 +103,7 @@ public class PhysModel {
         }
 
         for ( BodyItem bi : bodyItems) {
-            PhysWorld.getWorld().destroyBody( bi.body );
+            world.destroyBody( bi.body );
         }
         bodyItems.clear();
 
@@ -121,7 +130,7 @@ public class PhysModel {
 
         if ( jointsDesc != null ) {
             for ( JointItemDescription jd : jointsDesc ) {
-                JointItem ji = JointItemFactory.createFromDescription( jd, this );
+                JointItem ji = JointItemFactory.createFromDescription( jd, this, world );
                 if ( ji != null ) {
                     jointItems.add(ji);
                 } else {
@@ -249,7 +258,7 @@ public class PhysModel {
     public BodyItem addBodyItem( String name, BodyDef bodyDef, int id ) {
         BodyItem bi = new BodyItem( id );
         bi.setName( name );
-        Body body = PhysWorld.getWorld().createBody( bodyDef );
+        Body body = world.createBody( bodyDef );
         bi.setBody( body );
         bodyItems.add(bi);
         return bi;
@@ -281,7 +290,7 @@ public class PhysModel {
             removeJointItem( ji );
 
         bodyItems.removeValue( bodyItem, true );
-        PhysWorld.getWorld().destroyBody( bodyItem.body );
+        world.destroyBody( bodyItem.body );
     }
 
 
@@ -319,7 +328,7 @@ public class PhysModel {
 
 
     public JointItem addNewJointItem( JointItemDescription jiDesc) {
-        JointItem ji = JointItemFactory.createFromDescription(jiDesc, this);
+        JointItem ji = JointItemFactory.createFromDescription(jiDesc, this, world);
         if ( ji == null )
             return null;
         jointItems.add( ji );
@@ -328,12 +337,12 @@ public class PhysModel {
 
 
     public void removeJointItem ( JointItem ji ) {
-        PhysWorld.getWorld().destroyJoint( ji.getJoint() );
+        world.destroyJoint( ji.getJoint() );
         jointItems.removeValue( ji, true );
     }
     //================ Static ================================
 
-    public static PhysModel loadFromFile(FileHandle fileHandle) {
+    public static PhysModel loadFromFile( FileHandle fileHandle ) {
 
         Json js = new Json();
         PhysModel physModel = null;
@@ -341,7 +350,7 @@ public class PhysModel {
         try {
 
             Description description = js.fromJson(Description.class, fileHandle);
-            physModel = new PhysModel( description );
+            physModel = new PhysModel( description, PhysWorld.getPrimaryWorld() );
         } catch ( SerializationException e) {
             Gdx.app.error("PhysModel.loadFromFile", e.getMessage() );
             e.printStackTrace();

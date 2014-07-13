@@ -3,6 +3,7 @@ package org.skr.physmodel;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.physics.box2d.Joint;
 import com.badlogic.gdx.physics.box2d.JointDef;
+import com.badlogic.gdx.physics.box2d.World;
 import org.skr.PhysModelEditor.PhysWorld;
 import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
 import org.skr.physmodel.jointitems.DistanceJointItem;
@@ -13,7 +14,7 @@ import org.skr.physmodel.jointitems.DistanceJointItem;
 public class JointItemFactory {
 
 
-    public static JointItem createFromDescription( JointItemDescription desc, PhysModel model ) {
+    public static JointItem createFromDescription( JointItemDescription desc, PhysModel model, World world) {
 
         JointItem ji = create( desc.getType(),
                 desc.getId(), desc.getName(), model );
@@ -34,7 +35,7 @@ public class JointItemFactory {
             return null;
         }
 
-        Joint joint = PhysWorld.getWorld().createJoint( jd );
+        Joint joint = world.createJoint( jd );
         if ( joint == null ) {
 //            Gdx.app.log("JointItemFactory.createFromDescription",
 //                    "Unable to create a joint: " + desc.getName() );

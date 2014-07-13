@@ -1,11 +1,9 @@
 package org.skr.PhysModelEditor;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.utils.Array;
 
 /**
  * Created by rat on 08.06.14.
@@ -58,7 +56,8 @@ public class PhysWorld {
 //        }
     }
 
-    World world;
+    World primaryWorld;
+    World testWorld;
     Vector2 gravity = new Vector2( 0, -9.8f );
     float scale = 10;
     float timing = 1f/120f;
@@ -69,7 +68,8 @@ public class PhysWorld {
     static PhysWorld instance;
 
     private PhysWorld(float scale) {
-        world = new World( gravity, true);
+        primaryWorld = new World( gravity, true);
+        testWorld = new World( gravity, true);
         instance = this;
         this.scale = scale;
         debugRenderer = new WorldDebugRenderer(true, true, false, true, true, true);
@@ -93,16 +93,20 @@ public class PhysWorld {
         this.scale = scale;
     }
 
-    public static World getWorld() {
-        return get().world;
+    public static World getPrimaryWorld() {
+        return get().primaryWorld;
+    }
+
+    public static World getTestWorld() {
+        return get().testWorld;
     }
 
     public void debugRender( Stage stage) {
-        debugRenderer.render( world, stage, scale);
+        debugRenderer.render(primaryWorld, stage, scale);
     }
 
     public void step() {
-       world.step( timing, 8, 8);
+       primaryWorld.step(timing, 8, 8);
     }
 
     public float toView(float v) {
@@ -134,7 +138,7 @@ public class PhysWorld {
     }
 
     public void act() {
-        world.step( timing, 10, 8);
+        primaryWorld.step(timing, 10, 8);
     }
 
 }

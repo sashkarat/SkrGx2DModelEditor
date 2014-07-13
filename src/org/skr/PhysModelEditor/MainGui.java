@@ -459,7 +459,7 @@ public class MainGui extends JFrame {
 
     void newModel() {
 
-        model = new PhysModel();
+        model = new PhysModel( PhysWorld.getPrimaryWorld() );
         model.setName("noname");
         model.uploadAtlas();
 
