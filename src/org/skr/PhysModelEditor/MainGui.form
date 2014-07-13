@@ -797,7 +797,7 @@
           </component>
           <hspacer id="a9741">
             <constraints>
-              <grid row="0" column="10" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="11" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
               <gridbag weightx="1.0" weighty="0.0"/>
             </constraints>
           </hspacer>
@@ -808,6 +808,15 @@
             </constraints>
             <properties>
               <text value="Texture Atlas: "/>
+            </properties>
+          </component>
+          <component id="74f7a" class="javax.swing.JCheckBox" binding="chbEnableSimulation">
+            <constraints>
+              <grid row="0" column="10" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <gridbag weightx="0.0" weighty="0.0"/>
+            </constraints>
+            <properties>
+              <text value="Enable Simulation"/>
             </properties>
           </component>
         </children>

@@ -164,11 +164,11 @@ public abstract class JointItem extends PhysItem {
 
     }
 
-    public float getDumpingRatio() {
+    public float getDampingRatio() {
         return 0;
     }
 
-    public void setDumpingRatio(float dumpingRatio) {
+    public void setDampingRatio(float dumpingRatio) {
 
     }
 
@@ -292,12 +292,19 @@ public abstract class JointItem extends PhysItem {
 
 
     public JointItemDescription createJointItemDescription ( ) {
-        JointItemDescription jd = new JointItemDescription();
-        jd.setId( getId() );
 
         if ( getJoint() == null )
-            return jd;
+            return null;
 
+        JointItemDescription jd = new JointItemDescription();
+        jd.setId( getId() );
+        jd.setName( getName() );
+        jd.setAnchorA( getAnchorA() );
+        jd.setAnchorB( getAnchorB() );
+        jd.setCollideConnected( isCollideConnected() );
+
+
+        jd.setType( joint.getType() );
         fillUpJointItemDescription( jd );
 
         if ( getAagBackground() != null ) {
@@ -327,7 +334,7 @@ public abstract class JointItem extends PhysItem {
         Body bodyB = bi.getBody();
 
         jd.initialize( bodyA, bodyB, desc.getAnchorA(), desc.getAnchorB() );
-        jd.dampingRatio = desc.getDumpingRatio();
+        jd.dampingRatio = desc.getDampingRatio();
         jd.frequencyHz = desc.getFrequencyHz();
         jd.length = desc.getLength();
 
@@ -352,7 +359,7 @@ public abstract class JointItem extends PhysItem {
 
         desc.setBodyAId( bodyAId );
         desc.setBodyBId( bodyBId );
-        desc.setDumpingRatio( joint.getDampingRatio() );
+        desc.setDampingRatio( joint.getDampingRatio() );
         desc.setFrequencyHz( joint.getFrequency() );
         desc.setLength( joint.getLength() );
     }

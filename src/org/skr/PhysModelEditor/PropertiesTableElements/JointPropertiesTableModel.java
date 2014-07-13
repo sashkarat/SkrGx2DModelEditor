@@ -1,12 +1,9 @@
 package org.skr.PhysModelEditor.PropertiesTableElements;
 
-import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.Joint;
 import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.utils.Array;
 import org.skr.physmodel.BodyItem;
 import org.skr.physmodel.JointItem;
-import org.skr.physmodel.PhysModel;
 
 import javax.swing.*;
 import java.util.HashMap;
@@ -91,7 +88,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
         // Distance Joint
         propList = new Array<Property_>();
         propList.addAll(Property_.Name, Property_.Type,
-                Property_.BodyA, Property_.BodyB,
+                Property_.BodyA, Property_.BodyB, Property_.CollideConnected,
                 Property_.AnchorA_X, Property_.AnchorA_Y,
                 Property_.AnchorB_X, Property_.AnchorB_Y,
                 Property_.DumpingRatio, Property_.FrequencyHz,
@@ -135,6 +132,11 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
         }
     }
 
+    int getBodyNameIndex( int id ) {
+        int index = bodyIdList.indexOf( id, true );
+        return index;
+    }
+
     @Override
     public int getCurrentSelectorIndex(int rowIndex) {
         if ( jointItem == null )
@@ -147,9 +149,9 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 return Property_.jointTypeNames.indexOf(
                         jointItem.getJoint().getType().name(), false);
             case BodyA:
-                //TODO: implement this
+                return getBodyNameIndex( jointItem.getBodyAId() );
             case BodyB:
-                //TODO: implement this
+                return getBodyNameIndex( jointItem.getBodyBId() );
             case JointA:
                 //TODO: implement this
             case JointB:
@@ -209,6 +211,89 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
 
     @Override
     public boolean isPropertyEditable(int rowIndex) {
+        Property_ prop = getProperty(jointItem.getJoint().getType(), rowIndex);
+        switch ( prop ) {
+            case Name:
+                break;
+            case Type:
+                return false;
+            case BodyA:
+                return false;
+            case BodyB:
+                return false;
+            case CollideConnected:
+                return false;
+            case Length:
+                break;
+            case AnchorA_X:
+                break;
+            case AnchorA_Y:
+                break;
+            case AnchorB_X:
+                break;
+            case AnchorB_Y:
+                break;
+            case FrequencyHz:
+                break;
+            case DumpingRatio:
+                break;
+            case Ratio:
+                break;
+            case MaxLength:
+                break;
+            case MaxForce:
+                break;
+            case MaxMotorForce:
+                break;
+            case MotorSpeed:
+                break;
+            case MaxMotorTorque:
+                break;
+            case MaxTorque:
+                break;
+            case AngularOffset:
+                break;
+            case LowerAngle:
+                break;
+            case UpperAngle:
+                break;
+            case CorrectionFactor:
+                break;
+            case ReferenceAngle:
+                break;
+            case LowerTranslation:
+                break;
+            case UpperTranslation:
+                break;
+            case EnableLimit:
+                break;
+            case EnableMotor:
+                break;
+            case JointA:
+                break;
+            case JointB:
+                break;
+            case LinearOffset_X:
+                break;
+            case LinearOffset_Y:
+                break;
+            case Target_X:
+                break;
+            case Target_Y:
+                break;
+            case Axis_X:
+                break;
+            case Axis_Y:
+                break;
+            case GroundAnchorA_X:
+                break;
+            case GroundAnchorA_Y:
+                break;
+            case GroundAnchorB_X:
+                break;
+            case GroundAnchorB_Y:
+                break;
+        }
         return true;
     }
 
@@ -222,14 +307,196 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
         return prop.name();
     }
 
+    String getBodyName( int id ) {
+        BodyItem bi = jointItem.getModel().findBodyItem( id );
+        if ( bi == null )
+            return "";
+        return bi.getName();
+    }
+
     @Override
     public Object getPropertyValue(int rowIndex) {
+        Property_ prop = getProperty(jointItem.getJoint().getType(), rowIndex);
+
+        switch ( prop ) {
+            case Name:
+                return jointItem.getName();
+            case Type:
+                return jointItem.getJoint().getType().name();
+            case BodyA:
+                return getBodyName( jointItem.getBodyAId() );
+            case BodyB:
+                return getBodyName( jointItem.getBodyBId() );
+            case CollideConnected:
+                return jointItem.isCollideConnected();
+            case Length:
+                return jointItem.getLength();
+            case AnchorA_X:
+                return jointItem.getAnchorA().x;
+            case AnchorA_Y:
+                return jointItem.getAnchorA().y;
+            case AnchorB_X:
+                return jointItem.getAnchorB().x;
+            case AnchorB_Y:
+                return jointItem.getAnchorB().y;
+            case FrequencyHz:
+                return jointItem.getFrequencyHz();
+            case DumpingRatio:
+                return jointItem.getDampingRatio();
+            case Ratio:
+                return jointItem.getRatio();
+            case MaxLength:
+                return jointItem.getMaxLength();
+            case MaxForce:
+                return jointItem.getMaxForce();
+            case MaxMotorForce:
+                return jointItem.getMaxMotorForce();
+            case MotorSpeed:
+                return jointItem.getMotorSpeed();
+            case MaxMotorTorque:
+                return jointItem.getMaxMotorTorque();
+            case MaxTorque:
+                return jointItem.getMaxTorque();
+            case AngularOffset:
+                return jointItem.getAngularOffset();
+            case LowerAngle:
+                return jointItem.getLowerAngle();
+            case UpperAngle:
+                return jointItem.getUpperAngle();
+            case CorrectionFactor:
+                return jointItem.getCorrectionFactor();
+            case ReferenceAngle:
+                return jointItem.getReferenceAngle();
+            case LowerTranslation:
+                return jointItem.getLowerTranslation();
+            case UpperTranslation:
+                return jointItem.getUpperTranslation();
+            case EnableLimit:
+                return jointItem.isEnableLimit();
+            case EnableMotor:
+                return jointItem.isEnableMotor();
+            case JointA:
+                //TODO: implement that
+                break;
+            case JointB:
+                //TODO: implement that
+                break;
+            case LinearOffset_X:
+                return jointItem.getLinearOffset().x;
+            case LinearOffset_Y:
+                return jointItem.getLinearOffset().y;
+            case Target_X:
+                return jointItem.getTarget().x;
+            case Target_Y:
+                return jointItem.getTarget().y;
+            case Axis_X:
+                return jointItem.getAxis().x;
+            case Axis_Y:
+                return jointItem.getAxis().y;
+            case GroundAnchorA_X:
+                return jointItem.getGroundAnchorA().x;
+            case GroundAnchorA_Y:
+                return jointItem.getGroundAnchorA().y;
+            case GroundAnchorB_X:
+                return jointItem.getGroundAnchorB().x;
+            case GroundAnchorB_Y:
+                return jointItem.getGroundAnchorB().y;
+        }
+
         return null;
     }
 
     @Override
     public void setProperty(Object aValue, int rowIndex) {
+        Property_ prop = getProperty(jointItem.getJoint().getType(), rowIndex);
 
+        switch( prop ) {
+            case Name:
+                jointItem.setName( (String) aValue);
+                break;
+            case Type:
+                break;
+            case BodyA:
+                break;
+            case BodyB:
+                break;
+            case CollideConnected:
+                break;
+            case Length:
+                jointItem.setLength((Float) aValue);
+                break;
+            case AnchorA_X:
+                break;
+            case AnchorA_Y:
+                break;
+            case AnchorB_X:
+                break;
+            case AnchorB_Y:
+                break;
+            case FrequencyHz:
+                jointItem.setFrequencyHz((Float) aValue );
+                break;
+            case DumpingRatio:
+                jointItem.setDampingRatio((Float) aValue);
+                break;
+            case Ratio:
+                jointItem.setRatio((Float) aValue);
+                break;
+            case MaxLength:
+                break;
+            case MaxForce:
+                break;
+            case MaxMotorForce:
+                break;
+            case MotorSpeed:
+                break;
+            case MaxMotorTorque:
+                break;
+            case MaxTorque:
+                break;
+            case AngularOffset:
+                break;
+            case LowerAngle:
+                break;
+            case UpperAngle:
+                break;
+            case CorrectionFactor:
+                break;
+            case ReferenceAngle:
+                break;
+            case LowerTranslation:
+                break;
+            case UpperTranslation:
+                break;
+            case EnableLimit:
+                break;
+            case EnableMotor:
+                break;
+            case JointA:
+                break;
+            case JointB:
+                break;
+            case LinearOffset_X:
+                break;
+            case LinearOffset_Y:
+                break;
+            case Target_X:
+                break;
+            case Target_Y:
+                break;
+            case Axis_X:
+                break;
+            case Axis_Y:
+                break;
+            case GroundAnchorA_X:
+                break;
+            case GroundAnchorA_Y:
+                break;
+            case GroundAnchorB_X:
+                break;
+            case GroundAnchorB_Y:
+                break;
+        }
     }
 
     protected static Property_ getProperty(JointDef.JointType type, int index) {

@@ -97,10 +97,12 @@ public class PhysWorld {
         return get().world;
     }
 
-
-
     public void debugRender( Stage stage) {
         debugRenderer.render( world, stage, scale);
+    }
+
+    public void step() {
+       world.step( timing, 8, 8);
     }
 
     public float toView(float v) {

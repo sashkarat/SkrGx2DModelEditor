@@ -124,6 +124,8 @@ public class PhysModel {
                 JointItem ji = JointItemFactory.createFromDescription( jd, this );
                 if ( ji != null ) {
                     jointItems.add(ji);
+                } else {
+                    Gdx.app.log("PhysModel.uploadFromDescription", "unable to create the jointItem:  " + jd.getName() );
                 }
             }
         }
@@ -265,14 +267,21 @@ public class PhysModel {
 
     public void removeBody( BodyItem bodyItem ) {
 
-        int indexOf = bodyItems.indexOf( bodyItem, true );
-        if ( indexOf < 0 )
-            return;
-        bodyItems.removeIndex( indexOf );
+        Array<JointItem> jointItemsTmp = new Array<JointItem>();
 
+        for ( JointItem ji : jointItems) {
+            if ( ji.getBodyAId() == bodyItem.getId() ||
+                    ji.getBodyBId() == bodyItem.getId() ) {
+                jointItemsTmp.add( ji );
+                continue;
+            }
+        }
+
+        for ( JointItem ji : jointItemsTmp )
+            removeJointItem( ji );
+
+        bodyItems.removeValue( bodyItem, true );
         PhysWorld.getWorld().destroyBody( bodyItem.body );
-        //TODO: check joint list
-
     }
 
 
@@ -309,6 +318,19 @@ public class PhysModel {
     }
 
 
+    public JointItem addNewJointItem( JointItemDescription jiDesc) {
+        JointItem ji = JointItemFactory.createFromDescription(jiDesc, this);
+        if ( ji == null )
+            return null;
+        jointItems.add( ji );
+        return  ji;
+    }
+
+
+    public void removeJointItem ( JointItem ji ) {
+        PhysWorld.getWorld().destroyJoint( ji.getJoint() );
+        jointItems.removeValue( ji, true );
+    }
     //================ Static ================================
 
     public static PhysModel loadFromFile(FileHandle fileHandle) {
@@ -354,11 +376,11 @@ public class PhysModel {
         }
     }
 
-    // =======================================================
-
     public static FileNameExtensionFilter getFileFilter() {
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("PhysModel files", "physmodel");
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("PhysModel files:", "physmodel");
         return  filter;
     }
+
+    // =======================================================
 
 }

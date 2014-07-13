@@ -36,9 +36,9 @@ public class DistanceJointItem extends JointItem {
             return null;
 
         Body bodyB = bi.getBody();
-
         jd.initialize( bodyA, bodyB, desc.getAnchorA(), desc.getAnchorB() );
-        jd.dampingRatio = desc.getDumpingRatio();
+        jd.collideConnected = desc.isCollideConnected();
+        jd.dampingRatio = desc.getDampingRatio();
         jd.frequencyHz = desc.getFrequencyHz();
         jd.length = desc.getLength();
 
@@ -58,10 +58,10 @@ public class DistanceJointItem extends JointItem {
             return;
 
         int bodyBId = bi.getId();
-
+        desc.setCollideConnected( joint.getCollideConnected() );
         desc.setBodyAId( bodyAId );
         desc.setBodyBId( bodyBId );
-        desc.setDumpingRatio( joint.getDampingRatio() );
+        desc.setDampingRatio(joint.getDampingRatio());
         desc.setFrequencyHz( joint.getFrequency() );
         desc.setLength( joint.getLength() );
 
@@ -69,32 +69,32 @@ public class DistanceJointItem extends JointItem {
 
     @Override
     public float getLength() {
-        return super.getLength();
+        return joint.getLength();
     }
 
     @Override
     public void setLength(float length) {
-        super.setLength(length);
+        joint.setLength( length );
     }
 
     @Override
     public float getFrequencyHz() {
-        return super.getFrequencyHz();
+        return joint.getFrequency();
     }
 
     @Override
     public void setFrequencyHz(float frequencyHz) {
-        super.setFrequencyHz(frequencyHz);
+        joint.setFrequency( frequencyHz );
     }
 
     @Override
-    public float getDumpingRatio() {
-        return super.getDumpingRatio();
+    public float getDampingRatio() {
+        return joint.getDampingRatio();
     }
 
     @Override
-    public void setDumpingRatio(float dumpingRatio) {
-        super.setDumpingRatio(dumpingRatio);
+    public void setDampingRatio(float dumpingRatio) {
+        joint.setDampingRatio( dumpingRatio );
     }
 
     @Override

@@ -188,7 +188,10 @@ public class FixtureSet {
         removeAllFixtures();
 
         for ( ShapeDescription shd : shapeDescriptions ) {
-            fixtures.add( createFixture( shd ) );
+            Fixture fx = createFixture( shd );
+            if ( fx == null )
+                continue;
+            fixtures.add( fx );
         }
     }
 
@@ -212,6 +215,9 @@ public class FixtureSet {
                 shape = createChainShape( shd );
                 break;
         }
+
+        if ( shape == null )
+            return null;
 
         fixtureDef.density = density;
         fixtureDef.friction = friction;
@@ -248,8 +254,13 @@ public class FixtureSet {
 
         sh.set( vertices );
 
-        Gdx.app.log("FixtureSet.createPolygonShape","SHD::vertices: " + shd.getVertices().size +
-                " Array::size: " + vertices.length + " i: " + i + " SH:: vertices: " + sh.getVertexCount() );
+//        Gdx.app.log("FixtureSet.createPolygonShape","SHD::vertices: " + shd.getVertices().size +
+//                " Array::size: " + vertices.length + " i: " + i + " SH:: vertices: " + sh.getVertexCount() );
+
+        if( vertices.length != sh.getVertexCount() ) {
+            Gdx.app.log("FixtureSet.createPolygonShape", "WARNING: unable to create shape. Vertex count mismatch");
+            return null;
+        }
 
         return sh;
     }

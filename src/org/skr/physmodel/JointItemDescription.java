@@ -2,8 +2,6 @@ package org.skr.physmodel;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.JointDef;
-import org.skr.physmodel.animatedactorgroup.AagDescription;
-import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
 
 /**
  * Created by rat on 05.07.14.
@@ -28,7 +26,7 @@ public class JointItemDescription extends PhysItemDescription {
     float correctionFactor = 0.3f;
     Vector2 target = new Vector2();
     float frequencyHz = 5;
-    float dumpingRatio = 0.7f;
+    float dampingRatio = 0.7f;
     Vector2 axis = new Vector2();
     float referenceAngle = 0;
     boolean enableLimit = false;
@@ -188,12 +186,12 @@ public class JointItemDescription extends PhysItemDescription {
         this.frequencyHz = frequencyHz;
     }
 
-    public float getDumpingRatio() {
-        return dumpingRatio;
+    public float getDampingRatio() {
+        return dampingRatio;
     }
 
-    public void setDumpingRatio(float dumpingRatio) {
-        this.dumpingRatio = dumpingRatio;
+    public void setDampingRatio(float dampingRatio) {
+        this.dampingRatio = dampingRatio;
     }
 
     public Vector2 getAxis() {

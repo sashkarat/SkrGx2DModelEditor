@@ -33,6 +33,8 @@ public class EditorScreen implements Screen, InputProcessor {
     private Controller currentController = null;
     private ShapeRenderer shapeRenderer;
 
+    private boolean simulationEnabled = false;
+
     public EditorScreen() {
         ScreenViewport vp = new ScreenViewport();
         stage = new Stage( vp );
@@ -135,10 +137,23 @@ public class EditorScreen implements Screen, InputProcessor {
         return (ShapeController) currentController;
     }
 
+    public boolean isSimulationEnabled() {
+        return simulationEnabled;
+    }
+
+    public void setSimulationEnabled(boolean simulationEnabled) {
+        this.simulationEnabled = simulationEnabled;
+    }
+
     @Override
     public void render(float delta) {
+
+
         Gdx.gl20.glClearColor(0, 0.1f, 0.05f, 1);
         Gdx.gl.glClear(Gdx.gl20.GL_COLOR_BUFFER_BIT | Gdx.gl20.GL_DEPTH_BUFFER_BIT);
+
+        if ( simulationEnabled )
+            PhysWorld.get().step();
 
         shapeRenderer.setProjectionMatrix( stage.getBatch().getProjectionMatrix() );
         shapeRenderer.setTransformMatrix( stage.getBatch().getTransformMatrix() );
