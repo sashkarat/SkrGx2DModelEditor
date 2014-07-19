@@ -110,6 +110,10 @@ public class MainGui extends JFrame {
     private JButton btnSetGroundAnchorA;
     private JButton btnSetGroundAnchorB;
     private JTextField tfRatio;
+    private JPanel panelRatio;
+    private JPanel panelJoints;
+    private JComboBox comboJoint1;
+    private JComboBox comboJoint2;
 
     private GdxApplication gApp;
     private String currentModelFileName = "";
@@ -631,6 +635,7 @@ public class MainGui extends JFrame {
 
         GdxApplication.get().getEditorScreen().getModelRenderer().setModel( model );
 
+        updateJointCombos();
     }
 
 
@@ -815,6 +820,7 @@ public class MainGui extends JFrame {
             case JOINT_ITEM:
                 JointItem ji = (JointItem) ni.object;
                 model.removeJointItem( ji );
+                updateJointCombos();
                 break;
         }
         md.removeNodeFromParent( node );
@@ -1192,6 +1198,7 @@ public class MainGui extends JFrame {
 
 
     void createJoint() {
+        jiDesc.setType((JointDef.JointType) comboJointType.getSelectedItem() );
 
         BodyItem biA = (BodyItem) comboBodyASelector.getSelectedItem();
         BodyItem biB = (BodyItem) comboBodyBSelector.getSelectedItem();
@@ -1205,9 +1212,16 @@ public class MainGui extends JFrame {
 
         jiDesc.setBodyAId( biA.getId() );
         jiDesc.setBodyBId( biB.getId() );
+        jiDesc.setCollideConnected(chbCollideConnected.isSelected());
+
         setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeA);
         setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeB);
-        jiDesc.setCollideConnected( chbCollideConnected.isSelected() );
+        if ( jiDesc.getType() == JointDef.JointType.PulleyJoint ) {
+            setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeC);
+            setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeD);
+        } else if ( jiDesc.getType() == JointDef.JointType.PrismaticJoint ) {
+            setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeAxis);
+        }
 
         try {
             jiDesc.setRatio(Float.valueOf(tfRatio.getText()));
@@ -1216,8 +1230,20 @@ public class MainGui extends JFrame {
             jiDesc.setRatio(1);
         }
 
-        jiDesc.setType((JointDef.JointType) comboJointType.getSelectedItem() );
-        jiDesc.setName("nonameJoint");
+
+        jiDesc.setName("_" + jiDesc.getType());
+        if ( jiDesc.getType() == JointDef.JointType.GearJoint ) {
+            JointItem jiA = (JointItem) comboJoint1.getSelectedItem();
+            JointItem jiB = (JointItem) comboJoint2.getSelectedItem();
+            if ( jiA == null )
+                return;
+            if ( jiB == null )
+                return;
+            jiDesc.setJointAId( jiA.getId() );
+            jiDesc.setJointBId( jiB.getId() );
+        }
+
+
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePhysModel.getLastSelectedPathComponent();
         DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
         NodeInfo ni = ( NodeInfo ) node.getUserObject();
@@ -1232,7 +1258,28 @@ public class MainGui extends JFrame {
 
         md.nodeChanged( node );
         md.nodeStructureChanged(node);
+        updateJointCombos();
 
+    }
+
+    void updateJointCombos() {
+        comboJoint1.removeAllItems();
+        comboJoint2.removeAllItems();
+
+        if ( model == null )
+            return;
+
+        for (JointItem ji : model.getJointItems() ) {
+            if ( ji.getJoint().getType() == JointDef.JointType.RevoluteJoint ) {
+                comboJoint1.addItem( ji );
+                comboJoint2.addItem( ji );
+                continue;
+            }
+
+            if ( ji.getJoint().getType() == JointDef.JointType.PrismaticJoint ) {
+                comboJoint2.addItem( ji );
+            }
+        }
     }
 
     void toggleScreen() {
@@ -1322,49 +1369,65 @@ public class MainGui extends JFrame {
 
 
     void updateJointCreatorPanelFeatures() {
-        setGuiElementEnable( panelJointCreatorFeatures, true );
-        setGuiElementEnable( panelAxis, false );
-        setGuiElementEnable( panelGroundAnchors, false );
+        panelJointCreatorFeatures.setVisible( true );
+        panelAxis.setVisible( false );
+        panelGroundAnchors.setVisible( false );
+        panelRatio.setVisible( false );
+        panelJoints.setVisible( false );
+        panelAnchorA.setVisible( true );
+        panelAnchorB.setVisible( true );
         JointDef.JointType type = (JointDef.JointType) comboJointType.getSelectedItem();
         AnchorPointController ctrlr = GdxApplication.get().getEditorScreen().getAnchorPointController();
 
         switch ( type ) {
             case Unknown:
-                setGuiElementEnable( panelJointCreatorFeatures, false );
+                panelJointCreatorFeatures.setVisible( false );
                 ctrlr.setMode(AnchorPointController.Mode.NoPoints);
                 break;
             case RevoluteJoint:
                 ctrlr.setMode(AnchorPointController.Mode.OnePointMode);
-                setGuiElementEnable( panelAnchorB, false );
+                panelAnchorB.setVisible( false );
                 break;
             case PrismaticJoint:
                 ctrlr.setMode(AnchorPointController.Mode.OnPointAndAxisMode );
-                setGuiElementEnable( panelAxis, true);
-                setGuiElementEnable( panelAnchorB, false );
+                panelAxis.setVisible( true );
+                panelAnchorB.setVisible( false );
                 break;
             case DistanceJoint:
                 ctrlr.setMode(AnchorPointController.Mode.TwoPointsMode);
                 break;
             case PulleyJoint:
-                setGuiElementEnable( panelGroundAnchors, true );
+                panelGroundAnchors.setVisible( true );
                 ctrlr.setMode(AnchorPointController.Mode.FourPointsMode );
+                panelRatio.setVisible( true );
                 break;
             case MouseJoint:
                 break;
             case GearJoint:
+                ctrlr.setMode(AnchorPointController.Mode.NoPoints);
+                panelRatio.setVisible( true );
+                panelJoints.setVisible( true );
+                panelAnchorA.setVisible( false );
+                panelAnchorB.setVisible( false );
                 break;
             case WheelJoint:
+                ctrlr.setMode(AnchorPointController.Mode.OnPointAndAxisMode );
+                panelAxis.setVisible( true );
+                panelAnchorB.setVisible( false );
                 break;
             case WeldJoint:
                 break;
             case FrictionJoint:
+                ctrlr.setMode(AnchorPointController.Mode.OnePointMode);
+                panelAnchorB.setVisible( false );
                 break;
             case RopeJoint:
+                ctrlr.setMode(AnchorPointController.Mode.TwoPointsMode);
                 break;
             case MotorJoint:
+                ctrlr.setMode(AnchorPointController.Mode.NoPoints);
                 break;
         }
-
     }
 
     //======================= main ================================

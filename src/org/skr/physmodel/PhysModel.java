@@ -323,11 +323,13 @@ public class PhysModel {
     }
 
     public JointItem findJointItem( Joint joint) {
-        for ( JointItem ji : jointItems ) {
-            if ( ji.getJoint() == joint )
-                return ji;
-        }
-        return null;
+        if ( joint.getUserData() == null )
+            return null;
+        Object o = joint.getUserData();
+        if ( !(o instanceof JointItem ))
+            return null;
+        JointItem ji = (JointItem) o;
+        return ji;
     }
 
 

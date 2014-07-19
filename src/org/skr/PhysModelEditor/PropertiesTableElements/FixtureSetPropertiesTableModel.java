@@ -136,7 +136,7 @@ public class FixtureSetPropertiesTableModel extends PropertiesBaseTableModel {
             case Friction:
                 return fixtureSet.getFriction();
             case Restitution:
-                fixtureSet.getRestitution();
+                return fixtureSet.getRestitution();
             case Density:
                 return fixtureSet.getDensity();
             case FixturesCount:

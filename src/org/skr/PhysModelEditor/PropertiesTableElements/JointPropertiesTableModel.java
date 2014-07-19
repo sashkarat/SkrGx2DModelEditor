@@ -19,9 +19,9 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
     private enum Property_ {
 
         Name(PropertyType.STRING),
-        Type(PropertyType.SELECTOR ),
-        BodyA(PropertyType.SELECTOR),
-        BodyB(PropertyType.SELECTOR),
+        Type(PropertyType.STRING ),
+        BodyA(PropertyType.STRING),
+        BodyB(PropertyType.STRING),
         CollideConnected(PropertyType.BOOLEAN),
         Length(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         AnchorA_X(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
@@ -29,7 +29,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
         AnchorB_X(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         AnchorB_Y(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         FrequencyHz(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
-        DumpingRatio(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        DampingRatio(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         Ratio(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         MaxLength(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         MaxForce(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
@@ -46,8 +46,8 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
         UpperTranslation(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         EnableLimit(PropertyType.BOOLEAN),
         EnableMotor(PropertyType.BOOLEAN),
-        JointA(PropertyType.SELECTOR),
-        JointB(PropertyType.SELECTOR),
+        JointA(PropertyType.STRING),
+        JointB(PropertyType.STRING),
         LinearOffset_X(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         LinearOffset_Y(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         Target_X(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
@@ -72,11 +72,6 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
         }
 
         static Property_[] values = Property_.values();
-        static Array<String> jointTypeNames = new Array<String>();
-        static {
-            for ( int i = 0; i < JointDef.JointType.values().length; i++)
-                jointTypeNames.add( JointDef.JointType.values()[i].toString() );
-        }
     }
 
     static { // fill propMap
@@ -92,7 +87,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 Property_.BodyA, Property_.BodyB, Property_.CollideConnected,
                 Property_.AnchorA_X, Property_.AnchorA_Y,
                 Property_.AnchorB_X, Property_.AnchorB_Y,
-                Property_.DumpingRatio, Property_.FrequencyHz,
+                Property_.DampingRatio, Property_.FrequencyHz,
                 Property_.Length);
         propMap.put(JointDef.JointType.DistanceJoint, propList );
 
@@ -131,91 +126,74 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 Property_.Ratio);
         propMap.put(JointDef.JointType.PulleyJoint, propList );
 
+        // Gear Joint
+
+        propList = new Array<Property_>();
+        propList.addAll(Property_.Name, Property_.Type,
+                Property_.BodyA, Property_.BodyB, Property_.CollideConnected,
+                Property_.JointA, Property_.JointB,
+                Property_.Ratio);
+        propMap.put(JointDef.JointType.GearJoint, propList );
+
+        // Wheel Joint
+
+        propList = new Array<Property_>();
+        propList.addAll( Property_.Name, Property_.Type,
+                Property_.BodyA, Property_.BodyB, Property_.CollideConnected,
+                Property_.AnchorA_X, Property_.AnchorA_Y,
+                Property_.Axis_X, Property_.Axis_Y,
+                Property_.DampingRatio, Property_.FrequencyHz,
+                Property_.EnableMotor, Property_.MaxMotorTorque, Property_.MotorSpeed );
+        propMap.put(JointDef.JointType.WheelJoint, propList );
+
+        // Rope Joint
+
+        propList = new Array<Property_>();
+        propList.addAll( Property_.Name, Property_.Type,
+                Property_.BodyA, Property_.BodyB, Property_.CollideConnected,
+                Property_.AnchorA_X, Property_.AnchorA_Y,
+                Property_.AnchorB_X, Property_.AnchorB_Y,
+                Property_.MaxLength );
+        propMap.put(JointDef.JointType.RopeJoint, propList );
+
+        // Friction Joint
+
+        propList = new Array<Property_>();
+        propList.addAll(Property_.Name, Property_.Type,
+                Property_.BodyA, Property_.BodyB, Property_.CollideConnected,
+                Property_.AnchorA_X, Property_.AnchorA_Y,
+                Property_.MaxForce, Property_.MaxTorque );
+        propMap.put(JointDef.JointType.FrictionJoint, propList );
+
+        // Motor Joint
+
+        propList = new Array<Property_>();
+        propList.addAll(Property_.Name, Property_.Type,
+                Property_.BodyA, Property_.BodyB, Property_.CollideConnected,
+                Property_.LinearOffset_X, Property_.LinearOffset_Y,
+                Property_.AngularOffset, Property_.MaxForce, Property_.MaxTorque,
+                Property_.CorrectionFactor);
+        propMap.put(JointDef.JointType.MotorJoint, propList );
     }
 
 
     JointItem jointItem = null;
-
-    Array< Integer > bodyIdList = new Array< Integer >();
-    Array< String > bodyNameList = new Array<String>();
-
-    Array< Integer > jointIdList = new Array< Integer >();
-    Array< String > jointNameList = new Array<String>();
-
-
 
     public JointPropertiesTableModel(JTree modelJTree) {
         super(modelJTree);
     }
 
     public void setJointItem( JointItem jointItem ) {
-
         this.jointItem = jointItem;
-
-        bodyIdList.clear();
-        bodyNameList.clear();
-
-        jointIdList.clear();
-        jointNameList.clear();
-
-        for ( BodyItem bi : jointItem.getModel().getBodyItems() ) {
-            bodyIdList.add( bi.getId() );
-            bodyNameList.add( bi.getName() );
-        }
-
-        for (JointItem ji : jointItem.getModel().getJointItems() ) {
-            jointIdList.add( ji.getId() );
-            jointNameList.add( ji.getName() );
-        }
-    }
-
-    int getBodyNameIndex( int id ) {
-        int index = bodyIdList.indexOf( id, true );
-        return index;
     }
 
     @Override
     public int getCurrentSelectorIndex(int rowIndex) {
-        if ( jointItem == null )
-            return -1;
-
-        Property_ prop = getProperty(jointItem.getJoint().getType(), rowIndex);
-
-        switch ( prop ) {
-            case Type:
-                return Property_.jointTypeNames.indexOf(
-                        jointItem.getJoint().getType().name(), false);
-            case BodyA:
-                return getBodyNameIndex( jointItem.getBodyAId() );
-            case BodyB:
-                return getBodyNameIndex( jointItem.getBodyBId() );
-            case JointA:
-                //TODO: implement this
-            case JointB:
-                //TODO: implement this
-        }
-
         return -1;
     }
 
     @Override
     public Array<String> getSelectorArray(int rowIndex) {
-        if ( jointItem == null)
-            return null;
-        Property_ prop = getProperty( jointItem.getJoint().getType(), rowIndex );
-        if ( prop == null )
-            return null;
-        switch ( prop ) {
-            case Type:
-                return Property_.jointTypeNames;
-            case BodyA:
-            case BodyB:
-                return bodyNameList;
-            case JointA:
-            case JointB:
-                return jointNameList;
-        }
-
         return null;
     }
 
@@ -272,7 +250,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 return false;
             case FrequencyHz:
                 break;
-            case DumpingRatio:
+            case DampingRatio:
                 break;
             case Ratio:
                 return false;
@@ -347,8 +325,15 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
     String getBodyName( int id ) {
         BodyItem bi = jointItem.getModel().findBodyItem( id );
         if ( bi == null )
-            return "";
+            return "not found";
         return bi.getName();
+    }
+
+    String getJointName(int id)  {
+        JointItem ji = jointItem.getModel().findJointItem( id );
+        if ( ji == null )
+            return "not found";
+        return ji.getName();
     }
 
     @Override
@@ -378,7 +363,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 return jointItem.getAnchorB().y;
             case FrequencyHz:
                 return jointItem.getFrequencyHz();
-            case DumpingRatio:
+            case DampingRatio:
                 return jointItem.getDampingRatio();
             case Ratio:
                 return jointItem.getRatio();
@@ -413,11 +398,9 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
             case EnableMotor:
                 return jointItem.isEnableMotor();
             case JointA:
-                //TODO: implement that
-                break;
+                return getJointName(jointItem.getJointAId());
             case JointB:
-                //TODO: implement that
-                break;
+                return getJointName(jointItem.getJointBId());
             case LinearOffset_X:
                 return jointItem.getLinearOffset().x;
             case LinearOffset_Y:
@@ -473,7 +456,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
             case FrequencyHz:
                 jointItem.setFrequencyHz((Float) aValue );
                 break;
-            case DumpingRatio:
+            case DampingRatio:
                 jointItem.setDampingRatio((Float) aValue);
                 break;
             case Ratio:

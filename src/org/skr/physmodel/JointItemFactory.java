@@ -6,10 +6,7 @@ import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.physics.box2d.World;
 import org.skr.PhysModelEditor.PhysWorld;
 import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
-import org.skr.physmodel.jointitems.DistanceJointItem;
-import org.skr.physmodel.jointitems.PrismaticJointItem;
-import org.skr.physmodel.jointitems.PulleyJointItem;
-import org.skr.physmodel.jointitems.RevoluteJointItem;
+import org.skr.physmodel.jointitems.*;
 
 /**
  * Created by rat on 06.07.14.
@@ -32,19 +29,29 @@ public class JointItemFactory {
 
         JointDef jd = ji.createJointDef(desc);
 
+
         if ( jd == null ) {
             Gdx.app.log("JointItemFactory.createFromDescription",
                     "Unable to create a JointDef: " + desc.getName() );
             return null;
         }
 
-        Joint joint = world.createJoint( jd );
+        jd.collideConnected = desc.isCollideConnected();
+
+        Joint joint = null;
+        try {
+            joint = world.createJoint(jd);
+        } catch (NullPointerException e ) {
+            joint = null;
+        }
+
         if ( joint == null ) {
             Gdx.app.log("JointItemFactory.createFromDescription",
                     "Unable to create a joint: " + desc.getName() );
             return null;
         }
         ji.setJoint( joint );
+        joint.setUserData( ji );
         return ji;
     }
 
@@ -70,18 +77,26 @@ public class JointItemFactory {
             case MouseJoint:
                 break;
             case GearJoint:
+                jointItem = new GearJointItem(id, model );
                 break;
             case WheelJoint:
+                jointItem = new WheelJointItem( id, model );
                 break;
             case WeldJoint:
                 break;
             case FrictionJoint:
+                jointItem = new FrictionJointItem( id, model );
                 break;
             case RopeJoint:
+                jointItem = new RopeJointItem( id, model );
                 break;
             case MotorJoint:
+                jointItem = new MotorJointItem( id, model );
                 break;
         }
+
+        if ( jointItem == null )
+            return null;
 
         jointItem.setName( name );
         return jointItem;

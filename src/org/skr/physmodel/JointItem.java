@@ -109,7 +109,7 @@ public abstract class JointItem extends PhysItem {
     }
 
     public int getJointAId() {
-        return 0;
+        return -1;
     }
 
     public void setJointAId(int jointAId) {
@@ -117,7 +117,7 @@ public abstract class JointItem extends PhysItem {
     }
 
     public int getJointBId() {
-        return 0;
+        return -1;
     }
 
     public void setJointBId(int jointBId) {
@@ -168,7 +168,7 @@ public abstract class JointItem extends PhysItem {
         return 0;
     }
 
-    public void setDampingRatio(float dumpingRatio) {
+    public void setDampingRatio(float dampingRatio ) {
 
     }
 

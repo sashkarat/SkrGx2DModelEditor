@@ -55,7 +55,6 @@ public class RevoluteJointItem extends JointItem {
         jd.upperAngle = desc.getUpperAngle();
         jd.maxMotorTorque = desc.getMaxMotorTorque();
         jd.motorSpeed = desc.getMotorSpeed();
-
         return jd;
     }
 

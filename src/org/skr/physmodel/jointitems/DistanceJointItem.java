@@ -37,7 +37,7 @@ public class DistanceJointItem extends JointItem {
 
         Body bodyB = bi.getBody();
         jd.initialize( bodyA, bodyB, desc.getAnchorA(), desc.getAnchorB() );
-        jd.collideConnected = desc.isCollideConnected();
+
         jd.dampingRatio = desc.getDampingRatio();
         jd.frequencyHz = desc.getFrequencyHz();
 
