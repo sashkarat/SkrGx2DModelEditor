@@ -260,6 +260,7 @@ public class PhysModel {
         bi.setName( name );
         Body body = world.createBody( bodyDef );
         bi.setBody( body );
+        body.setUserData( bi );
         bodyItems.add(bi);
         return bi;
     }
@@ -303,11 +304,14 @@ public class PhysModel {
     }
 
     public BodyItem findBodyItem( Body body ) {
-        for ( BodyItem bi : bodyItems) {
-            if ( bi.getBody() == body )
-                return bi;
-        }
-        return null;
+
+        if ( body.getUserData() == null )
+            return null;
+        if ( !(body.getUserData() instanceof BodyItem) )
+            return  null;
+        BodyItem bi = (BodyItem) body.getUserData();
+
+        return bi;
     }
 
     public JointItem findJointItem( int id ) {

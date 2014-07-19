@@ -7,6 +7,8 @@ import com.badlogic.gdx.physics.box2d.World;
 import org.skr.PhysModelEditor.PhysWorld;
 import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
 import org.skr.physmodel.jointitems.DistanceJointItem;
+import org.skr.physmodel.jointitems.PrismaticJointItem;
+import org.skr.physmodel.jointitems.PulleyJointItem;
 import org.skr.physmodel.jointitems.RevoluteJointItem;
 
 /**
@@ -57,11 +59,13 @@ public class JointItemFactory {
                 jointItem = new RevoluteJointItem( id, model );
                 break;
             case PrismaticJoint:
+                jointItem = new PrismaticJointItem( id, model);
                 break;
             case DistanceJoint:
                 jointItem = new DistanceJointItem( id, model);
                 break;
             case PulleyJoint:
+                jointItem = new PulleyJointItem( id, model );
                 break;
             case MouseJoint:
                 break;

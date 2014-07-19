@@ -20,7 +20,8 @@ public class AnchorPointController extends Controller {
         NoPoints,
         TwoPointsMode,
         OnePointMode,
-        OnPointAndAxisMode
+        OnPointAndAxisMode,
+        FourPointsMode
     }
 
     public static class AnchorControlPoint extends ControlPoint {
@@ -28,7 +29,9 @@ public class AnchorPointController extends Controller {
         public enum AcpType {
             typeA,
             typeB,
-            typeAxis
+            typeAxis,
+            typeC,
+            typeD
         }
 
         AcpType type;
@@ -60,11 +63,22 @@ public class AnchorPointController extends Controller {
         controlPoints.add( cp );
         cp.setColor( new Color( 0, 1, 1, 1 ));
         updateControlPointFromObject( cp );
+
+        cp = new AnchorControlPoint( jdesc, AnchorControlPoint.AcpType.typeC );
+        jdesc.getGroundAnchorA().set(-1, 1);
+        controlPoints.add(cp);
+        cp.setColor( new Color(1f, 0.2f, 0.7f, 1 ));
+        updateControlPointFromObject(cp);
+
+        cp = new AnchorControlPoint( jdesc, AnchorControlPoint.AcpType.typeD );
+        jdesc.getGroundAnchorB().set( 1, 1);
+        controlPoints.add( cp );
+        cp.setColor( new Color( 0.2f, 1f, 0.7f, 1 ));
+        updateControlPointFromObject( cp );
     }
 
     public AnchorPointController(Stage stage) {
         super(stage);
-
         createControlPoints();
     }
 
@@ -112,6 +126,12 @@ public class AnchorPointController extends Controller {
             case typeAxis:
                 pv = jdesc.getAxis();
                 break;
+            case typeC:
+                pv = jdesc.getGroundAnchorA();
+                break;
+            case typeD:
+                pv = jdesc.getGroundAnchorB();
+                break;
         }
 
         if ( pv == null )
@@ -131,12 +151,19 @@ public class AnchorPointController extends Controller {
                 break;
             case typeAxis:
                 pv = jdesc.getAxis();
+                break;
+            case typeC:
+                pv = jdesc.getGroundAnchorA();
+                break;
+            case typeD:
+                pv = jdesc.getGroundAnchorB();
+                break;
         }
 
         if ( pv == null )
             return;
 
-        pv.set( PhysWorld.get().toPhys( cp.getX() ), PhysWorld.get().toPhys( cp.getY() ) );
+        pv.set(PhysWorld.get().toPhys(cp.getX()), PhysWorld.get().toPhys(cp.getY()));
     }
 
     @Override
@@ -160,26 +187,30 @@ public class AnchorPointController extends Controller {
         return jdesc;
     }
 
+
     public void setMode( Mode mode ) {
+
+        for( ControlPoint cp :  controlPoints )
+        cp.setVisible( false );
+
         setControlPointVisible( controlPoints.get(0), true);
+
         switch ( mode ) {
             case NoPoints:
                 setControlPointVisible( controlPoints.get(0), false );
-                setControlPointVisible( controlPoints.get(1), false );
-                setControlPointVisible( controlPoints.get(2), false );
                 break;
             case TwoPointsMode:
                 setControlPointVisible( controlPoints.get(1), true );
-                setControlPointVisible( controlPoints.get(2), false);
                 break;
             case OnePointMode:
-                setControlPointVisible( controlPoints.get(1), false );
-                setControlPointVisible( controlPoints.get(2), false);
                 break;
-
             case OnPointAndAxisMode:
-                setControlPointVisible( controlPoints.get(1), false );
-                setControlPointVisible( controlPoints.get(2), true);
+                setControlPointVisible( controlPoints.get(2), true );
+                break;
+            case FourPointsMode:
+                setControlPointVisible( controlPoints.get(1), true );
+                setControlPointVisible( controlPoints.get(3), true );
+                setControlPointVisible( controlPoints.get(4), true );
                 break;
         }
     }

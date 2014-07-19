@@ -102,6 +102,14 @@ public class MainGui extends JFrame {
     private JButton btnSetAxis;
     private JTextField tfAxis_Y;
     private JTextField tfAxis_X;
+    private JPanel panelGroundAnchors;
+    private JTextField tfGroundAnchorA_X;
+    private JTextField tfGroundAnchorA_Y;
+    private JTextField tfGroundAnchorB_X;
+    private JTextField tfGroundAnchorB_Y;
+    private JButton btnSetGroundAnchorA;
+    private JButton btnSetGroundAnchorB;
+    private JTextField tfRatio;
 
     private GdxApplication gApp;
     private String currentModelFileName = "";
@@ -472,6 +480,18 @@ public class MainGui extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setAnchorPointFromGui( AnchorPointController.AnchorControlPoint.AcpType.typeAxis );
+            }
+        });
+        btnSetGroundAnchorA.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setAnchorPointFromGui( AnchorPointController.AnchorControlPoint.AcpType.typeC );
+            }
+        });
+        btnSetGroundAnchorB.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setAnchorPointFromGui( AnchorPointController.AnchorControlPoint.AcpType.typeD );
             }
         });
     }
@@ -898,7 +918,6 @@ public class MainGui extends JFrame {
         }
 
         c.setEnabled( state );
-
     }
 
     private void loadTree() {
@@ -1103,7 +1122,11 @@ public class MainGui extends JFrame {
         tfAnchorB_Y.setText("");
         tfAxis_X.setText("");
         tfAxis_Y.setText("");
-
+        tfGroundAnchorA_X.setText("");
+        tfGroundAnchorA_Y.setText("");
+        tfGroundAnchorB_X.setText("");
+        tfGroundAnchorB_Y.setText("");
+        tfRatio.setText("1.0");
         loadAnchorPointsPosition();
     }
 
@@ -1112,8 +1135,13 @@ public class MainGui extends JFrame {
         tfAnchorA_Y.setText("" + jiDesc.getAnchorA().y );
         tfAnchorB_X.setText("" + jiDesc.getAnchorB().x );
         tfAnchorB_Y.setText("" + jiDesc.getAnchorB().y );
-        tfAxis_X.setText(""+jiDesc.getAxis().x);
+        tfAxis_X.setText("" + jiDesc.getAxis().x);
         tfAxis_Y.setText("" + jiDesc.getAxis().y);
+        tfGroundAnchorA_X.setText("" + jiDesc.getGroundAnchorA().x);
+        tfGroundAnchorA_Y.setText("" + jiDesc.getGroundAnchorA().y);
+        tfGroundAnchorB_X.setText("" + jiDesc.getGroundAnchorB().x);
+        tfGroundAnchorB_Y.setText("" + jiDesc.getGroundAnchorB().y);
+        tfRatio.setText("" + jiDesc.getRatio() );
     }
 
 
@@ -1138,6 +1166,17 @@ public class MainGui extends JFrame {
                 av = jiDesc.getAxis();
                 tf_x = tfAxis_X;
                 tf_y = tfAxis_Y;
+                break;
+
+            case typeC:
+                av = jiDesc.getGroundAnchorA();
+                tf_x = tfGroundAnchorA_X;
+                tf_y = tfGroundAnchorA_Y;
+                break;
+            case typeD:
+                av = jiDesc.getGroundAnchorB();
+                tf_x = tfGroundAnchorB_X;
+                tf_y = tfGroundAnchorB_Y;
                 break;
         }
 
@@ -1169,6 +1208,13 @@ public class MainGui extends JFrame {
         setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeA);
         setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeB);
         jiDesc.setCollideConnected( chbCollideConnected.isSelected() );
+
+        try {
+            jiDesc.setRatio(Float.valueOf(tfRatio.getText()));
+        } catch (NumberFormatException e) {
+            Gdx.app.error("MainGui.createJoint", "Ratio: " + e.getMessage() );
+            jiDesc.setRatio(1);
+        }
 
         jiDesc.setType((JointDef.JointType) comboJointType.getSelectedItem() );
         jiDesc.setName("nonameJoint");
@@ -1273,9 +1319,12 @@ public class MainGui extends JFrame {
     }
 
 
+
+
     void updateJointCreatorPanelFeatures() {
         setGuiElementEnable( panelJointCreatorFeatures, true );
         setGuiElementEnable( panelAxis, false );
+        setGuiElementEnable( panelGroundAnchors, false );
         JointDef.JointType type = (JointDef.JointType) comboJointType.getSelectedItem();
         AnchorPointController ctrlr = GdxApplication.get().getEditorScreen().getAnchorPointController();
 
@@ -1297,6 +1346,8 @@ public class MainGui extends JFrame {
                 ctrlr.setMode(AnchorPointController.Mode.TwoPointsMode);
                 break;
             case PulleyJoint:
+                setGuiElementEnable( panelGroundAnchors, true );
+                ctrlr.setMode(AnchorPointController.Mode.FourPointsMode );
                 break;
             case MouseJoint:
                 break;

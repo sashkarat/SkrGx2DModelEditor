@@ -107,6 +107,29 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 Property_.MaxMotorTorque);
         propMap.put(JointDef.JointType.RevoluteJoint, propList );
 
+        // Prismatic Joint
+
+        propList = new Array<Property_>();
+        propList.addAll(Property_.Name, Property_.Type,
+                Property_.BodyA, Property_.BodyB, Property_.CollideConnected,
+                Property_.AnchorA_X, Property_.AnchorA_Y,
+                Property_.Axis_X, Property_.Axis_Y,
+                Property_.EnableLimit, Property_.UpperTranslation,
+                Property_.LowerTranslation, Property_.EnableMotor, Property_.MotorSpeed,
+                Property_.MaxMotorForce);
+        propMap.put(JointDef.JointType.PrismaticJoint, propList );
+
+        // Pulley Joint
+
+        propList = new Array<Property_>();
+        propList.addAll(Property_.Name, Property_.Type,
+                Property_.BodyA, Property_.BodyB, Property_.CollideConnected,
+                Property_.AnchorA_X, Property_.AnchorA_Y,
+                Property_.AnchorB_X, Property_.AnchorB_Y,
+                Property_.GroundAnchorA_X, Property_.GroundAnchorA_Y,
+                Property_.GroundAnchorB_X, Property_.GroundAnchorB_Y,
+                Property_.Ratio);
+        propMap.put(JointDef.JointType.PulleyJoint, propList );
 
     }
 
@@ -240,19 +263,19 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
             case Length:
                 break;
             case AnchorA_X:
-                break;
+                return false;
             case AnchorA_Y:
-                break;
+                return false;
             case AnchorB_X:
-                break;
+                return false;
             case AnchorB_Y:
-                break;
+                return false;
             case FrequencyHz:
                 break;
             case DumpingRatio:
                 break;
             case Ratio:
-                break;
+                return false;
             case MaxLength:
                 break;
             case MaxForce:
@@ -274,7 +297,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
             case CorrectionFactor:
                 break;
             case ReferenceAngle:
-                break;
+                return false;
             case LowerTranslation:
                 break;
             case UpperTranslation:
@@ -284,9 +307,9 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
             case EnableMotor:
                 break;
             case JointA:
-                break;
+                return false;
             case JointB:
-                break;
+                return false;
             case LinearOffset_X:
                 break;
             case LinearOffset_Y:
@@ -296,17 +319,17 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
             case Target_Y:
                 break;
             case Axis_X:
-                break;
+                return false;
             case Axis_Y:
-                break;
+                return false;
             case GroundAnchorA_X:
-                break;
+                return false;
             case GroundAnchorA_Y:
-                break;
+                return false;
             case GroundAnchorB_X:
-                break;
+                return false;
             case GroundAnchorB_Y:
-                break;
+                return false;
         }
         return true;
     }
@@ -457,10 +480,13 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 jointItem.setRatio((Float) aValue);
                 break;
             case MaxLength:
+                jointItem.setMaxLength((Float) aValue);
                 break;
             case MaxForce:
+                jointItem.setMaxForce((Float) aValue);
                 break;
             case MaxMotorForce:
+                jointItem.setMaxMotorForce((Float) aValue);
                 break;
             case MotorSpeed:
                 jointItem.setMotorSpeed((Float) aValue );
@@ -469,8 +495,10 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 jointItem.setMaxMotorTorque((Float) aValue);
                 break;
             case MaxTorque:
+                jointItem.setMaxMotorTorque((Float) aValue);
                 break;
             case AngularOffset:
+                jointItem.setAngularOffset((Float) aValue * MathUtils.degreesToRadians );
                 break;
             case LowerAngle:
                 jointItem.setLowerAngle((Float) aValue * MathUtils.degreesToRadians);
@@ -479,12 +507,15 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 jointItem.setUpperAngle((Float) aValue * MathUtils.degreesToRadians);
                 break;
             case CorrectionFactor:
+                jointItem.setCorrectionFactor((Float) aValue);
                 break;
             case ReferenceAngle:
                 break;
             case LowerTranslation:
+                jointItem.setLowerTranslation((Float) aValue);
                 break;
             case UpperTranslation:
+                jointItem.setUpperTranslation((Float) aValue);
                 break;
             case EnableLimit:
                 jointItem.setEnableLimit((Boolean) aValue );
