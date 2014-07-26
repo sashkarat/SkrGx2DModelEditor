@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix3;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.PhysWorld;
@@ -60,6 +61,16 @@ public class BodyItem extends PhysItem {
         return fs;
     }
 
+    public void addFixtureSet( FixtureSet fs ) {
+        fixtureSets.add( fs );
+    }
+
+    public FixtureSet addNewFixtureSet( FixtureSetDescription fsd ) {
+        FixtureSet fs = new FixtureSet( fsd, this );
+        fixtureSets.add( fs );
+        return fs;
+    }
+
     public void removeFixtureSet( FixtureSet fixtureSet ) {
         int indexOf = fixtureSets.indexOf( fixtureSet, true );
         if ( indexOf < 0 )
@@ -99,6 +110,50 @@ public class BodyItem extends PhysItem {
 
         coord.mul( mtx.inv() );
         return coord;
+    }
+
+
+    public BodyItemDescription createBodyItemDescription() {
+
+        BodyItemDescription bd = new BodyItemDescription();
+        bd.setName( getName() );
+        BodyDef bodyDef = getBodyDefFromBody( body );
+        bd.setBodyDef( bodyDef );
+        bd.setId( getId() );
+
+        for ( FixtureSet fs : fixtureSets ) {
+            bd.getFixtureSetDescriptions().add( fs.getDescription() );
+        }
+
+        if ( getAagBackground() != null ) {
+            bd.setAagDescription( getAagBackground().getDescription() );
+        }
+
+        return bd;
+    }
+
+
+    // ============= STATIC ================================
+
+    public static BodyDef getBodyDefFromBody( Body body ) {
+
+        BodyDef bd = new BodyDef();
+
+        bd.type = body.getType();
+        bd.position.set( body.getPosition() );
+        bd.angle = body.getAngle();
+        bd.linearVelocity.set( body.getLinearVelocity() );
+        bd.angularVelocity = body.getAngularVelocity();
+        bd.linearDamping = body.getLinearDamping();
+        bd.angularDamping = body.getAngularDamping();
+        bd.allowSleep = body.isSleepingAllowed();
+        bd.awake = body.isAwake();
+        bd.fixedRotation = body.isFixedRotation();
+        bd.bullet = body.isBullet();
+        bd.active = body.isActive();
+        bd.gravityScale = body.getGravityScale();
+
+        return bd;
     }
 
 }

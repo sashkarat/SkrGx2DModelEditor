@@ -1,13 +1,13 @@
 <component name="libraryTable">
   <library name="gdx-box2d">
     <CLASSES>
-      <root url="file://$USER_HOME$/bin/libGDX/libgdx-1.1.0/extensions/gdx-box2d" />
+      <root url="file://$USER_HOME$/bin/libGDX/libgdx-1.2.0/extensions/gdx-box2d" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="file://$USER_HOME$/bin/libGDX/libgdx-1.1.0/extensions/gdx-box2d/sources" />
+      <root url="file://$USER_HOME$/bin/libGDX/libgdx-1.2.0/extensions/gdx-box2d/sources" />
     </SOURCES>
-    <jarDirectory url="file://$USER_HOME$/bin/libGDX/libgdx-1.1.0/extensions/gdx-box2d" recursive="false" />
-    <jarDirectory url="file://$USER_HOME$/bin/libGDX/libgdx-1.1.0/extensions/gdx-box2d/sources" recursive="false" type="SOURCES" />
+    <jarDirectory url="file://$USER_HOME$/bin/libGDX/libgdx-1.2.0/extensions/gdx-box2d" recursive="false" />
+    <jarDirectory url="file://$USER_HOME$/bin/libGDX/libgdx-1.2.0/extensions/gdx-box2d/sources" recursive="false" type="SOURCES" />
   </library>
 </component>

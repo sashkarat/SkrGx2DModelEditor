@@ -25,6 +25,11 @@ public class FixtureSet {
         this.bodyItem = bodyItem;
     }
 
+    public FixtureSet( FixtureSetDescription desc, BodyItem bodyItem ) {
+        this.bodyItem = bodyItem;
+        loadFromDescription( desc );
+    }
+
     public BodyItem getBodyItem() {
         return bodyItem;
     }

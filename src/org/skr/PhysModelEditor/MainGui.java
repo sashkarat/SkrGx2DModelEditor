@@ -8,13 +8,13 @@ import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.physics.box2d.Shape;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
-import com.sun.org.apache.xerces.internal.impl.xpath.XPath;
 import org.skr.PhysModelEditor.PropertiesTableElements.*;
 import org.skr.PhysModelEditor.controller.AnchorPointController;
 import org.skr.PhysModelEditor.controller.CircleShapeController;
 import org.skr.PhysModelEditor.controller.Controller;
 import org.skr.PhysModelEditor.controller.ShapeController;
 import org.skr.physmodel.*;
+import org.skr.physmodel.animatedactorgroup.AagDescription;
 import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
 
 import javax.swing.*;
@@ -114,6 +114,7 @@ public class MainGui extends JFrame {
     private JPanel panelJoints;
     private JComboBox comboJoint1;
     private JComboBox comboJoint2;
+    private JButton btnDuplicate;
 
     private GdxApplication gApp;
     private String currentModelFileName = "";
@@ -498,6 +499,12 @@ public class MainGui extends JFrame {
                 setAnchorPointFromGui( AnchorPointController.AnchorControlPoint.AcpType.typeD );
             }
         });
+        btnDuplicate.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                processTreeNodeDuplication();
+            }
+        });
     }
 
     void uploadGuiFromSettings() {
@@ -700,7 +707,7 @@ public class MainGui extends JFrame {
     }
 
     void addNewBody( DefaultMutableTreeNode parentNode ) {
-        BodyItem bi = model.addNewBodyItem("noname");
+        BodyItem bi = model.addBodyItem("noname");
         parentNode.add( new DefaultMutableTreeNode( new NodeInfo(bi, NodeInfo.Type.BODY_ITEM) ) );
     }
 
@@ -845,8 +852,6 @@ public class MainGui extends JFrame {
         }
     }
 
-
-
     void processTreeSelection( TreeSelectionEvent e) {
 
         propertiesCellEditor.cancelCellEditing();
@@ -909,6 +914,79 @@ public class MainGui extends JFrame {
     }
 
 
+    void processTreeNodeDuplication() {
+
+        propertiesCellEditor.cancelCellEditing();
+        tabbedPaneEditors.removeAll();
+
+        setGuiElementEnable(panelShapeEditor, false);
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePhysModel.getLastSelectedPathComponent();
+
+        if ( node == null )
+            return;
+
+        if ( node.getUserObject() == null )
+            return;
+
+        NodeInfo ni = (NodeInfo) node.getUserObject();
+        DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
+        DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
+        DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) md.getRoot();
+        NodeInfo parentNi = null;
+        if ( parentNode != null ) {
+            parentNi = (NodeInfo) parentNode.getUserObject();
+        }
+
+        switch ( ni.type ) {
+            case ROOT:
+                return;
+            case AAG:
+
+                if ( parentNi.type != NodeInfo.Type.AAG )
+                    return;
+                AnimatedActorGroup pAag = (AnimatedActorGroup) parentNi.object;
+                AnimatedActorGroup aag = (AnimatedActorGroup) ni.object;
+                AagDescription aagDesc = aag.getDescription();
+                aagDesc.setName( aagDesc.getName() + "Cpy" );
+                AnimatedActorGroup newAag = new AnimatedActorGroup( aagDesc );
+                pAag.addChild( newAag );
+                createTreeAagNode( parentNode, newAag );
+                break;
+
+            case BODY_ITEM:
+
+                BodyItem bi = (BodyItem) ni.object;
+                BodyItemDescription bd = bi.createBodyItemDescription();
+                bd.setName( bd.getName() + "Cpy");
+                bd.setId( -1 );
+                BodyItem dupBi = model.addBodyItem( bd );
+                createTreeBodyNode( dupBi );
+
+                break;
+            case FIXTURE_SET:
+
+                BodyItem bodyItem = (BodyItem) parentNi.object;
+                FixtureSet fs = (FixtureSet) ni.object;
+                FixtureSetDescription fd = fs.getDescription();
+                FixtureSet newFs = bodyItem.addNewFixtureSet( fd );
+                createTreeFixtureSetNode( parentNode, newFs );
+
+                break;
+            case JOINT_ITEM:
+                return;
+        }
+
+        if ( parentNode != null ) {
+            md.nodeChanged(parentNode);
+            md.nodeStructureChanged(parentNode);
+        }
+
+    }
+
+
+
+
     private void setGuiElementEnable(Container c, boolean state) {
 
         Component [] cl = c.getComponents();
@@ -926,6 +1004,57 @@ public class MainGui extends JFrame {
         c.setEnabled( state );
     }
 
+    private void createTreeAagNode( DefaultMutableTreeNode parent, AnimatedActorGroup aag ) {
+
+        DefaultMutableTreeNode aagNode = new DefaultMutableTreeNode(
+                new NodeInfo( aag, NodeInfo.Type.AAG) );
+
+        for ( int i = 0; i < aag.getChildrenCount(); i++) {
+            createTreeAagNode( aagNode, aag.getChild(i) );
+        }
+
+        parent.add( aagNode );
+    }
+
+    private void createTreeFixtureSetNode( DefaultMutableTreeNode bodyNode, FixtureSet fs ) {
+        DefaultMutableTreeNode fsNode = new DefaultMutableTreeNode(
+                new NodeInfo( fs, NodeInfo.Type.FIXTURE_SET) );
+        bodyNode.add( fsNode );
+    }
+
+    private void createTreeBodyNode(BodyItem bi ) {
+
+        DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
+        DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) md.getRoot();
+
+        DefaultMutableTreeNode bodyNode = new DefaultMutableTreeNode(
+                new NodeInfo( bi, NodeInfo.Type.BODY_ITEM) );
+
+        if ( bi.getAagBackground() != null ) {
+            createTreeAagNode( bodyNode, bi.getAagBackground() );
+        }
+
+        for ( FixtureSet fs: bi.getFixtureSets() ) {
+            createTreeFixtureSetNode( bodyNode, fs );
+        }
+
+        rootNode.add( bodyNode );
+
+    }
+
+    private void createTreeJointItemNode( JointItem ji ) {
+        DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
+        DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) md.getRoot();
+
+        DefaultMutableTreeNode jiNode = new DefaultMutableTreeNode(
+                new NodeInfo( ji, NodeInfo.Type.JOINT_ITEM ) );
+
+        if ( ji.getAagBackground() != null ) {
+            createTreeAagNode( jiNode, ji.getAagBackground() );
+        }
+        rootNode.add( jiNode );
+    }
+
     private void loadTree() {
 
         if ( model == null ) {
@@ -937,43 +1066,15 @@ public class MainGui extends JFrame {
         treePhysModel.setModel(new DefaultTreeModel(root));
 
         if ( model.getBackgroundActor() != null ) {
-            DefaultMutableTreeNode aagNode = new DefaultMutableTreeNode(
-                    new NodeInfo( model.getBackgroundActor(), NodeInfo.Type.AAG) );
-            root.add( aagNode );
-            loadTreeNodeForAag(aagNode);
+            createTreeAagNode(root, model.getBackgroundActor());
         }
 
         for ( BodyItem bi : model.getBodyItems() ) {
-            DefaultMutableTreeNode bodyNode = new DefaultMutableTreeNode(
-                    new NodeInfo( bi, NodeInfo.Type.BODY_ITEM) );
-
-            if ( bi.getAagBackground() != null ) {
-                DefaultMutableTreeNode aagNode = new DefaultMutableTreeNode(
-                        new NodeInfo( bi.getAagBackground(), NodeInfo.Type.AAG) );
-                loadTreeNodeForAag( aagNode );
-                bodyNode.add( aagNode );
-            }
-
-            for ( FixtureSet fs: bi.getFixtureSets() ) {
-                DefaultMutableTreeNode fsNode = new DefaultMutableTreeNode(
-                        new NodeInfo( fs, NodeInfo.Type.FIXTURE_SET) );
-                bodyNode.add( fsNode );
-            }
-
-            root.add( bodyNode );
+            createTreeBodyNode( bi );
         }
+
         for ( JointItem ji : model.getJointItems() ) {
-            DefaultMutableTreeNode jiNode = new DefaultMutableTreeNode(
-                    new NodeInfo( ji, NodeInfo.Type.JOINT_ITEM ) );
-
-            if ( ji.getAagBackground() != null ) {
-                DefaultMutableTreeNode aagNode = new DefaultMutableTreeNode(
-                        new NodeInfo( ji.getAagBackground(), NodeInfo.Type.AAG) );
-                loadTreeNodeForAag( aagNode );
-                jiNode.add( aagNode );
-            }
-
-            root.add( jiNode );
+            createTreeJointItemNode( ji );
         }
     }
 
@@ -987,15 +1088,7 @@ public class MainGui extends JFrame {
     }
 
 
-    private void loadTreeNodeForAag(DefaultMutableTreeNode parent) {
-        AnimatedActorGroup parentAag = (AnimatedActorGroup) ((NodeInfo)parent.getUserObject()).object;
 
-        for ( int i = 0; i < parentAag.getChildrenCount(); i++) {
-            DefaultMutableTreeNode nd = new DefaultMutableTreeNode( new NodeInfo( parentAag.getChild(i), NodeInfo.Type.AAG ) );
-            parent.add( nd );
-            loadTreeNodeForAag(nd);
-        }
-    }
 
     void updateShapeEditorFeatures(FixtureSet fixtureSet) {
         chbAutoTessellate.setEnabled( false );
@@ -1365,9 +1458,6 @@ public class MainGui extends JFrame {
         });
     }
 
-
-
-
     void updateJointCreatorPanelFeatures() {
         panelJointCreatorFeatures.setVisible( true );
         panelAxis.setVisible( false );
@@ -1389,7 +1479,7 @@ public class MainGui extends JFrame {
                 panelAnchorB.setVisible( false );
                 break;
             case PrismaticJoint:
-                ctrlr.setMode(AnchorPointController.Mode.OnPointAndAxisMode );
+                ctrlr.setMode(AnchorPointController.Mode.OnePointAndAxisMode);
                 panelAxis.setVisible( true );
                 panelAnchorB.setVisible( false );
                 break;
@@ -1411,11 +1501,13 @@ public class MainGui extends JFrame {
                 panelAnchorB.setVisible( false );
                 break;
             case WheelJoint:
-                ctrlr.setMode(AnchorPointController.Mode.OnPointAndAxisMode );
+                ctrlr.setMode(AnchorPointController.Mode.OnePointAndAxisMode);
                 panelAxis.setVisible( true );
                 panelAnchorB.setVisible( false );
                 break;
             case WeldJoint:
+                ctrlr.setMode(AnchorPointController.Mode.OnePointMode);
+                panelAnchorB.setVisible( false );
                 break;
             case FrictionJoint:
                 ctrlr.setMode(AnchorPointController.Mode.OnePointMode);
@@ -1426,6 +1518,8 @@ public class MainGui extends JFrame {
                 break;
             case MotorJoint:
                 ctrlr.setMode(AnchorPointController.Mode.NoPoints);
+                panelAnchorA.setVisible( false );
+                panelAnchorB.setVisible( false );
                 break;
         }
     }

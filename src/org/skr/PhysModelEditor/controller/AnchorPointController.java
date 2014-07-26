@@ -20,7 +20,7 @@ public class AnchorPointController extends Controller {
         NoPoints,
         TwoPointsMode,
         OnePointMode,
-        OnPointAndAxisMode,
+        OnePointAndAxisMode,
         FourPointsMode
     }
 
@@ -204,7 +204,7 @@ public class AnchorPointController extends Controller {
                 break;
             case OnePointMode:
                 break;
-            case OnPointAndAxisMode:
+            case OnePointAndAxisMode:
                 setControlPointVisible( controlPoints.get(2), true );
                 break;
             case FourPointsMode:

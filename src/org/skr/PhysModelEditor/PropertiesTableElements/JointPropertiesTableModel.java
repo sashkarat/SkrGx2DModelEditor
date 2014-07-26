@@ -174,6 +174,15 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 Property_.AngularOffset, Property_.MaxForce, Property_.MaxTorque,
                 Property_.CorrectionFactor);
         propMap.put(JointDef.JointType.MotorJoint, propList );
+
+        // Weld Joint
+
+        propList = new Array<Property_>();
+        propList.addAll(Property_.Name, Property_.Type,
+                Property_.BodyA, Property_.BodyB, Property_.CollideConnected,
+                Property_.AnchorA_X, Property_.AnchorA_Y,
+                Property_.ReferenceAngle);
+        propMap.put(JointDef.JointType.WeldJoint, propList );
     }
 
 

@@ -66,6 +66,7 @@ public class RopeJointItem extends JointItem {
 
     @Override
     public void setMaxLength(float maxLength) {
-        joint.setMaxLength( maxLength );
+        //Something strange. symbol setMaxLength not found
+//        joint.setMaxLength( maxLength );
     }
 }

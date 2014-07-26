@@ -43,22 +43,31 @@ public class PhysModelRenderer extends Group {
             return;
         }
 
-        if ( model.getWorld() != world ) {
-            return;
+        if ( model.getWorld() == world ) {
+            for (BodyItem bi :  model.getBodyItems() )
+                bi.draw( batch, parentAlpha );
+        }
+
+        if ( model.getBackgroundActor() != null ) {
+            model.getBackgroundActor().draw( batch, parentAlpha);
         }
 
 
-        for (BodyItem bi :  model.getBodyItems() ) {
-            bi.draw( batch, parentAlpha );
-        }
     }
 
     @Override
     public void act(float delta) {
         if ( model == null )
             return;
-        for ( BodyItem bi : model.getBodyItems() )
-            bi.act( delta );
+
+        if ( model.getWorld() == world ) {
+            for (BodyItem bi : model.getBodyItems())
+                bi.act(delta);
+        }
+
+        if ( model.getBackgroundActor() != null ) {
+            model.getBackgroundActor().act( delta );
+        }
     }
 
 

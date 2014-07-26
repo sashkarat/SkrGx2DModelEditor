@@ -83,6 +83,7 @@ public class JointItemFactory {
                 jointItem = new WheelJointItem( id, model );
                 break;
             case WeldJoint:
+                jointItem = new WeldJointItem( id, model );
                 break;
             case FrictionJoint:
                 jointItem = new FrictionJointItem( id, model );

@@ -112,17 +112,7 @@ public class PhysModel {
         if ( bodiesDesc != null ) {
 
             for (BodyItemDescription bd : bodiesDesc) {
-                BodyItem bi = addBodyItem( bd.getName(), bd.bodyDef, bd.getId() );
-
-                for ( FixtureSetDescription fsd : bd.getFixtureSetDescriptions() ) {
-                    FixtureSet fs = new FixtureSet( bi );
-                    bi.getFixtureSets().add( fs.loadFromDescription( fsd) );
-                }
-
-                if (bd.aagDescription != null) {
-                    bi.setAagBackground(new AnimatedActorGroup(bd.getAagDescription()));
-                }
-
+                addBodyItem( bd );
             }
         }
 
@@ -171,20 +161,7 @@ public class PhysModel {
     void fillUpBodyDescriptions(Array<BodyItemDescription> bodyDescriptions) {
 
         for(BodyItem bi : bodyItems) {
-            BodyItemDescription bd = new BodyItemDescription();
-            bd.setName( bi.getName() );
-            BodyDef bdef = getBodyDefFromBody( bi.body );
-            bd.setBodyDef( bdef );
-            bd.setId( bi.getId() );
-
-            for ( FixtureSet fs : bi.getFixtureSets() ) {
-                bd.getFixtureSetDescriptions().add( fs.getDescription() );
-            }
-
-            if ( bi.aagBackground != null ) {
-                bd.setAagDescription( bi.aagBackground.getDescription() );
-            }
-
+            BodyItemDescription bd = bi.createBodyItemDescription();
             bodyDescriptions.add( bd );
         }
     }
@@ -196,28 +173,6 @@ public class PhysModel {
                 jointItemDescriptions.add( jd );
         }
     }
-
-    public BodyDef getBodyDefFromBody( Body body ) {
-
-        BodyDef bd = new BodyDef();
-
-        bd.type = body.getType();
-        bd.position.set( body.getPosition() );
-        bd.angle = body.getAngle();
-        bd.linearVelocity.set( body.getLinearVelocity() );
-        bd.angularVelocity = body.getAngularVelocity();
-        bd.linearDamping = body.getLinearDamping();
-        bd.angularDamping = body.getAngularDamping();
-        bd.allowSleep = body.isSleepingAllowed();
-        bd.awake = body.isAwake();
-        bd.fixedRotation = body.isFixedRotation();
-        bd.bullet = body.isBullet();
-        bd.active = body.isActive();
-        bd.gravityScale = body.getGravityScale();
-
-        return bd;
-    }
-
 
     // ================ getters and setters ==================
 
@@ -250,7 +205,7 @@ public class PhysModel {
     // =======================================================
 
 
-    public BodyItem addNewBodyItem(String name) {
+    public BodyItem addBodyItem(String name) {
         BodyDef bd = new BodyDef();
         return addBodyItem( name, bd, -1 );
     }
@@ -264,6 +219,22 @@ public class PhysModel {
         bodyItems.add(bi);
         return bi;
     }
+
+    public BodyItem addBodyItem( BodyItemDescription bd ) {
+
+        BodyItem bi = addBodyItem( bd.getName(), bd.bodyDef, bd.getId() );
+
+        for ( FixtureSetDescription fsd : bd.getFixtureSetDescriptions() ) {
+            FixtureSet fs = new FixtureSet( bi );
+            bi.getFixtureSets().add( fs.loadFromDescription( fsd) );
+        }
+
+        if (bd.aagDescription != null) {
+            bi.setAagBackground(new AnimatedActorGroup(bd.getAagDescription()));
+        }
+        return bi;
+    }
+
 
     public void uploadAtlas() {
         if ( backgroundActor != null )
