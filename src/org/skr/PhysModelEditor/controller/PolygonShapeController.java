@@ -175,6 +175,34 @@ public class PolygonShapeController extends ShapeController {
         updateFixtureSetDescription();
     }
 
+    private static final Vector2 tmpV = new Vector2();
+
+    @Override
+    protected void getShapeViewCenter(ControlPoint cp) {
+        tmpV.set(0, 0);
+        for ( ControlPoint ccp: controlPoints )
+            tmpV.add( ccp.getX(), ccp.getY());
+        tmpV.scl( 1.0f / controlPoints.size );
+        cp.setPos( tmpV.x, tmpV.y );
+    }
+
+    @Override
+    protected void offsetAllPoints(Vector2 offsetLocal, Vector2 offsetStage) {
+        boolean backAutoTessellate = autoTessellate;
+
+        autoTessellate = false;
+
+
+        for ( int i = 0; i < controlPoints.size; i++ ) {
+            moveControlPoint(controlPoints.get( i ), offsetLocal, offsetStage);
+        }
+
+        autoTessellate = backAutoTessellate;
+
+        if ( autoTessellate )
+            tessellatePolygon();
+    }
+
     @Override
     protected void updateShapeFromControlPoint(ControlPoint cp) {
         checkMinimalDistance( cp );

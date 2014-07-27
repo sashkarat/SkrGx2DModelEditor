@@ -36,6 +36,8 @@ public class BodyItem extends PhysItem {
 
     Body body = null;
 
+    boolean overrideMassData = false;
+
     Array< FixtureSet > fixtureSets = new Array<FixtureSet>();
 
     public Body getBody() {
@@ -44,6 +46,14 @@ public class BodyItem extends PhysItem {
 
     public void setBody(Body body) {
         this.body = body;
+    }
+
+    public boolean isOverrideMassData() {
+        return overrideMassData;
+    }
+
+    public void setOverrideMassData(boolean overrideMassData) {
+        this.overrideMassData = overrideMassData;
     }
 
     public Array<FixtureSet> getFixtureSets() {
@@ -127,6 +137,11 @@ public class BodyItem extends PhysItem {
 
         if ( getAagBackground() != null ) {
             bd.setAagDescription( getAagBackground().getDescription() );
+        }
+
+        if ( overrideMassData ) {
+            bd.setOverrideMassData( true );
+            bd.setMassData( body.getMassData() );
         }
 
         return bd;

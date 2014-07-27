@@ -9,10 +9,7 @@ import com.badlogic.gdx.physics.box2d.Shape;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.PropertiesTableElements.*;
-import org.skr.PhysModelEditor.controller.AnchorPointController;
-import org.skr.PhysModelEditor.controller.CircleShapeController;
-import org.skr.PhysModelEditor.controller.Controller;
-import org.skr.PhysModelEditor.controller.ShapeController;
+import org.skr.PhysModelEditor.controller.*;
 import org.skr.physmodel.*;
 import org.skr.physmodel.animatedactorgroup.AagDescription;
 import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
@@ -115,6 +112,11 @@ public class MainGui extends JFrame {
     private JComboBox comboJoint1;
     private JComboBox comboJoint2;
     private JButton btnDuplicate;
+    private JPanel panelBodyItemEditor;
+    private JTextField tfMassCenterWorldX;
+    private JTextField tfMassCenterWorldY;
+    private JButton btnSetMassCenter;
+    private JButton btnResetMassData;
 
     private GdxApplication gApp;
     private String currentModelFileName = "";
@@ -277,6 +279,20 @@ public class MainGui extends JFrame {
             }
         });
 
+        Gdx.app.postRunnable( new Runnable() {
+            @Override
+            public void run() {
+                final BodyItemController ctrl = GdxApplication.get().getEditorScreen().getBodyItemController();
+                ctrl.setControlPointListener( new Controller.controlPointListener() {
+                    @Override
+                    public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
+                        onBodyItemControllerCenterChanged( ctrl );
+                    }
+                });
+
+            }
+        });
+
         ShapeController.setStaticShapeControllerListener( new ShapeController.ShapeControllerListener() {
             @Override
             public void controlPointChanged(ShapeDescription shapeDescription, Controller.ControlPoint controlPoint) {
@@ -293,6 +309,8 @@ public class MainGui extends JFrame {
                 shapeRadiusChanged( shapeDescription );
             }
         });
+
+
 
 
         for (JointDef.JointType jt : JointDef.JointType.values() ) {
@@ -505,6 +523,18 @@ public class MainGui extends JFrame {
                 processTreeNodeDuplication();
             }
         });
+        btnSetMassCenter.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setCenterOfMass();
+            }
+        });
+        btnResetMassData.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                resetMassData();
+            }
+        });
     }
 
     void uploadGuiFromSettings() {
@@ -553,6 +583,8 @@ public class MainGui extends JFrame {
 
     void newModel() {
 
+        PhysWorld.clearPrimaryWorld();
+
         model = new PhysModel( PhysWorld.getPrimaryWorld() );
         model.setName("noname");
         model.uploadAtlas();
@@ -585,6 +617,7 @@ public class MainGui extends JFrame {
         if (!fl.exists())
             return;
 
+        PhysWorld.clearPrimaryWorld();
         model = PhysModel.loadFromFile( Gdx.files.absolute( fl.getAbsolutePath()) );
         model.uploadAtlas();
 
@@ -852,6 +885,8 @@ public class MainGui extends JFrame {
         }
     }
 
+
+
     void processTreeSelection( TreeSelectionEvent e) {
 
         propertiesCellEditor.cancelCellEditing();
@@ -889,6 +924,8 @@ public class MainGui extends JFrame {
                 bodyPropertiesTableModel.setBodyItem( bi );
                 tableProperties.setModel( bodyPropertiesTableModel );
                 tableProperties.updateUI();
+                setGuiElementEnable( panelBodyItemEditor, true);
+                tabbedPaneEditors.add("Body Editor", panelBodyItemEditor);
                 break;
 
             case FIXTURE_SET:
@@ -1522,6 +1559,33 @@ public class MainGui extends JFrame {
                 panelAnchorB.setVisible( false );
                 break;
         }
+    }
+
+    void onBodyItemControllerCenterChanged( BodyItemController controller ) {
+        BodyItem bi = controller.getBodyItem();
+
+        Vector2 cntr = bi.getBody().getWorldCenter();
+
+        tfMassCenterWorldX.setText("" + cntr.x );
+        tfMassCenterWorldY.setText("" + cntr.y );
+
+    }
+
+    void setCenterOfMass() {
+        float x, y;
+        try {
+            x = Float.valueOf( tfMassCenterWorldX.getText() );
+            y = Float.valueOf( tfMassCenterWorldY.getText() );
+        } catch ( NumberFormatException e ) {
+            return;
+        }
+        BodyItemController ctrlr = GdxApplication.get().getEditorScreen().getBodyItemController();
+        ctrlr.setWorldCenterOfMass( x, y );
+    }
+
+    void resetMassData() {
+        BodyItemController ctrlr = GdxApplication.get().getEditorScreen().getBodyItemController();
+        ctrlr.resetMassData();
     }
 
     //======================= main ================================

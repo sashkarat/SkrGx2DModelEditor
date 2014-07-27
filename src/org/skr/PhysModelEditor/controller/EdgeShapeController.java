@@ -105,6 +105,24 @@ public class EdgeShapeController extends ShapeController {
 
     }
 
+
+    private static final Vector2 tmpV = new Vector2();
+
+    @Override
+    protected void getShapeViewCenter(ControlPoint cp) {
+        tmpV.set(0, 0);
+        for ( ControlPoint ccp: controlPoints )
+            tmpV.add( ccp.getX(), ccp.getY());
+        tmpV.scl( 1.0f / controlPoints.size );
+        cp.setPos( tmpV.x, tmpV.y );
+    }
+
+    @Override
+    protected void offsetAllPoints(Vector2 offsetLocal, Vector2 offsetStage) {
+        for ( ControlPoint cp : controlPoints )
+            moveControlPoint( cp, offsetLocal, offsetStage );
+    }
+
     @Override
     protected void updateControlPointFromObject(ControlPoint cp) {
         EdgeControlPoint ecp = (EdgeControlPoint) cp;

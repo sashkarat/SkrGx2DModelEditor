@@ -33,7 +33,10 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
         FixedRot(PropertyType.BOOLEAN),
         Bullet(PropertyType.BOOLEAN),
         Active(PropertyType.BOOLEAN),
-        GravityScale(PropertyType.NUMBER, DataRole.PHYS_COORDINATES);
+        GravityScale(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        Mass(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        MassCenterX(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        MassCenterY(PropertyType.NUMBER, DataRole.PHYS_COORDINATES);
 
         private PropertyType propertyType;
         private DataRole dataRole = DataRole.DEFAULT;
@@ -119,6 +122,47 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
 
     @Override
     public boolean isPropertyEditable(int rowIndex) {
+        Properties_ property = Properties_.values[rowIndex];
+        switch ( property ) {
+            case Name:
+                break;
+            case Type:
+                break;
+            case PositionX:
+                break;
+            case PositionY:
+                break;
+            case Angle:
+                break;
+            case LinearVelX:
+                break;
+            case LinearVelY:
+                break;
+            case AngularVel:
+                break;
+            case LinearDumping:
+                break;
+            case AngularDumping:
+                break;
+            case AllowSleep:
+                break;
+            case Awake:
+                break;
+            case FixedRot:
+                break;
+            case Bullet:
+                break;
+            case Active:
+                break;
+            case GravityScale:
+                break;
+            case Mass:
+                return false;
+            case MassCenterX:
+                return false;
+            case MassCenterY:
+                return false;
+        }
         return true;
     }
 
@@ -168,6 +212,12 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
                 return body.isActive();
             case GravityScale:
                 return body.getGravityScale();
+            case Mass:
+                return body.getMass();
+            case MassCenterX:
+                return body.getLocalCenter().x;
+            case MassCenterY:
+                return body.getLocalCenter().y;
         }
 
         return null;

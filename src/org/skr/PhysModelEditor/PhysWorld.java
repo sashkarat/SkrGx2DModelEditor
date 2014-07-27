@@ -1,9 +1,11 @@
 package org.skr.PhysModelEditor;
 
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.utils.Array;
 
 /**
  * Created by rat on 08.06.14.
@@ -12,26 +14,43 @@ public class PhysWorld {
 
     static private class WorldDebugRenderer extends Box2DDebugRenderer {
         Matrix4 box2dProjection = new Matrix4();
-
+        OrthographicCamera currentCam = null;
 
         public WorldDebugRenderer(boolean drawBodies, boolean drawJoints, boolean drawAABBs, boolean drawInactiveBodies, boolean drawVelocities, boolean drawContacts) {
             super(drawBodies, drawJoints, drawAABBs, drawInactiveBodies, drawVelocities, drawContacts);
+            renderer = new ModShapeRenderer();
         }
 
         public void render( World world, Stage stage, float scaleFactor) {
+            if ( stage.getCamera() instanceof OrthographicCamera ) {
+                currentCam = (OrthographicCamera) stage.getCamera();
+            }
             box2dProjection.set( stage.getBatch().getProjectionMatrix() );
             box2dProjection.scl( scaleFactor );
             render(world, box2dProjection );
+            currentCam = null;
         }
 
 
         @Override
         protected void renderBody(Body body) {
             super.renderBody(body);
-            renderer.setColor(1, 1, 0, 1);
+
+
+            // draw Body Center
+
+            renderer.setColor(0.5f, 1, 0.8f, 1);
             float x = body.getWorldCenter().x;
             float y = body.getWorldCenter().y;
-            renderer.rect( x - 0.004f, y - 0.004f, 0.008f, 0.008f);
+
+            float s2 = 0.008f;
+
+            if ( currentCam != null )
+                s2 *= currentCam.zoom;
+
+            float s = s2*2;
+
+            renderer.rect( x - s2, y - s2, s, s);
 
 //            Array<Fixture> fixtureList = body.getFixtureList();
 //
@@ -95,6 +114,14 @@ public class PhysWorld {
 
     public static World getPrimaryWorld() {
         return get().primaryWorld;
+    }
+
+    private static final Array<Body> bodies = new Array<Body>();
+    public static void clearPrimaryWorld() {
+        getPrimaryWorld().getBodies( bodies );
+        for ( Body b : bodies ) {
+            getPrimaryWorld().destroyBody( b );
+        }
     }
 
     public static World getTestWorld() {

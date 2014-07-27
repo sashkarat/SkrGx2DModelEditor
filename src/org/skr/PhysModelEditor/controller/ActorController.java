@@ -16,7 +16,6 @@ public class ActorController extends Controller implements AnimatedActorGroup.Re
 
     public enum CpType {
         FREE,
-        CENTER,
         BOTTOM_LEFT,
         BOTTOM_RIGHT,
         TOP_RIGHT,
@@ -55,7 +54,6 @@ public class ActorController extends Controller implements AnimatedActorGroup.Re
         controlPoints.add( new ActorControlPoint(CpType.BOTTOM_RIGHT) );
         controlPoints.add( new ActorControlPoint(CpType.TOP_RIGHT) );
         controlPoints.add( new ActorControlPoint(CpType.TOP_LEFT) );
-        controlPoints.add( new ActorControlPoint(CpType.CENTER) );
 
     }
 
@@ -106,9 +104,6 @@ public class ActorController extends Controller implements AnimatedActorGroup.Re
         switch ( acp.getType() ) {
             case FREE:
                 break;
-            case CENTER:
-                cp.setPos( 0, 0 );
-                break;
             case BOTTOM_LEFT:
                 cp.setPos( - actor.getWidth() / 2, - actor.getHeight() / 2 );
                 break;
@@ -139,10 +134,6 @@ public class ActorController extends Controller implements AnimatedActorGroup.Re
             case FREE:
                 cp.offsetPos( offsetStage.x, offsetStage.y );
                 break;
-            case CENTER:
-                actor.setX( actor.getX() + offsetStage.x );
-                actor.setY( actor.getY() + offsetStage.y );
-                break;
             case BOTTOM_LEFT:
                 actor.setHeight(actor.getHeight() - offsetStage.y);
                 actor.setWidth(actor.getWidth() - offsetStage.x);
@@ -164,6 +155,15 @@ public class ActorController extends Controller implements AnimatedActorGroup.Re
     }
 
     @Override
+    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+        if ( actor == null )
+            return;
+        AnimatedActorGroup.rotateStageToLocal( actor,  offsetStage );
+        actor.setX( actor.getX() + offsetStage.x );
+        actor.setY( actor.getY() + offsetStage.y );
+    }
+
+    @Override
     protected void rotateAtControlPoint(ControlPoint cp, float angle) {
         if ( actor == null )
             return;
@@ -171,8 +171,6 @@ public class ActorController extends Controller implements AnimatedActorGroup.Re
 
         switch ( acp.getType() ) {
             case FREE:
-                break;
-            case CENTER:
                 break;
             case BOTTOM_LEFT:
             case BOTTOM_RIGHT:
@@ -187,6 +185,11 @@ public class ActorController extends Controller implements AnimatedActorGroup.Re
     @Override
     protected Object getControlledObject() {
         return actor;
+    }
+
+    @Override
+    protected void updatePosControlPointFromObject(ControlPoint cp) {
+        cp.setPos( 0, 0 );
     }
 
     @Override

@@ -4,6 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.MassData;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import org.skr.PhysModelEditor.PhysWorld;
 import org.skr.physmodel.BodyItem;
@@ -17,7 +19,7 @@ public class BodyItemController extends Controller {
 
     public BodyItemController(Stage stage) {
         super(stage);
-        controlPoints.add( new ControlPoint( null ) );
+        controlPoints.add( new ControlPoint( null) );
     }
 
     public BodyItem getBodyItem() {
@@ -51,13 +53,47 @@ public class BodyItemController extends Controller {
 
     @Override
     protected void updateControlPointFromObject(ControlPoint cp) {
-
-        cp.setPos( 0, 0);
-
+        if ( bodyItem == null )
+            return;
+        if ( bodyItem.getBody().getType() != BodyDef.BodyType.DynamicBody ) {
+            cp.setVisible( false );
+            return;
+        }
+        if ( !cp.isVisible() )
+            cp.setVisible( true );
+        Vector2 c = bodyItem.getBody().getLocalCenter();
+        PhysWorld.get().toView(c);
+        cp.setPos(c.x, c.y);
     }
 
     @Override
     protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+        if ( bodyItem == null )
+            return;
+        if ( bodyItem.getBody().getType() != BodyDef.BodyType.DynamicBody )
+            return;
+
+        cp.offsetPos( offsetLocal.x, offsetLocal.y );
+        Vector2 c = bodyItem.getBody().getLocalCenter();
+        PhysWorld.get().toPhys( offsetLocal );
+
+        float l = c.len();
+        c.add( offsetLocal );
+        float l2 = c.len();
+
+        float z = l/l2;
+
+        MassData md = bodyItem.getBody().getMassData();
+//        Gdx.app.log("BodyItemController.moveControlPoint", "MassData: M=" + md.mass +
+//        " I=" + md.I + " C=" + md.center + " z=" + z );
+        md.center.set(c);
+        md.I /= ( z * z );
+        bodyItem.getBody().setMassData( md );
+        bodyItem.setOverrideMassData( true );
+    }
+
+    @Override
+    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
         if ( bodyItem == null )
             return;
         Vector2 pos = bodyItem.getBody().getPosition();
@@ -73,5 +109,34 @@ public class BodyItemController extends Controller {
     @Override
     protected Object getControlledObject() {
         return bodyItem;
+    }
+
+    @Override
+    protected void updatePosControlPointFromObject(ControlPoint cp) {
+        cp.setPos( 0, 0);
+    }
+
+
+    public void setWorldCenterOfMass(float x, float y) {
+
+        Vector2 c = bodyItem.getBody().getWorldCenter();
+        float l = c.len();
+        c.set( x, y );
+        float l2 = c.len();
+
+        float z = l/l2;
+
+        MassData md = bodyItem.getBody().getMassData();
+//        Gdx.app.log("BodyItemController.moveControlPoint", "MassData: M=" + md.mass +
+//        " I=" + md.I + " C=" + md.center + " z=" + z );
+        md.center.set( c );
+        md.I /= ( z * z );
+        bodyItem.getBody().setMassData( md );
+        bodyItem.setOverrideMassData( true );
+    }
+
+    public void resetMassData() {
+        bodyItem.getBody().resetMassData();
+        bodyItem.setOverrideMassData( false );
     }
 }

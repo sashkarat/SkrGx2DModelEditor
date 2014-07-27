@@ -80,6 +80,7 @@ public class AnchorPointController extends Controller {
     public AnchorPointController(Stage stage) {
         super(stage);
         createControlPoints();
+        setPosControlPoint( null );
     }
 
     @Override
@@ -174,6 +175,11 @@ public class AnchorPointController extends Controller {
     }
 
     @Override
+    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+
+    }
+
+    @Override
     protected void rotateAtControlPoint(ControlPoint cp, float angle) {
         // does nothing
     }
@@ -181,6 +187,11 @@ public class AnchorPointController extends Controller {
     @Override
     protected Object getControlledObject() {
         return jdesc;
+    }
+
+    @Override
+    protected void updatePosControlPointFromObject(ControlPoint cp) {
+
     }
 
     public JointItemDescription getDescription() {

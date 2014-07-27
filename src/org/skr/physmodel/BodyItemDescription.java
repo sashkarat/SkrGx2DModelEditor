@@ -1,6 +1,7 @@
 package org.skr.physmodel;
 
 import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.MassData;
 import com.badlogic.gdx.utils.Array;
 import org.skr.physmodel.animatedactorgroup.AagDescription;
 
@@ -11,6 +12,9 @@ public class BodyItemDescription extends PhysItemDescription {
 
     BodyDef bodyDef = new BodyDef();
     int id = -1;
+    boolean overrideMassData = false;
+    Array< FixtureSetDescription > fixtureSetDescriptions = new Array<FixtureSetDescription>();
+    MassData massData;
 
     public int getId() {
         return id;
@@ -20,14 +24,28 @@ public class BodyItemDescription extends PhysItemDescription {
         this.id = id;
     }
 
-    Array< FixtureSetDescription > fixtureSetDescriptions = new Array<FixtureSetDescription>();
-
     public BodyDef getBodyDef() {
         return bodyDef;
     }
 
     public void setBodyDef(BodyDef bodyDef) {
         this.bodyDef = bodyDef;
+    }
+
+    public boolean isOverrideMassData() {
+        return overrideMassData;
+    }
+
+    public void setOverrideMassData(boolean overrideMassData) {
+        this.overrideMassData = overrideMassData;
+    }
+
+    public MassData getMassData() {
+        return massData;
+    }
+
+    public void setMassData(MassData massData) {
+        this.massData = massData;
     }
 
     public Array<FixtureSetDescription> getFixtureSetDescriptions() {

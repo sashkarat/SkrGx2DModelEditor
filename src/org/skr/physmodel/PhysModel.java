@@ -232,6 +232,15 @@ public class PhysModel {
         if (bd.aagDescription != null) {
             bi.setAagBackground(new AnimatedActorGroup(bd.getAagDescription()));
         }
+
+        if ( bd.isOverrideMassData() ) {
+            MassData md = bd.getMassData();
+            if ( md != null ) {
+                bi.getBody().setMassData( md );
+                bi.setOverrideMassData( true );
+            }
+        }
+
         return bi;
     }
 

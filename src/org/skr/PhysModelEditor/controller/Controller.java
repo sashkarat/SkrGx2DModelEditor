@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Array;
+import org.skr.PhysModelEditor.ModShapeRenderer;
 import org.skr.PhysModelEditor.RectangleExt;
 
 /**
@@ -27,10 +28,16 @@ public abstract  class Controller  {
         private int id = -1;
         private boolean visible = true;
 
+        public enum ShapeType {
+            _Rect,
+            _Circle
+        }
+
         public ControlPoint( Object object) {
             this.object = object;
             this.id = idc++;
         }
+
 
         public boolean isVisible() {
             return visible;
@@ -96,7 +103,11 @@ public abstract  class Controller  {
 
         private static final Color colorBackup = new Color();
 
-        public void draw( ShapeRenderer shr ) {
+        public void draw( ModShapeRenderer shr ) {
+            draw( shr, ShapeType._Rect );
+        }
+
+        public void draw( ModShapeRenderer shr, ShapeType type ) {
 
 
             if ( color != null ) {
@@ -109,12 +120,20 @@ public abstract  class Controller  {
             } else {
                 shr.begin(ShapeRenderer.ShapeType.Line);
             }
-            shr.rect( x - size/2, y - size/2, size, size );
+
+            if ( type == ShapeType._Rect ) {
+                shr.rect(x - size / 2, y - size / 2, size, size);
+            } else if ( type == ShapeType._Circle ) {
+                shr.solidCircle( x, y, size / 2);
+            }
+
             shr.end();
             if ( color != null ) {
                 shr.setColor( colorBackup );
             }
         }
+
+
 
         public static float getSize() {
             return size;
@@ -145,9 +164,10 @@ public abstract  class Controller  {
     }
 
 
-    ShapeRenderer shapeRenderer = new ShapeRenderer();
+    ModShapeRenderer shapeRenderer = new ModShapeRenderer();
     Stage stage;
     Array<ControlPoint> controlPoints = new Array<ControlPoint>();
+    ControlPoint posControlPoint = null;
     ControlPoint selectedControlPoint = null;
     controlPointListener controlPointListener;
     ControlPointSelectionMode selectionMode = ControlPointSelectionMode.PRESSED_ONLY;
@@ -158,8 +178,23 @@ public abstract  class Controller  {
 
     public Controller(Stage stage) {
         this.stage = stage;
+
+        setPosControlPoint( new ControlPoint( null ) );
     }
 
+    protected void setPosControlPoint( ControlPoint cp ) {
+        if ( posControlPoint != null ) {
+            if ( selectedControlPoint == posControlPoint ) {
+                selectedControlPoint = cp;
+                cp.setSelected( true );
+            }
+        }
+        posControlPoint = cp;
+    }
+
+    protected ControlPoint getPosControlPoint() {
+        return posControlPoint;
+    }
 
     protected ControlPoint getControlPoint( int index ) {
         if ( controlPoints.size == 0 )
@@ -198,8 +233,10 @@ public abstract  class Controller  {
     protected abstract Vector2 stageToObject( Vector2 stageCoord );
     protected abstract void updateControlPointFromObject(ControlPoint cp);
     protected abstract void moveControlPoint( ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage );
+    protected abstract void movePosControlPoint( ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage );
     protected abstract void rotateAtControlPoint(ControlPoint cp, float angle);
     protected abstract Object getControlledObject();
+    protected abstract void updatePosControlPointFromObject(ControlPoint cp);
 
     protected void drawControlPoints() {
         for( ControlPoint cp : controlPoints ) {
@@ -208,6 +245,15 @@ public abstract  class Controller  {
             if ( !cp.isVisible() )
                 continue;
             cp.draw( shapeRenderer );
+        }
+
+        if ( posControlPoint != null ) {
+            if ( !posControlPoint .isSelected() ) {
+                updatePosControlPointFromObject(posControlPoint);
+            }
+            if ( !posControlPoint.isVisible() )
+                return;
+            posControlPoint.draw( shapeRenderer, ControlPoint.ShapeType._Circle );
         }
     }
 
@@ -237,6 +283,13 @@ public abstract  class Controller  {
             if ( cp.contains( coords ) && cp.isVisible() ) {
                 cp.setSelected( true );
                 selectedControlPoint = cp;
+                return true;
+            }
+        }
+
+        if ( posControlPoint != null ) {
+            if ( posControlPoint.contains( coords ) && posControlPoint.isVisible() ) {
+                selectedControlPoint = posControlPoint;
                 return true;
             }
         }
@@ -307,7 +360,12 @@ public abstract  class Controller  {
 
             } else {
                 if ( controlPointMovingEnabled ) {
-                    moveControlPoint(selectedControlPoint, offsetLocal, offsetStage);
+                    if ( selectedControlPoint == posControlPoint ) {
+                        movePosControlPoint( selectedControlPoint, offsetLocal, offsetStage );
+                    } else {
+                        moveControlPoint( selectedControlPoint, offsetLocal, offsetStage );
+                    }
+
                     if ( controlPointListener != null ) {
                         controlPointListener.changed( getControlledObject(), selectedControlPoint );
                     }

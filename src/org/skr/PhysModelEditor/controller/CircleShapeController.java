@@ -70,23 +70,23 @@ public class CircleShapeController extends ShapeController{
         controlPoints.add( cp );
     }
 
-    private static final Vector2 tmpV = new Vector2();
+    private static final Vector2 tmpV2 = new Vector2();
 
     @Override
     protected void updateControlPointFromObject(ControlPoint cp) {
         CircleControlPoint controlPoint = ( CircleControlPoint ) cp;
         ShapeDescription shapeDescription = (ShapeDescription) controlPoint.getObject();
-        tmpV.set( shapeDescription.getPosition() );
-        PhysWorld.get().toView( tmpV );
+        tmpV2.set( shapeDescription.getPosition() );
+        PhysWorld.get().toView( tmpV2 );
 
         switch ( controlPoint.type ) {
             case CENTER:
-                controlPoint.setPos( tmpV.x, tmpV.y );
+                controlPoint.setPos( tmpV2.x, tmpV2.y );
                 break;
 
             case RADIUS:
                 float rad = PhysWorld.get().toView( shapeDescription.getRadius() );
-                cp.setPos( tmpV.x + rad, tmpV.y );
+                cp.setPos( tmpV2.x + rad, tmpV2.y );
                 break;
         }
     }
@@ -146,15 +146,36 @@ public class CircleShapeController extends ShapeController{
         }
     }
 
+    private static final Vector2 tmpV = new Vector2();
+
+    @Override
+    protected void getShapeViewCenter(ControlPoint cp) {
+
+        tmpV.set(0, 0);
+
+        for ( ShapeDescription shd : fixtureSetDescription.getShapeDescriptions() ) {
+            tmpV.add( shd.getPosition() );
+        }
+
+        tmpV.scl( 1.0f / fixtureSetDescription.getShapeDescriptions().size );
+
+        PhysWorld.get().toView( tmpV );
+
+        cp.setPos( tmpV.x, tmpV.y);
+    }
+
+    @Override
+    protected void offsetAllPoints(Vector2 offsetLocal, Vector2 offsetStage) {
+        for ( ControlPoint cp: controlPoints ) {
+            moveControlPoint( cp, offsetLocal, offsetStage);
+        }
+    }
+
     @Override
     protected void drawShapeDescription( ShapeDescription shd ) {
         drawCircleShape( shd );
     }
 
-
-    private static final Vector2 f = new Vector2();
-    private static final Vector2 v = new Vector2();
-    private static final Vector2 lv = new Vector2();
 
     private void drawCircleShape( ShapeDescription shd ) {
 
@@ -162,19 +183,7 @@ public class CircleShapeController extends ShapeController{
         float y = PhysWorld.get().toView( shd.getPosition().y );
         float r = PhysWorld.get().toView( shd.getRadius() );
 
-        float angle = 0;
-        float angleInc = 2 * (float)Math.PI / 20;
-        for (int i = 0; i < 20; i++, angle += angleInc) {
-            v.set((float)Math.cos(angle) * r + x, (float)Math.sin(angle) * r + y);
-            if (i == 0) {
-                lv.set(v);
-                f.set(v);
-                continue;
-            }
-            shapeRenderer.line(lv.x, lv.y, v.x, v.y);
-            lv.set(v);
-        }
-        shapeRenderer.line(f.x, f.y, lv.x, lv.y);
+        shapeRenderer.solidCircle(x, y, r );
 
     }
 }

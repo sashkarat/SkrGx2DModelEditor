@@ -919,6 +919,85 @@
                                           </grid>
                                         </children>
                                       </grid>
+                                      <grid id="56e91" binding="panelBodyItemEditor" layout-manager="GridBagLayout">
+                                        <constraints>
+                                          <tabbedpane title="Body Editor"/>
+                                        </constraints>
+                                        <properties/>
+                                        <border type="none"/>
+                                        <children>
+                                          <grid id="ea748" layout-manager="GridBagLayout">
+                                            <constraints>
+                                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                                              <gridbag weightx="1.0" weighty="0.0"/>
+                                            </constraints>
+                                            <properties/>
+                                            <border type="etched" title="Mass Center Setup"/>
+                                            <children>
+                                              <component id="3bb3b" class="javax.swing.JLabel">
+                                                <constraints>
+                                                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                                  <gridbag weightx="0.0" weighty="0.0"/>
+                                                </constraints>
+                                                <properties>
+                                                  <text value="world X: "/>
+                                                </properties>
+                                              </component>
+                                              <component id="a243c" class="javax.swing.JLabel">
+                                                <constraints>
+                                                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                                  <gridbag weightx="0.0" weighty="0.0"/>
+                                                </constraints>
+                                                <properties>
+                                                  <text value="world Y: "/>
+                                                </properties>
+                                              </component>
+                                              <component id="dc34e" class="javax.swing.JTextField" binding="tfMassCenterWorldX">
+                                                <constraints>
+                                                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                                    <preferred-size width="150" height="-1"/>
+                                                  </grid>
+                                                  <gridbag weightx="1.0" weighty="0.0"/>
+                                                </constraints>
+                                                <properties/>
+                                              </component>
+                                              <component id="6831f" class="javax.swing.JTextField" binding="tfMassCenterWorldY">
+                                                <constraints>
+                                                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                                    <preferred-size width="150" height="-1"/>
+                                                  </grid>
+                                                  <gridbag weightx="1.0" weighty="0.0"/>
+                                                </constraints>
+                                                <properties/>
+                                              </component>
+                                              <component id="9d701" class="javax.swing.JButton" binding="btnSetMassCenter">
+                                                <constraints>
+                                                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                                  <gridbag weightx="0.0" weighty="0.0"/>
+                                                </constraints>
+                                                <properties>
+                                                  <text value="Set"/>
+                                                </properties>
+                                              </component>
+                                              <component id="5fd47" class="javax.swing.JButton" binding="btnResetMassData">
+                                                <constraints>
+                                                  <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                                  <gridbag weightx="0.0" weighty="0.0"/>
+                                                </constraints>
+                                                <properties>
+                                                  <text value="Reset"/>
+                                                </properties>
+                                              </component>
+                                            </children>
+                                          </grid>
+                                          <vspacer id="c9c2e">
+                                            <constraints>
+                                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                                              <gridbag weightx="0.0" weighty="1.0"/>
+                                            </constraints>
+                                          </vspacer>
+                                        </children>
+                                      </grid>
                                     </children>
                                   </tabbedpane>
                                 </children>
