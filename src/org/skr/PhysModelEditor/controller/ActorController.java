@@ -54,6 +54,7 @@ public class ActorController extends Controller implements AnimatedActorGroup.Re
         controlPoints.add( new ActorControlPoint(CpType.BOTTOM_RIGHT) );
         controlPoints.add( new ActorControlPoint(CpType.TOP_RIGHT) );
         controlPoints.add( new ActorControlPoint(CpType.TOP_LEFT) );
+        setEnableBbControl( false );
 
     }
 

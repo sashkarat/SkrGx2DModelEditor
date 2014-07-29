@@ -16,10 +16,15 @@ import org.skr.physmodel.BodyItem;
 public class BodyItemController extends Controller {
 
     BodyItem bodyItem;
+    boolean enableMassCorrection = false;
+    ControlPoint comPoint;
 
     public BodyItemController(Stage stage) {
         super(stage);
-        controlPoints.add( new ControlPoint( null) );
+        comPoint = new ControlPoint( null );
+        controlPoints.add( comPoint );
+        comPoint.setVisible( enableMassCorrection );
+        setEnableBbControl( false );
     }
 
     public BodyItem getBodyItem() {
@@ -28,6 +33,16 @@ public class BodyItemController extends Controller {
 
     public void setBodyItem(BodyItem bodyItem) {
         this.bodyItem = bodyItem;
+        setEnableMassCorrection( false );
+    }
+
+    public boolean isEnableMassCorrection() {
+        return enableMassCorrection;
+    }
+
+    public void setEnableMassCorrection(boolean enableMassCorrection) {
+        this.enableMassCorrection = enableMassCorrection;
+        comPoint.setVisible( this.enableMassCorrection );
     }
 
     @Override
@@ -59,7 +74,7 @@ public class BodyItemController extends Controller {
             cp.setVisible( false );
             return;
         }
-        if ( !cp.isVisible() )
+        if ( !cp.isVisible() && enableMassCorrection )
             cp.setVisible( true );
         Vector2 c = bodyItem.getBody().getLocalCenter();
         PhysWorld.get().toView(c);
@@ -68,6 +83,9 @@ public class BodyItemController extends Controller {
 
     @Override
     protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+        if ( !enableMassCorrection )
+            return;
+
         if ( bodyItem == null )
             return;
         if ( bodyItem.getBody().getType() != BodyDef.BodyType.DynamicBody )
@@ -118,6 +136,9 @@ public class BodyItemController extends Controller {
 
 
     public void setWorldCenterOfMass(float x, float y) {
+
+        if ( !enableMassCorrection )
+            return;
 
         Vector2 c = bodyItem.getBody().getWorldCenter();
         float l = c.len();

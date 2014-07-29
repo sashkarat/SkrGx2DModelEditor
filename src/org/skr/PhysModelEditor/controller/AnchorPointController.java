@@ -81,6 +81,7 @@ public class AnchorPointController extends Controller {
         super(stage);
         createControlPoints();
         setPosControlPoint( null );
+        setEnableBbControl( false );
     }
 
     @Override

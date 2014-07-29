@@ -47,6 +47,7 @@ public class CircleShapeController extends ShapeController{
 
     public CircleShapeController(Stage stage) {
         super(stage);
+        setEnableBbControl( false );
     }
 
     @Override

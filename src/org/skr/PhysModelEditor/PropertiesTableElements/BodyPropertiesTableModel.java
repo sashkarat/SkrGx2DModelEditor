@@ -207,7 +207,7 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
             case FixedRot:
                 return body.isFixedRotation();
             case Bullet:
-                return body.isFixedRotation();
+                return body.isBullet();
             case Active:
                 return body.isActive();
             case GravityScale:

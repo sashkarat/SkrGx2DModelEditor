@@ -162,10 +162,10 @@ public class ChainShapeController extends  ShapeController{
     }
 
     @Override
-    protected void removeControlPoint( Vector2 localCoord ) {
+    protected boolean removeControlPoint( Vector2 localCoord ) {
 
         if ( controlPoints.size < 2 )
-            return;
+            return false;
 
         ChainControlPoint cp = null;
 
@@ -177,14 +177,15 @@ public class ChainShapeController extends  ShapeController{
         }
 
         if ( cp == null )
-            return;
+            return false;
 
         ShapeDescription shd = getShapeDescription( cp );
 
-        shd.getVertices().removeValue( cp.getVertex(), true);
+        shd.getVertices().removeValue( cp.getVertex(), true );
 
         removeControlPoint( cp );
 
+        return true;
     }
 
 }

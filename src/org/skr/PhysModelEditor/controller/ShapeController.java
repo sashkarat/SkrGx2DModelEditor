@@ -133,24 +133,25 @@ public abstract class ShapeController extends Controller {
     }
 
     @Override
-    protected void onMouseClicked(Vector2 localCoord, Vector2 stageCoord) {
+    protected boolean onMouseClicked(Vector2 localCoord, Vector2 stageCoord) {
         boolean leftCtrl = Gdx.input.isKeyPressed( Input.Keys.CONTROL_LEFT );
         boolean leftShift = Gdx.input.isKeyPressed( Input.Keys.SHIFT_LEFT );
         boolean leftAlt = Gdx.input.isKeyPressed( Input.Keys.ALT_LEFT );
 
-        if ( leftShift && !leftAlt && !leftCtrl) {
+        if ( !leftShift && !leftAlt && leftCtrl) {
             addControlPoint( localCoord );
         } else if ( !leftShift && leftAlt && !leftCtrl) {
-            removeControlPoint( localCoord );
+            return removeControlPoint( localCoord );
         }
+        return false;
     }
 
     protected void addControlPoint( Vector2 localCoord ) {
         // dumb
     }
 
-    protected void removeControlPoint( Vector2 localCoord ) {
-        // dumb
+    protected boolean removeControlPoint( Vector2 localCoord ) {
+        return false;
     }
 
     public void tessellatePolygon() {

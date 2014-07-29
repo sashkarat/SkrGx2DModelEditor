@@ -163,12 +163,20 @@ public abstract  class Controller  {
         PRESSED_ONLY
     }
 
+    public static class BoundingBox {
+        public float minX;
+        public float maxX;
+        public float minY;
+        public float maxY;
+    }
 
     ModShapeRenderer shapeRenderer = new ModShapeRenderer();
     Stage stage;
     Array<ControlPoint> controlPoints = new Array<ControlPoint>();
     ControlPoint posControlPoint = null;
     ControlPoint selectedControlPoint = null;
+    Array<ControlPoint> boundingBoxControlPoints = new Array<ControlPoint>();
+    boolean enableBbControl = true;
     controlPointListener controlPointListener;
     ControlPointSelectionMode selectionMode = ControlPointSelectionMode.PRESSED_ONLY;
 
@@ -180,6 +188,12 @@ public abstract  class Controller  {
         this.stage = stage;
 
         setPosControlPoint( new ControlPoint( null ) );
+
+        for ( int i = 0; i < 4; i++ ) {
+            ControlPoint cp = new ControlPoint( null );
+            cp.setColor( new Color(0.3f, 0.6f, 0.3f, 1) );
+            boundingBoxControlPoints.add( cp );
+        }
     }
 
     protected void setPosControlPoint( ControlPoint cp ) {
@@ -190,6 +204,34 @@ public abstract  class Controller  {
             }
         }
         posControlPoint = cp;
+    }
+
+    public Array<ControlPoint> getBoundingBoxControlPoints() {
+        return boundingBoxControlPoints;
+    }
+
+    public boolean isEnableBbControl() {
+        return enableBbControl;
+    }
+
+    public void setEnableBbControl(boolean enableBbControl) {
+        this.enableBbControl = enableBbControl;
+    }
+
+    public ControlPoint getBbDownLeftControlPoint() {
+        return boundingBoxControlPoints.get(0);
+    }
+
+    public ControlPoint getBbDownRightControlPoint() {
+        return boundingBoxControlPoints.get(1);
+    }
+
+    public ControlPoint getBbTopRightControlPoint() {
+        return boundingBoxControlPoints.get(2);
+    }
+
+    public ControlPoint getBbTopLeftControlPoint() {
+        return boundingBoxControlPoints.get(3);
     }
 
     protected ControlPoint getPosControlPoint() {
@@ -238,7 +280,86 @@ public abstract  class Controller  {
     protected abstract Object getControlledObject();
     protected abstract void updatePosControlPointFromObject(ControlPoint cp);
 
+
+    protected BoundingBox getBoundingBox() {
+
+        final BoundingBox bb = new BoundingBox();
+
+        if ( controlPoints.size == 0 )
+            return bb;
+
+        bb.minX = 999999;
+        bb.minY = 999999;
+        bb.maxX = -999999;
+        bb.maxY = -999999;
+
+
+        for ( ControlPoint cp : controlPoints) {
+            if ( cp.getX() < bb.minX )
+                bb.minX = cp.getX();
+            if ( cp.getX() > bb.maxX )
+                bb.maxX = cp.getX();
+            if ( cp.getY() < bb.minY )
+                bb.minY = cp.getY();
+            if ( cp.getY() > bb.maxY )
+                bb.maxY = cp.getY();
+        }
+
+        return bb;
+    }
+
+    protected void updateBoundingBox() {
+
+        BoundingBox b = getBoundingBox( );
+
+        if ( !getBbDownLeftControlPoint().isSelected() )
+            getBbDownLeftControlPoint().setPos( b.minX - ControlPoint.getSize(),
+                b.minY - ControlPoint.getSize());
+        if ( !getBbDownRightControlPoint().isSelected() )
+            getBbDownRightControlPoint().setPos( b.maxX + ControlPoint.getSize(),
+                b.minY - ControlPoint.getSize() );
+        if ( !getBbTopRightControlPoint().isSelected() )
+            getBbTopRightControlPoint().setPos( b.maxX + ControlPoint.getSize(),
+                b.maxY + ControlPoint.getSize() );
+        if ( !getBbTopLeftControlPoint().isSelected() )
+            getBbTopLeftControlPoint().setPos( b.minX - ControlPoint.getSize(),
+                b.maxY + ControlPoint.getSize() );
+    }
+
+    protected void moveBbControlPoint(ControlPoint movingPoint, ControlPoint basePoint,
+                                      Vector2 localOffset, Vector2 stageOffset ) {
+        movingPoint.offsetPos( localOffset.x, localOffset.y );
+
+        float xdist = movingPoint.getX() - basePoint.getX();
+        float ydist = movingPoint.getY() - basePoint.getY();
+
+        if ( xdist > 0 ) {
+            xdist -= ControlPoint.getSize();
+        } else {
+            xdist += ControlPoint.getSize();
+        }
+
+        if ( ydist > 0) {
+            ydist -= ControlPoint.getSize();
+        } else {
+            ydist += ControlPoint.getSize();
+        }
+
+        for ( ControlPoint cp : controlPoints ) {
+            float xd = cp.getX() - basePoint.getX();
+            float yd = cp.getY() - basePoint.getY();
+            cp.offsetPos( offsetLocal.x * xd / xdist, offsetLocal.y * yd / ydist);
+        }
+
+
+        updateBoundingBox();
+
+    }
+
     protected void drawControlPoints() {
+
+
+
         for( ControlPoint cp : controlPoints ) {
             if ( !cp.isSelected() )
                 updateControlPointFromObject(cp);
@@ -255,10 +376,36 @@ public abstract  class Controller  {
                 return;
             posControlPoint.draw( shapeRenderer, ControlPoint.ShapeType._Circle );
         }
+
+        drawBbControlPoints();
     }
 
-    protected void removeControlPoint( ControlPoint cp ) {
-        controlPoints.removeValue( cp, true );
+    protected void drawBbControlPoints() {
+        if ( !enableBbControl )
+            return;
+
+        updateBoundingBox();
+
+        for( ControlPoint cp : boundingBoxControlPoints ) {
+            if ( !cp.isVisible() )
+                continue;
+            cp.draw( shapeRenderer );
+        }
+
+        shapeRenderer.setColor( boundingBoxControlPoints.get(0).getColor() );
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line );
+        for ( int i = 0; i < 4; i++ ) {
+            shapeRenderer.line( boundingBoxControlPoints.get(i).getX(),
+                                boundingBoxControlPoints.get(i).getY(),
+                                boundingBoxControlPoints.get( (i+1) % 4).getX(),
+                                boundingBoxControlPoints.get( (i+1) % 4).getY()
+                    );
+        }
+        shapeRenderer.end();
+    }
+
+    protected boolean removeControlPoint( ControlPoint cp ) {
+        return controlPoints.removeValue( cp, true );
     }
 
 
@@ -268,7 +415,6 @@ public abstract  class Controller  {
         translateRendererToObject();
         draw();
     }
-
 
 
     protected boolean updateSelection(Vector2 coords) {
@@ -294,11 +440,22 @@ public abstract  class Controller  {
             }
         }
 
+        if ( enableBbControl ) {
+            for (ControlPoint cp : boundingBoxControlPoints) {
+
+                if (cp.contains(coords) && cp.isVisible()) {
+                    cp.setSelected(true);
+                    selectedControlPoint = cp;
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 
-    protected void onMouseClicked( Vector2 localCoord, Vector2 stageCoord ) {
-        // dumb
+    protected boolean onMouseClicked( Vector2 localCoord, Vector2 stageCoord ) {
+        return false;
     }
 
 
@@ -313,6 +470,7 @@ public abstract  class Controller  {
 
     private boolean mouseMoved = false;
     private boolean controlPointMovingEnabled = false;
+    private boolean inputResult = false;
 
     public void touchDown( Vector2 stageCoord ) {
         localCoord.set(stageCoord);
@@ -343,9 +501,18 @@ public abstract  class Controller  {
         downLocalPos.set( localCoord );
     }
 
+    private enum MoveDir {
+        Free,
+        Vertical,
+        Horizontal
+    }
+
+    private MoveDir moveDir = MoveDir.Free;
+
     public void touchDragged( Vector2 stageCoord ) {
 
         mouseMoved = true;
+        inputResult = true;
 
         localCoord.set(stageCoord);
         stageToObject(localCoord);
@@ -353,6 +520,29 @@ public abstract  class Controller  {
         if ( selectedControlPoint != null ) {
             offsetLocal.set( localCoord ).sub( downLocalPos );
             offsetStage.set( stageCoord ).sub( downStagePos );
+
+            if ( Gdx.input.isKeyPressed( Input.Keys.SHIFT_LEFT ) && (moveDir == MoveDir.Free) ) {
+                if ( Math.abs(offsetStage .x) < Math.abs( offsetStage.y) ) {
+                    moveDir = MoveDir.Vertical;
+                } else  {
+                    moveDir = MoveDir.Horizontal;
+                }
+            } else if ( !Gdx.input.isKeyPressed( Input.Keys.SHIFT_LEFT ) ) {
+                moveDir = MoveDir.Free;
+            }
+
+            switch ( moveDir ) {
+                case Free:
+                    break;
+                case Vertical:
+                    offsetStage.set(0, offsetStage.y);
+                    offsetLocal.set(0, offsetLocal.y);
+                    break;
+                case Horizontal:
+                    offsetStage.set(offsetStage.x, 0);
+                    offsetLocal.set(offsetLocal.x, 0);
+                    break;
+            }
 
             if ( Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) ) {
                 float ang = localCoord.angle() - downLocalPos.angle();
@@ -362,6 +552,18 @@ public abstract  class Controller  {
                 if ( controlPointMovingEnabled ) {
                     if ( selectedControlPoint == posControlPoint ) {
                         movePosControlPoint( selectedControlPoint, offsetLocal, offsetStage );
+                    } else if ( selectedControlPoint == getBbDownLeftControlPoint() ) {
+                        moveBbControlPoint( selectedControlPoint, getBbTopRightControlPoint(),
+                                offsetLocal, offsetStage);
+                    } else if ( selectedControlPoint == getBbDownRightControlPoint() ) {
+                        moveBbControlPoint( selectedControlPoint, getBbTopLeftControlPoint(),
+                                offsetLocal, offsetStage);
+                    } else if ( selectedControlPoint == getBbTopLeftControlPoint() ) {
+                        moveBbControlPoint( selectedControlPoint, getBbDownRightControlPoint(),
+                                offsetLocal, offsetStage);
+                    } else if ( selectedControlPoint == getBbTopRightControlPoint() ) {
+                        moveBbControlPoint( selectedControlPoint, getBbDownLeftControlPoint(),
+                                offsetLocal, offsetStage);
                     } else {
                         moveControlPoint( selectedControlPoint, offsetLocal, offsetStage );
                     }
@@ -375,10 +577,10 @@ public abstract  class Controller  {
 
         downStagePos.set( stageCoord );
         downLocalPos.set( localCoord );
-
     }
 
-    public void touchUp( Vector2 stageCoord ) {
+    public boolean touchUp( Vector2 stageCoord ) {
+
         localCoord.set(stageCoord);
         stageToObject(localCoord);
 
@@ -395,10 +597,12 @@ public abstract  class Controller  {
 
 
         if ( !mouseMoved ) {
-            onMouseClicked( localCoord, stageCoord);
+            inputResult = onMouseClicked( localCoord, stageCoord);
         }
 
         mouseMoved = false;
+        moveDir = MoveDir.Free;
+        return inputResult;
     }
 
     protected void setControlPointVisible( ControlPoint cp, boolean state ) {

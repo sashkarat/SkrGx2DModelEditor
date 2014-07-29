@@ -21,6 +21,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.JTableHeader;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -117,6 +118,7 @@ public class MainGui extends JFrame {
     private JTextField tfMassCenterWorldY;
     private JButton btnSetMassCenter;
     private JButton btnResetMassData;
+    private JCheckBox chbEnableMassCorrection;
 
     private GdxApplication gApp;
     private String currentModelFileName = "";
@@ -290,6 +292,18 @@ public class MainGui extends JFrame {
                     }
                 });
 
+            }
+        });
+
+        Gdx.app.postRunnable( new Runnable() {
+            @Override
+            public void run() {
+                GdxApplication.get().getEditorScreen().setBodyItemSelectionListener( new EditorScreen.BodyItemSelectionListener() {
+                    @Override
+                    public void bodyItemSelected(BodyItem bi) {
+                        processBodyItemSelection( bi );
+                    }
+                });
             }
         });
 
@@ -535,18 +549,27 @@ public class MainGui extends JFrame {
                 resetMassData();
             }
         });
+        chbEnableMassCorrection.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setMassCorrectionEnabled();
+            }
+        });
     }
+
 
     void uploadGuiFromSettings() {
         tfTextureAtlasFile.setText( ApplicationSettings.get().getTextureAtlasFile() );
     }
 
 
-
     void selectTextureAtlasFile() {
 
         final JFileChooser fch = new JFileChooser();
         int res;
+
+        fch.setCurrentDirectory( new File(ApplicationSettings.get().getLastDirectory()) );
+
         res = fch.showDialog( null, "Select");
 
         if ( res != JFileChooser.APPROVE_OPTION )
@@ -573,6 +596,7 @@ public class MainGui extends JFrame {
         });
 
         ApplicationSettings.get().setTextureAtlasFile(tfTextureAtlasFile.getText());
+        ApplicationSettings.get().setLastDirectory( fl.getParent() );
     }
 
     void onAtlasLoaded( TextureAtlas atlas ) {
@@ -616,6 +640,8 @@ public class MainGui extends JFrame {
 
         if (!fl.exists())
             return;
+
+        ApplicationSettings.get().setLastDirectory( fl.getParent() );
 
         PhysWorld.clearPrimaryWorld();
         model = PhysModel.loadFromFile( Gdx.files.absolute( fl.getAbsolutePath()) );
@@ -885,7 +911,25 @@ public class MainGui extends JFrame {
         }
     }
 
+    void processBodyItemSelection( BodyItem bi ) {
+        DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
+        DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) md.getRoot();
+        boolean res  = false;
+        for ( int i = 0; i < rootNode.getChildCount(); i++ ) {
+            DefaultMutableTreeNode chNode = (DefaultMutableTreeNode) rootNode.getChildAt( i );
+            NodeInfo ni = (NodeInfo) chNode.getUserObject();
+            if ( ni.type != NodeInfo.Type.BODY_ITEM )
+                continue;
+            BodyItem chBi = (BodyItem) ni.object;
+            if ( chBi != bi )
+                continue;
+            treePhysModel.setSelectionPath(new TreePath( chNode.getPath() ) );
+            res = true;
+        }
 
+        if ( res )
+            processTreeSelection( null );
+    }
 
     void processTreeSelection( TreeSelectionEvent e) {
 
@@ -926,6 +970,7 @@ public class MainGui extends JFrame {
                 tableProperties.updateUI();
                 setGuiElementEnable( panelBodyItemEditor, true);
                 tabbedPaneEditors.add("Body Editor", panelBodyItemEditor);
+                chbEnableMassCorrection.setSelected( false );
                 break;
 
             case FIXTURE_SET:
@@ -1586,6 +1631,12 @@ public class MainGui extends JFrame {
     void resetMassData() {
         BodyItemController ctrlr = GdxApplication.get().getEditorScreen().getBodyItemController();
         ctrlr.resetMassData();
+    }
+
+    private void setMassCorrectionEnabled() {
+        BodyItemController ctrlr = GdxApplication.get().getEditorScreen().getBodyItemController();
+        ctrlr.setEnableMassCorrection( chbEnableMassCorrection.isSelected() );
+
     }
 
     //======================= main ================================

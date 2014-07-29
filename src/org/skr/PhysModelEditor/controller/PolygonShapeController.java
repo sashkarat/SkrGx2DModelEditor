@@ -156,12 +156,23 @@ public class PolygonShapeController extends ShapeController {
             return null;
 
         shd = new ShapeDescription();
+        float size = 1;
 
         PolygonControlPoint cp = new PolygonControlPoint( shd );
         cp.setColor( firstColor );
+        cp.setPos( PhysWorld.get().toView( x - size/2 ), PhysWorld.get().toView( y - size/2 ) );
+        controlPoints.add( cp );
 
-        cp.setPos( PhysWorld.get().toView( x ), PhysWorld.get().toView( y ) );
+        cp = new PolygonControlPoint( shd );
+        cp.setPos( PhysWorld.get().toView( x + size/2 ), PhysWorld.get().toView( y - size/2 ) );
+        controlPoints.add( cp );
 
+        cp = new PolygonControlPoint( shd );
+        cp.setPos( PhysWorld.get().toView( x + size/2 ), PhysWorld.get().toView( y + size/2 ) );
+        controlPoints.add( cp );
+
+        cp = new PolygonControlPoint( shd );
+        cp.setPos( PhysWorld.get().toView( x - size/2 ), PhysWorld.get().toView( y + size/2 ) );
         controlPoints.add( cp );
 
         return shd;
@@ -215,12 +226,13 @@ public class PolygonShapeController extends ShapeController {
     }
 
     @Override
-    protected void removeControlPoint(ControlPoint cp) {
+    protected boolean removeControlPoint(ControlPoint cp) {
         Color c = cp.getColor();
-        super.removeControlPoint(cp);
+        boolean res = super.removeControlPoint(cp);
         if ( c == firstColor && controlPoints.size > 0 ) {
             controlPoints.get( 0 ).setColor( firstColor );
         }
+        return res;
     }
 
     @Override
@@ -266,10 +278,10 @@ public class PolygonShapeController extends ShapeController {
     }
 
     @Override
-    protected void removeControlPoint(Vector2 localCoord ) {
+    protected boolean removeControlPoint(Vector2 localCoord ) {
 
         if ( controlPoints.size < 2 )
-            return;
+            return false;
 
         PolygonControlPoint cp = null;
 
@@ -280,15 +292,18 @@ public class PolygonShapeController extends ShapeController {
             }
         }
 
+        boolean res = false;
+
         if ( cp != null ) {
 
             if ( controlPoints.size == 1)
-                return;
+                return false;
 
-            removeControlPoint(cp);
-            if (autoTessellate)
+            res = removeControlPoint(cp);
+            if (autoTessellate && res)
                 tessellatePolygon();
         }
+        return res;
     }
 
     public void updateFixtureSetDescription() {

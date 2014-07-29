@@ -2,19 +2,12 @@ package org.skr.PhysModelEditor;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputProcessor;
-import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Matrix3;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.Fixture;
+import com.badlogic.gdx.physics.box2d.QueryCallback;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.controller.*;
 import org.skr.physmodel.BodyItem;
 import org.skr.physmodel.FixtureSet;
@@ -24,6 +17,10 @@ import org.skr.physmodel.PhysModel;
  * Created by rat on 02.06.14.
  */
 public class EditorScreen extends BaseScreen {
+
+    public interface BodyItemSelectionListener {
+        public void bodyItemSelected( BodyItem bi );
+    }
 
     private  PhysModelRenderer modelRenderer;
 
@@ -35,6 +32,8 @@ public class EditorScreen extends BaseScreen {
     private PolygonShapeController polygonShapeController;
     private AnchorPointController anchorPointController;
     private Controller currentController = null;
+    private BodyItemSelectionListener bodyItemSelectionListener;
+
 
 
     public EditorScreen() {
@@ -55,6 +54,13 @@ public class EditorScreen extends BaseScreen {
 
     }
 
+    public BodyItemSelectionListener getBodyItemSelectionListener() {
+        return bodyItemSelectionListener;
+    }
+
+    public void setBodyItemSelectionListener(BodyItemSelectionListener bodyItemSelectionListener) {
+        this.bodyItemSelectionListener = bodyItemSelectionListener;
+    }
 
     public PhysModelRenderer getModelRenderer() {
         return modelRenderer;
@@ -168,13 +174,45 @@ public class EditorScreen extends BaseScreen {
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
         boolean res = super.touchUp( screenX,screenY, pointer, button );
-
+        boolean res2 = false;
         if ( button == Input.Buttons.LEFT && currentController != null ) {
             coordV.set( screenX, screenY );
-            currentController.touchUp( getStage().screenToStageCoordinates(coordV) );
+            res2 = currentController.touchUp( getStage().screenToStageCoordinates(coordV) );
+        }
+
+        if ( !res2 && button == Input.Buttons.LEFT )  {
+            coordV.set( screenX, screenY );
+            processBodyItemSelection(getStage().screenToStageCoordinates(coordV));
         }
 
         return res;
+    }
+
+    QueryCallback qcb = new QueryCallback() {
+
+        @Override
+        public boolean reportFixture(Fixture fixture) {
+            Body b = fixture.getBody();
+            BodyItem bi = (BodyItem) b.getUserData();
+
+            if ( bodyItemSelectionListener != null )
+                bodyItemSelectionListener.bodyItemSelected( bi );
+
+            return false;
+        }
+    };
+
+    private static final Vector2 localV = new Vector2();
+
+    private void processBodyItemSelection(Vector2 stageCoord) {
+
+        localV.set(stageCoord);
+        PhysWorld.get().toPhys( localV );
+
+        PhysWorld.getPrimaryWorld().QueryAABB( qcb,
+                localV.x - 0.1f, localV.y - 0.1f,
+                localV.x + 0.1f, localV.y + 0.1f );
+
     }
 
     @Override
