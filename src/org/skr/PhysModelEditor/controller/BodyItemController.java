@@ -3,12 +3,13 @@ package org.skr.PhysModelEditor.controller;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.MassData;
+import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import org.skr.PhysModelEditor.PhysWorld;
+import org.skr.PhysModelEditor.PolygonRefinement;
 import org.skr.physmodel.BodyItem;
+import org.skr.physmodel.FixtureSet;
+import org.skr.physmodel.ShapeDescription;
 
 /**
  * Created by rat on 05.07.14.
@@ -24,7 +25,8 @@ public class BodyItemController extends Controller {
         comPoint = new ControlPoint( null );
         controlPoints.add( comPoint );
         comPoint.setVisible( enableMassCorrection );
-        setEnableBbControl( false );
+        for ( ControlPoint cp: boundingBoxControlPoints )
+            cp.setVisible( false );
     }
 
     public BodyItem getBodyItem() {

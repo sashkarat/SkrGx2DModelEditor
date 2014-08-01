@@ -119,6 +119,8 @@ public class MainGui extends JFrame {
     private JButton btnSetMassCenter;
     private JButton btnResetMassData;
     private JCheckBox chbEnableMassCorrection;
+    private JRadioButton rbControllerInput;
+    private JRadioButton rbScreenInput;
 
     private GdxApplication gApp;
     private String currentModelFileName = "";
@@ -193,8 +195,15 @@ public class MainGui extends JFrame {
         gdxPanel.add(gdxCanvas.getCanvas(), BorderLayout.CENTER);
         pack();
         setSize(1280, 800);
-        addWindowListener( new MainGuiWindowListener() );
 
+        MainGuiWindowListener guiWindowListener = new MainGuiWindowListener();
+        addWindowListener( guiWindowListener );
+
+        gdxPanel.requestFocusInWindow();
+
+        ButtonGroup group = new ButtonGroup();
+        group.add( rbControllerInput );
+        group.add( rbScreenInput );
 
         physModelPropertiesTableModel = new PhysModelPropertiesTableModel( treePhysModel );
         aagPropertiesTableModel = new AagPropertiesTableModel( treePhysModel );
@@ -307,6 +316,20 @@ public class MainGui extends JFrame {
             }
         });
 
+        Gdx.app.postRunnable( new Runnable() {
+            @Override
+            public void run() {
+                GdxApplication.get().getEditorScreen().getAnchorPointController().setBodyItemSelectionListener(
+                        new AnchorPointController.BodyItemSelectionListener() {
+                            @Override
+                            public void bodySelected(BodyItem bi, int id) {
+                                selectBodyItemToJointCreator( bi, id );
+                            }
+                        }
+                );
+            }
+        });
+
         ShapeController.setStaticShapeControllerListener( new ShapeController.ShapeControllerListener() {
             @Override
             public void controlPointChanged(ShapeDescription shapeDescription, Controller.ControlPoint controlPoint) {
@@ -330,7 +353,6 @@ public class MainGui extends JFrame {
         for (JointDef.JointType jt : JointDef.JointType.values() ) {
             comboJointType.addItem( jt );
         }
-
 
         uploadTextureAtlas();
 
@@ -555,6 +577,18 @@ public class MainGui extends JFrame {
                 setMassCorrectionEnabled();
             }
         });
+        comboBodyASelector.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                selectBodyItemToAnchorPointcController( 0 );
+            }
+        });
+        comboBodyBSelector.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                selectBodyItemToAnchorPointcController( 1 );
+            }
+        });
     }
 
 
@@ -704,6 +738,12 @@ public class MainGui extends JFrame {
         updateJointCombos();
     }
 
+    void selectNode( DefaultMutableTreeNode node ) {
+        TreePath newPath = new TreePath(node.getPath());
+        treePhysModel.setSelectionPath(new TreePath(node.getPath()));
+        treePhysModel.scrollPathToVisible(newPath);
+        processTreeSelection( null );
+    }
 
     void addNode() {
 
@@ -714,7 +754,7 @@ public class MainGui extends JFrame {
 
         DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
         NodeInfo ni = ( NodeInfo ) node.getUserObject();
-
+        DefaultMutableTreeNode newNode = null;
         switch ( ni.type ) {
             case ROOT:
 
@@ -722,10 +762,10 @@ public class MainGui extends JFrame {
                     int res = showRootAddNodeSelectorDialog();
 
                     if ( res == 1 ) {
-                        addNewBody( node );
+                        newNode = addNewBody( node );
                         break;
                     } else if ( res == 0 ) {
-                        addNewAag( node );
+                        newNode = addNewAag( node );
                         break;
                     } else if ( res < 0 ) {
                         return;
@@ -733,7 +773,7 @@ public class MainGui extends JFrame {
                 }
 
                 if ( model.getBackgroundActor() != null ) {
-                    addNewBody( node );
+                    newNode = addNewBody( node );
                 }
                 break;
 
@@ -744,13 +784,13 @@ public class MainGui extends JFrame {
             case BODY_ITEM:
                 BodyItem bi = ( BodyItem ) ni.object;
                 if ( bi.getAagBackground() != null ) {
-                    addNewFixtureSet( node );
+                    newNode = addNewFixtureSet( node );
                 } else {
                     int res = showBodyAddNodeSelectorDialog();
                     if ( res == 0 ) {
-                        addNewAag(node);
+                        newNode = addNewAag(node);
                     } else if ( res == 1) {
-                        addNewFixtureSet( node );
+                        newNode = addNewFixtureSet( node );
                     }
                 }
                 break;
@@ -763,58 +803,72 @@ public class MainGui extends JFrame {
 
         md.nodeChanged( node );
         md.nodeStructureChanged(node);
+
+        if ( newNode != null ) {
+            selectNode( newNode );
+        }
     }
 
-    void addNewBody( DefaultMutableTreeNode parentNode ) {
+    DefaultMutableTreeNode addNewBody( DefaultMutableTreeNode parentNode ) {
         BodyItem bi = model.addBodyItem("noname");
-        parentNode.add( new DefaultMutableTreeNode( new NodeInfo(bi, NodeInfo.Type.BODY_ITEM) ) );
+        DefaultMutableTreeNode newNode = new DefaultMutableTreeNode( new NodeInfo(bi, NodeInfo.Type.BODY_ITEM) );
+        parentNode.add( newNode );
+        return newNode;
+
     }
 
 
-    void addNewAag( DefaultMutableTreeNode parentNode ) {
+    DefaultMutableTreeNode addNewAag( DefaultMutableTreeNode parentNode ) {
 
         NodeInfo ni = ( NodeInfo ) parentNode.getUserObject();
 
         AnimatedActorGroup newAg;
+
+        DefaultMutableTreeNode newNode = null;
 
         switch ( ni.type ) {
             case ROOT:
                 newAg = new AnimatedActorGroup();
                 newAg.setName("noname");
                 model.setBackgroundActor(newAg);
-                parentNode.add(new DefaultMutableTreeNode(new NodeInfo(newAg, NodeInfo.Type.AAG)));
+                newNode = new DefaultMutableTreeNode(new NodeInfo(newAg, NodeInfo.Type.AAG));
+                parentNode.add( newNode );
                 break;
 
             case AAG:
                 if ( ni.object == null )
-                    return;
+                    return null;
                 AnimatedActorGroup parentAg = (AnimatedActorGroup) ni.object;
                 newAg = new AnimatedActorGroup();
                 newAg.setName( "noname" );
                 parentAg.addChild( newAg );
-                parentNode.add( new DefaultMutableTreeNode( new NodeInfo( newAg, NodeInfo.Type.AAG ) ) );
+                newNode = new DefaultMutableTreeNode( new NodeInfo( newAg, NodeInfo.Type.AAG ) );
+                parentNode.add( newNode );
                 break;
             case BODY_ITEM:
                 if ( ni.object == null )
-                    return;
+                    return null;
                 BodyItem bi = (BodyItem) ni.object;
 
                 if ( bi.getAagBackground() != null )
-                    return;
+                    return null;
                 newAg = new AnimatedActorGroup();
                 newAg.setName( "noname" );
                 bi.setAagBackground( newAg );
-                parentNode.add( new DefaultMutableTreeNode( new NodeInfo( newAg, NodeInfo.Type.AAG ) ) );
+                newNode = new DefaultMutableTreeNode( new NodeInfo( newAg, NodeInfo.Type.AAG ) );
+                parentNode.add( newNode );
                 break;
         }
-
+        return newNode;
     }
 
-    void addNewFixtureSet(DefaultMutableTreeNode parentNode) {
+    DefaultMutableTreeNode addNewFixtureSet(DefaultMutableTreeNode parentNode) {
         NodeInfo ni = (NodeInfo) parentNode.getUserObject();
         BodyItem bi = ( BodyItem ) ni.object;
         FixtureSet fs = bi.addNewFixtureSet("noname");
-        parentNode.add(new DefaultMutableTreeNode(new NodeInfo(fs, NodeInfo.Type.FIXTURE_SET)));
+        DefaultMutableTreeNode nn = new DefaultMutableTreeNode(new NodeInfo(fs, NodeInfo.Type.FIXTURE_SET));
+        parentNode.add( nn );
+        return nn;
     }
 
     int showRootAddNodeSelectorDialog() {
@@ -905,10 +959,12 @@ public class MainGui extends JFrame {
             }
 
             for ( DefaultMutableTreeNode nd : removeList ) {
-                md.removeNodeFromParent( node );
+                if ( node.getParent() != null )
+                    md.removeNodeFromParent( node );
             }
             md.nodeStructureChanged((javax.swing.tree.TreeNode) md.getRoot());
         }
+        selectNode( parentNode );
     }
 
     void processBodyItemSelection( BodyItem bi ) {
@@ -952,7 +1008,7 @@ public class MainGui extends JFrame {
             case ROOT:
                 tableProperties.setModel( physModelPropertiesTableModel );
                 tabbedPaneEditors.add("Joint creator", panelJointCreator );
-                resetJointCreatorGui();
+                updateJointCreatorGui();
                 setGuiElementEnable( panelJointCreator, true);
                 updateJointCreatorPanelFeatures();
                 break;
@@ -1020,6 +1076,8 @@ public class MainGui extends JFrame {
             parentNi = (NodeInfo) parentNode.getUserObject();
         }
 
+        DefaultMutableTreeNode newNode = null;
+
         switch ( ni.type ) {
             case ROOT:
                 return;
@@ -1033,7 +1091,7 @@ public class MainGui extends JFrame {
                 aagDesc.setName( aagDesc.getName() + "Cpy" );
                 AnimatedActorGroup newAag = new AnimatedActorGroup( aagDesc );
                 pAag.addChild( newAag );
-                createTreeAagNode( parentNode, newAag );
+                newNode = createTreeAagNode( parentNode, newAag );
                 break;
 
             case BODY_ITEM:
@@ -1043,7 +1101,7 @@ public class MainGui extends JFrame {
                 bd.setName( bd.getName() + "Cpy");
                 bd.setId( -1 );
                 BodyItem dupBi = model.addBodyItem( bd );
-                createTreeBodyNode( dupBi );
+                newNode = createTreeBodyNode( dupBi );
 
                 break;
             case FIXTURE_SET:
@@ -1052,16 +1110,22 @@ public class MainGui extends JFrame {
                 FixtureSet fs = (FixtureSet) ni.object;
                 FixtureSetDescription fd = fs.getDescription();
                 FixtureSet newFs = bodyItem.addNewFixtureSet( fd );
-                createTreeFixtureSetNode( parentNode, newFs );
+                newNode = createTreeFixtureSetNode( parentNode, newFs );
 
                 break;
             case JOINT_ITEM:
                 return;
+
+
         }
 
         if ( parentNode != null ) {
             md.nodeChanged(parentNode);
             md.nodeStructureChanged(parentNode);
+        }
+
+        if ( newNode != null ) {
+            selectNode( newNode );
         }
 
     }
@@ -1086,7 +1150,7 @@ public class MainGui extends JFrame {
         c.setEnabled( state );
     }
 
-    private void createTreeAagNode( DefaultMutableTreeNode parent, AnimatedActorGroup aag ) {
+    private DefaultMutableTreeNode createTreeAagNode( DefaultMutableTreeNode parent, AnimatedActorGroup aag ) {
 
         DefaultMutableTreeNode aagNode = new DefaultMutableTreeNode(
                 new NodeInfo( aag, NodeInfo.Type.AAG) );
@@ -1096,15 +1160,19 @@ public class MainGui extends JFrame {
         }
 
         parent.add( aagNode );
+
+        return aagNode;
     }
 
-    private void createTreeFixtureSetNode( DefaultMutableTreeNode bodyNode, FixtureSet fs ) {
+    private DefaultMutableTreeNode createTreeFixtureSetNode( DefaultMutableTreeNode bodyNode, FixtureSet fs ) {
         DefaultMutableTreeNode fsNode = new DefaultMutableTreeNode(
                 new NodeInfo( fs, NodeInfo.Type.FIXTURE_SET) );
         bodyNode.add( fsNode );
+
+        return fsNode;
     }
 
-    private void createTreeBodyNode(BodyItem bi ) {
+    private DefaultMutableTreeNode createTreeBodyNode(BodyItem bi ) {
 
         DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
         DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) md.getRoot();
@@ -1122,9 +1190,10 @@ public class MainGui extends JFrame {
 
         rootNode.add( bodyNode );
 
+        return bodyNode;
     }
 
-    private void createTreeJointItemNode( JointItem ji ) {
+    private DefaultMutableTreeNode createTreeJointItemNode( JointItem ji ) {
         DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
         DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) md.getRoot();
 
@@ -1135,6 +1204,7 @@ public class MainGui extends JFrame {
             createTreeAagNode( jiNode, ji.getAagBackground() );
         }
         rootNode.add( jiNode );
+        return jiNode;
     }
 
     private void loadTree() {
@@ -1289,13 +1359,24 @@ public class MainGui extends JFrame {
     }
 
 
-    void resetJointCreatorGui() {
+    void updateJointCreatorGui() {
+
+        BodyItem selA = (BodyItem) comboBodyASelector.getSelectedItem();
+        BodyItem selB = (BodyItem) comboBodyBSelector.getSelectedItem();
+
         comboBodyASelector.removeAllItems();
         comboBodyBSelector.removeAllItems();
+
         for ( BodyItem bi : model.getBodyItems() ) {
             comboBodyASelector.addItem( bi );
             comboBodyBSelector.addItem( bi );
         }
+
+        if ( selA != null && model.getBodyItems().contains( selA, true))
+            comboBodyASelector.setSelectedItem( selA );
+
+        if ( selB != null && model.getBodyItems().contains( selB, true))
+            comboBodyBSelector.setSelectedItem( selB );
 
         tfAnchorA_X.setText("");
         tfAnchorA_Y.setText("");
@@ -1428,16 +1509,18 @@ public class MainGui extends JFrame {
         JointItem ji = model.addNewJointItem( jiDesc );
         if ( ji == null)
             return;
-
-        node.add(new DefaultMutableTreeNode(new NodeInfo(ji, NodeInfo.Type.JOINT_ITEM)));
-
+        DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(new NodeInfo(ji, NodeInfo.Type.JOINT_ITEM));
+        node.add( newNode );
         md.nodeChanged( node );
         md.nodeStructureChanged(node);
         updateJointCombos();
 
+        selectNode( newNode );
+
     }
 
     void updateJointCombos() {
+
         comboJoint1.removeAllItems();
         comboJoint2.removeAllItems();
 
@@ -1637,6 +1720,25 @@ public class MainGui extends JFrame {
         BodyItemController ctrlr = GdxApplication.get().getEditorScreen().getBodyItemController();
         ctrlr.setEnableMassCorrection( chbEnableMassCorrection.isSelected() );
 
+    }
+
+    void selectBodyItemToJointCreator( BodyItem bi,int id ) {
+        if ( id == 0 ) {
+            comboBodyASelector.setSelectedItem( bi );
+        } else {
+            comboBodyBSelector.setSelectedItem( bi );
+        }
+    }
+
+
+
+    void selectBodyItemToAnchorPointcController( int selId ) {
+        AnchorPointController ctrlr = GdxApplication.get().getEditorScreen().getAnchorPointController();
+        if ( selId == 0 ) {
+            ctrlr.setSelectedBodyItem((BodyItem) comboBodyASelector.getSelectedItem(), 0);
+        } else {
+            ctrlr.setSelectedBodyItem((BodyItem) comboBodyBSelector.getSelectedItem(), 1);
+        }
     }
 
     //======================= main ================================

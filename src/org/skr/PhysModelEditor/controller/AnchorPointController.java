@@ -1,10 +1,17 @@
 package org.skr.PhysModelEditor.controller;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.Fixture;
+import com.badlogic.gdx.physics.box2d.QueryCallback;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import org.skr.PhysModelEditor.EditorScreen;
 import org.skr.PhysModelEditor.PhysWorld;
+import org.skr.physmodel.BodyItem;
 import org.skr.physmodel.JointItemDescription;
 
 /**
@@ -42,6 +49,31 @@ public class AnchorPointController extends Controller {
         }
     }
 
+    public static interface BodyItemSelectionListener {
+        public void bodySelected( BodyItem bi, int id );
+    }
+
+    BodyItem selectedBodyItem_A = null;
+    BodyItem selectedBodyItem_B = null;
+
+    BodyItemSelectionListener bodyItemSelectionListener;
+
+
+    public BodyItemSelectionListener getBodyItemSelectionListener() {
+        return bodyItemSelectionListener;
+    }
+
+    public void setBodyItemSelectionListener(BodyItemSelectionListener bodyItemSelectionListener) {
+        this.bodyItemSelectionListener = bodyItemSelectionListener;
+    }
+
+    public void setSelectedBodyItem( BodyItem bi, int selId ) {
+        if ( selId == 0 ) {
+            selectedBodyItem_A = bi;
+        } else {
+            selectedBodyItem_B = bi;
+        }
+    }
 
     private void createControlPoints() {
         AnchorControlPoint cp = new AnchorControlPoint( jdesc, AnchorControlPoint.AcpType.typeA );
@@ -89,10 +121,30 @@ public class AnchorPointController extends Controller {
         // does nothing
     }
 
+    void drawBodyItemSelection( BodyItem bi, Color c ) {
+        Vector2 center = bi.getBody().getWorldCenter();
+        PhysWorld.get().toView( center );
+
+        shapeRenderer.setColor( c );
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.solidCircle( center.x, center.y, 20 );
+        shapeRenderer.end();
+    }
+
+    private static final Color cA = new Color( 1, 0,0,1);
+    private static final Color cB = new Color( 0, 1,0,1);
 
     @Override
     protected void draw() {
         drawControlPoints();
+
+        if ( selectedBodyItem_A != null ) {
+            drawBodyItemSelection( selectedBodyItem_A, cA );
+        }
+        if ( selectedBodyItem_B != null ) {
+            drawBodyItemSelection( selectedBodyItem_B, cB );
+        }
+
         if ( controlPoints.get(2).isVisible() ) {
             ControlPoint ax = controlPoints.get(2);
             float x = ax.getX() * 1000;
@@ -225,5 +277,45 @@ public class AnchorPointController extends Controller {
                 setControlPointVisible( controlPoints.get(4), true );
                 break;
         }
+    }
+
+    @Override
+    protected void onMouseClicked(Vector2 localCoord, Vector2 stageCoord, int button) {
+        if ( button == Input.Buttons.LEFT && selectedControlPoint == null ) {
+            processBodyItemSelection( stageCoord );
+        }
+    }
+
+    private final static Vector2 localV = new Vector2();
+    private static int biSelId = 0;
+    QueryCallback qcb = new QueryCallback() {
+        @Override
+        public boolean reportFixture(Fixture fixture) {
+
+            if ( bodyItemSelectionListener == null ) {
+                return false;
+            }
+            Body b = fixture.getBody();
+            BodyItem bi = (BodyItem) b.getUserData();
+
+            if ( biSelId == 0 ) {
+                selectedBodyItem_A = bi;
+            } else {
+                selectedBodyItem_B = bi;
+            }
+            bodyItemSelectionListener.bodySelected( bi, biSelId );
+            biSelId = (biSelId == 0 ) ? 1 : 0;
+            return false;
+        }
+    };
+
+    private void processBodyItemSelection(Vector2 stageCoord) {
+
+        localV.set(stageCoord);
+        PhysWorld.get().toPhys( localV );
+
+        PhysWorld.getPrimaryWorld().QueryAABB( qcb,
+                localV.x - 0.1f, localV.y - 0.1f,
+                localV.x + 0.1f, localV.y + 0.1f );
     }
 }

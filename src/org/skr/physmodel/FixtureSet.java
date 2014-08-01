@@ -112,7 +112,7 @@ public class FixtureSet {
             f.setDensity( density );
     }
 
-    private ShapeDescription getShapeDescription(Fixture fixture) {
+    public static ShapeDescription getShapeDescription(Fixture fixture) {
 
         ShapeDescription shd = new ShapeDescription();
         Shape shape = fixture.getShape();
@@ -129,11 +129,12 @@ public class FixtureSet {
                 EdgeShape esh = ( EdgeShape ) shape;
 
                 shd.getVertices().add( new Vector2() );
-                shd.getVertices().add(new Vector2());
+                shd.getVertices().add( new Vector2() );
 
-                esh.getVertex1( shd.getVertices().get(0)  );
+                esh.getVertex1( shd.getVertices().get(0) );
                 esh.getVertex2( shd.getVertices().get(1) );
-                   break;
+
+                break;
 
             case Polygon:
 

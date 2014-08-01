@@ -133,7 +133,11 @@ public abstract class ShapeController extends Controller {
     }
 
     @Override
-    protected boolean onMouseClicked(Vector2 localCoord, Vector2 stageCoord) {
+    protected void onMouseClicked(Vector2 localCoord, Vector2 stageCoord, int button) {
+
+        if ( button != Input.Buttons.LEFT )
+            return ;
+
         boolean leftCtrl = Gdx.input.isKeyPressed( Input.Keys.CONTROL_LEFT );
         boolean leftShift = Gdx.input.isKeyPressed( Input.Keys.SHIFT_LEFT );
         boolean leftAlt = Gdx.input.isKeyPressed( Input.Keys.ALT_LEFT );
@@ -141,9 +145,9 @@ public abstract class ShapeController extends Controller {
         if ( !leftShift && !leftAlt && leftCtrl) {
             addControlPoint( localCoord );
         } else if ( !leftShift && leftAlt && !leftCtrl) {
-            return removeControlPoint( localCoord );
+            removeControlPoint( localCoord );
         }
-        return false;
+        return;
     }
 
     protected void addControlPoint( Vector2 localCoord ) {

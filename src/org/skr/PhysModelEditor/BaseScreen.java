@@ -9,7 +9,6 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
@@ -92,9 +91,11 @@ public abstract class BaseScreen implements Screen, InputProcessor {
 
     private static  float downPosX = 0;
     private static  float downPosY = 0;
+    private boolean mouseDragged = false;
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        mouseDragged = false;
         if ( button == Input.Buttons.MIDDLE ) {
             downPosX = screenX;
             downPosY = screenY;
@@ -104,11 +105,20 @@ public abstract class BaseScreen implements Screen, InputProcessor {
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        if ( !mouseDragged )
+            clicked( screenX, screenY, button );
+        mouseDragged = false;
         return false;
+    }
+
+
+    protected void clicked( int screenX, int screenY, int button ) {
+        //dumb
     }
 
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
+        mouseDragged = true;
         if ( Gdx.input.isButtonPressed( Input.Buttons.MIDDLE ) ) {
 
             float offsetX = screenX - downPosX;

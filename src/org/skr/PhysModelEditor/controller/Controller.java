@@ -454,8 +454,8 @@ public abstract  class Controller  {
         return false;
     }
 
-    protected boolean onMouseClicked( Vector2 localCoord, Vector2 stageCoord ) {
-        return false;
+    protected void onMouseClicked( Vector2 localCoord, Vector2 stageCoord, int button ) {
+        //dumb
     }
 
 
@@ -468,9 +468,7 @@ public abstract  class Controller  {
     private final Vector2 localCoord = new Vector2();
 
 
-    private boolean mouseMoved = false;
     private boolean controlPointMovingEnabled = false;
-    private boolean inputResult = false;
 
     public void touchDown( Vector2 stageCoord ) {
         localCoord.set(stageCoord);
@@ -511,9 +509,6 @@ public abstract  class Controller  {
 
     public void touchDragged( Vector2 stageCoord ) {
 
-        mouseMoved = true;
-        inputResult = true;
-
         localCoord.set(stageCoord);
         stageToObject(localCoord);
 
@@ -536,11 +531,9 @@ public abstract  class Controller  {
                     break;
                 case Vertical:
                     offsetStage.set(0, offsetStage.y);
-                    offsetLocal.set(0, offsetLocal.y);
                     break;
                 case Horizontal:
                     offsetStage.set(offsetStage.x, 0);
-                    offsetLocal.set(offsetLocal.x, 0);
                     break;
             }
 
@@ -579,30 +572,28 @@ public abstract  class Controller  {
         downLocalPos.set( localCoord );
     }
 
-    public boolean touchUp( Vector2 stageCoord ) {
+    public void touchUp( Vector2 stageCoord, int button ) {
 
         localCoord.set(stageCoord);
         stageToObject(localCoord);
 
         switch ( selectionMode ) {
-
             case SELECT_BY_CLICK:
                 break;
             case PRESSED_ONLY:
-                if ( selectedControlPoint != null )
-                    selectedControlPoint.setSelected( false );
+                if ( selectedControlPoint != null ) {
+                    selectedControlPoint.setSelected(false);
+                }
                 selectedControlPoint = null;
                 break;
         }
-
-
-        if ( !mouseMoved ) {
-            inputResult = onMouseClicked( localCoord, stageCoord);
-        }
-
-        mouseMoved = false;
         moveDir = MoveDir.Free;
-        return inputResult;
+    }
+
+    public void mouseClicked( Vector2 stageCoord, int button ) {
+        localCoord.set(stageCoord);
+        stageToObject(localCoord);
+        onMouseClicked( localCoord, stageCoord, button);
     }
 
     protected void setControlPointVisible( ControlPoint cp, boolean state ) {

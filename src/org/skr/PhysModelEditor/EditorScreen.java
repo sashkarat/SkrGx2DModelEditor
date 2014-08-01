@@ -34,8 +34,6 @@ public class EditorScreen extends BaseScreen {
     private Controller currentController = null;
     private BodyItemSelectionListener bodyItemSelectionListener;
 
-
-
     public EditorScreen() {
 
         super();
@@ -53,6 +51,7 @@ public class EditorScreen extends BaseScreen {
         anchorPointController = new AnchorPointController( getStage() );
 
     }
+
 
     public BodyItemSelectionListener getBodyItemSelectionListener() {
         return bodyItemSelectionListener;
@@ -161,7 +160,6 @@ public class EditorScreen extends BaseScreen {
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         boolean res = super.touchDown( screenX, screenY, pointer, button);
-
         if ( button == Input.Buttons.LEFT && currentController != null ) {
             coordV.set( screenX, screenY );
             currentController.touchDown(getStage().screenToStageCoordinates(coordV));
@@ -174,18 +172,27 @@ public class EditorScreen extends BaseScreen {
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
         boolean res = super.touchUp( screenX,screenY, pointer, button );
-        boolean res2 = false;
+
         if ( button == Input.Buttons.LEFT && currentController != null ) {
             coordV.set( screenX, screenY );
-            res2 = currentController.touchUp( getStage().screenToStageCoordinates(coordV) );
+            currentController.touchUp( getStage().screenToStageCoordinates(coordV), button );
         }
 
-        if ( !res2 && button == Input.Buttons.LEFT )  {
-            coordV.set( screenX, screenY );
-            processBodyItemSelection(getStage().screenToStageCoordinates(coordV));
-        }
+
 
         return res;
+    }
+
+    @Override
+    protected void clicked(int screenX, int screenY, int button) {
+        if ( button == Input.Buttons.MIDDLE )  {
+            coordV.set( screenX, screenY );
+            processBodyItemSelection(getStage().screenToStageCoordinates(coordV));
+        } else if ( currentController != null ) {
+            coordV.set( screenX, screenY );
+            currentController.mouseClicked( getStage().screenToStageCoordinates(coordV), button );
+
+        }
     }
 
     QueryCallback qcb = new QueryCallback() {
