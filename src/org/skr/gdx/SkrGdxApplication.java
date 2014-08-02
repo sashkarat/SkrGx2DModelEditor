@@ -1,4 +1,4 @@
-package org.skr.PhysModelEditor.gdx.editor;
+package org.skr.gdx;
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.files.FileHandle;
@@ -6,19 +6,17 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.gdx.editor.screens.EditorScreen;
 import org.skr.PhysModelEditor.gdx.editor.screens.SimulationScreen;
-import org.skr.gdx.PhysWorld;
 
 /**
  * Created by rat on 30.05.14.
  */
-public class GdxApplication extends Game {
+public abstract class SkrGdxApplication extends Game {
 
-    private static GdxApplication instance = null;
+    private static SkrGdxApplication instance = null;
 
     TextureAtlas atlas;
     Array<String> regions = new Array<String>();
-    EditorScreen editorScreen;
-    SimulationScreen simulationScreen;
+
     Screen currentScreen;
 
 
@@ -30,45 +28,34 @@ public class GdxApplication extends Game {
 
     ChangeAtlasListener changeAtlasListener;
 
-    public GdxApplication() {
-        GdxApplication.instance = this;
+    public SkrGdxApplication() {
+        SkrGdxApplication.instance = this;
     }
 
-    public static GdxApplication get() {
-        return GdxApplication.instance;
+    public static SkrGdxApplication get() {
+        return SkrGdxApplication.instance;
     }
 
     public Array<String> getRegions() {
         return regions;
     }
 
+    public Screen getCurrentScreen() {
+        return currentScreen;
+    }
+
+    protected void toggleCurrentScreen(Screen screen) {
+        currentScreen = screen;
+        setScreen( currentScreen );
+    }
+
+    protected  abstract void onCreate();
+    protected abstract void onDispose();
+
     @Override
     public void create() {
-
         PhysWorld.create(100);
-
-        editorScreen = new EditorScreen();
-        simulationScreen = new SimulationScreen();
-        currentScreen = editorScreen;
-        setScreen( editorScreen );
-
-
-    }
-
-    public EditorScreen getEditorScreen() {
-        return editorScreen;
-    }
-
-    public SimulationScreen getSimulationScreen() {
-        return simulationScreen;
-    }
-
-    public void toggleEditorScreen() {
-        setScreen( editorScreen );
-    }
-
-    public void toggleSimulationScreen() {
-        setScreen(simulationScreen);
+        onCreate();
     }
 
     @Override
@@ -109,7 +96,7 @@ public class GdxApplication extends Game {
         this.regions.sort();
 
 
-        Gdx.app.log("GdxApplication.loadAtlas", "OK");
+        Gdx.app.log("SkrGdxApplication.loadAtlas", "OK");
 
         if ( changeAtlasListener != null )
             changeAtlasListener.atlasUpdated( atlas );
@@ -124,7 +111,7 @@ public class GdxApplication extends Game {
 
         super.dispose();
 
-        editorScreen.dispose();
+        onDispose();
 
         if ( atlas != null ) {
             atlas.dispose();

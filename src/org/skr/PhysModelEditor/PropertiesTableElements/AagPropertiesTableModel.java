@@ -2,8 +2,8 @@ package org.skr.PhysModelEditor.PropertiesTableElements;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.utils.Array;
+import org.skr.gdx.SkrGdxApplication;
 import org.skr.gdx.physmodel.animatedactorgroup.AnimatedActorGroup;
-import org.skr.PhysModelEditor.gdx.editor.GdxApplication;
 
 import javax.swing.*;
 
@@ -124,7 +124,7 @@ public class AagPropertiesTableModel extends PropertiesBaseTableModel {
 
         switch (rowIndex) {
             case PROP_REGION:
-                Array<String> regions = GdxApplication.get().getRegions();
+                Array<String> regions = SkrGdxApplication.get().getRegions();
                 int indexOf = regions.indexOf(aag.getTextureName(), false );
                 return indexOf;
             case PROP_PLAYMODE:
@@ -142,7 +142,7 @@ public class AagPropertiesTableModel extends PropertiesBaseTableModel {
 
         switch ( rowIndex ) {
             case PROP_REGION:
-                Array<String> regions = GdxApplication.get().getRegions();
+                Array<String> regions = SkrGdxApplication.get().getRegions();
                 return regions;
             case PROP_PLAYMODE:
                 return playModes;
@@ -188,7 +188,7 @@ public class AagPropertiesTableModel extends PropertiesBaseTableModel {
                     if (regIndex < 0) {
                         aag.setTextureName("");
                     } else {
-                        aag.setTextureName(GdxApplication.get().getRegions().get(regIndex));
+                        aag.setTextureName(SkrGdxApplication.get().getRegions().get(regIndex));
                     }
                     aag.updateTextures();
                 }

@@ -9,7 +9,8 @@ import com.badlogic.gdx.physics.box2d.Shape;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.PropertiesTableElements.*;
-import org.skr.PhysModelEditor.gdx.editor.GdxApplication;
+import org.skr.PhysModelEditor.gdx.editor.SkrGdxAppPhysModelEditor;
+import org.skr.gdx.SkrGdxApplication;
 import org.skr.gdx.PhysWorld;
 import org.skr.PhysModelEditor.gdx.editor.controllers.*;
 import org.skr.gdx.editor.controller.Controller;
@@ -126,7 +127,7 @@ public class MainGui extends JFrame {
     private JRadioButton rbControllerInput;
     private JRadioButton rbScreenInput;
 
-    private GdxApplication gApp;
+    private SkrGdxAppPhysModelEditor gApp;
     private String currentModelFileName = "";
     private PhysModel model = null;
 
@@ -191,7 +192,7 @@ public class MainGui extends JFrame {
 
         setGuiElementEnable( panelSimulationControls, false);
 
-        gApp = new GdxApplication();
+        gApp = new SkrGdxAppPhysModelEditor();
         final LwjglAWTCanvas gdxCanvas = new LwjglAWTCanvas( gApp );
 
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -220,7 +221,7 @@ public class MainGui extends JFrame {
             @Override
             public void changed(FixtureSet fixtureSet) {
                 updateShapeEditorFeatures( fixtureSet );
-                GdxApplication.get().getEditorScreen().setModelObject( fixtureSet );
+                SkrGdxAppPhysModelEditor.get().getEditorScreen().setModelObject( fixtureSet );
             }
         });
 
@@ -236,7 +237,7 @@ public class MainGui extends JFrame {
         ApplicationSettings.load();
         uploadGuiFromSettings();
 
-        gApp.setChangeAtlasListener( new GdxApplication.ChangeAtlasListener() {
+        gApp.setChangeAtlasListener( new SkrGdxApplication.ChangeAtlasListener() {
             @Override
             public void atlasUpdated(TextureAtlas atlas) {
                 onAtlasLoaded( atlas );
@@ -254,7 +255,7 @@ public class MainGui extends JFrame {
         Gdx.app.postRunnable(new Runnable() {
             @Override
             public void run() {
-                GdxApplication.get().getEditorScreen().getActorController().setControlPointListener(
+                SkrGdxAppPhysModelEditor.get().getEditorScreen().getActorController().setControlPointListener(
                         new Controller.controlPointListener() {
                             @Override
                             public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
@@ -269,7 +270,7 @@ public class MainGui extends JFrame {
         Gdx.app.postRunnable( new Runnable() {
             @Override
             public void run() {
-                GdxApplication.get().getEditorScreen().getBodyItemController().setControlPointListener(
+                SkrGdxAppPhysModelEditor.get().getEditorScreen().getBodyItemController().setControlPointListener(
                         new Controller.controlPointListener() {
                             @Override
                             public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
@@ -283,8 +284,8 @@ public class MainGui extends JFrame {
         Gdx.app.postRunnable( new Runnable() {
             @Override
             public void run() {
-                jiDesc = GdxApplication.get().getEditorScreen().getAnchorPointController().getDescription();
-                GdxApplication.get().getEditorScreen().getAnchorPointController().setControlPointListener(
+                jiDesc = SkrGdxAppPhysModelEditor.get().getEditorScreen().getAnchorPointController().getDescription();
+                SkrGdxAppPhysModelEditor.get().getEditorScreen().getAnchorPointController().setControlPointListener(
                         new Controller.controlPointListener() {
                             @Override
                             public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
@@ -297,7 +298,7 @@ public class MainGui extends JFrame {
         Gdx.app.postRunnable( new Runnable() {
             @Override
             public void run() {
-                final BodyItemController ctrl = GdxApplication.get().getEditorScreen().getBodyItemController();
+                final BodyItemController ctrl = SkrGdxAppPhysModelEditor.get().getEditorScreen().getBodyItemController();
                 ctrl.setControlPointListener( new Controller.controlPointListener() {
                     @Override
                     public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
@@ -311,7 +312,7 @@ public class MainGui extends JFrame {
         Gdx.app.postRunnable( new Runnable() {
             @Override
             public void run() {
-                GdxApplication.get().getEditorScreen().setBodyItemSelectionListener( new EditorScreen.BodyItemSelectionListener() {
+                SkrGdxAppPhysModelEditor.get().getEditorScreen().setBodyItemSelectionListener( new EditorScreen.BodyItemSelectionListener() {
                     @Override
                     public void bodyItemSelected(BodyItem bi) {
                         processBodyItemSelection( bi );
@@ -323,7 +324,7 @@ public class MainGui extends JFrame {
         Gdx.app.postRunnable( new Runnable() {
             @Override
             public void run() {
-                GdxApplication.get().getEditorScreen().getAnchorPointController().setBodyItemSelectionListener(
+                SkrGdxAppPhysModelEditor.get().getEditorScreen().getAnchorPointController().setBodyItemSelectionListener(
                         new AnchorPointController.BodyItemSelectionListener() {
                             @Override
                             public void bodySelected(BodyItem bi, int id) {
@@ -422,7 +423,7 @@ public class MainGui extends JFrame {
         btnDeleteShape.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                ShapeController shapeController = SkrGdxAppPhysModelEditor.get().getEditorScreen().getCurrentShapeController();
                 if ( shapeController == null )
                     return;
                 deleteShape( shapeController );
@@ -431,7 +432,7 @@ public class MainGui extends JFrame {
         btnSetControlPointPosition.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                ShapeController shapeController = SkrGdxAppPhysModelEditor.get().getEditorScreen().getCurrentShapeController();
                 if ( shapeController == null )
                     return;
                 setControlPointPosition( shapeController );
@@ -440,21 +441,21 @@ public class MainGui extends JFrame {
         chbLooped.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                ShapeController shapeController = SkrGdxAppPhysModelEditor.get().getEditorScreen().getCurrentShapeController();
                 setLooped( chbLooped.isSelected(), shapeController );
             }
         });
         chbAutoTessellate.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                ShapeController shapeController = SkrGdxAppPhysModelEditor.get().getEditorScreen().getCurrentShapeController();
                 setAutoTessellate( chbAutoTessellate.isSelected(), shapeController );
             }
         });
         btnUpdateFixtures.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                ShapeController shapeController = SkrGdxAppPhysModelEditor.get().getEditorScreen().getCurrentShapeController();
                 if ( shapeController == null )
                     return;
                 updateFixtures( shapeController );
@@ -463,7 +464,7 @@ public class MainGui extends JFrame {
         btnSetRadius.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                ShapeController shapeController = SkrGdxAppPhysModelEditor.get().getEditorScreen().getCurrentShapeController();
                 if ( shapeController == null )
                     return;
                 setRadius( shapeController );
@@ -472,7 +473,7 @@ public class MainGui extends JFrame {
         btnTessellatePolygon.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ShapeController shapeController = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+                ShapeController shapeController = SkrGdxAppPhysModelEditor.get().getEditorScreen().getCurrentShapeController();
                 tessellatePolygon( shapeController );
             }
         });
@@ -737,7 +738,7 @@ public class MainGui extends JFrame {
         loadTree();
         physModelPropertiesTableModel.setModel(model);
 
-        GdxApplication.get().getEditorScreen().getModelRenderer().setModel( model );
+        SkrGdxAppPhysModelEditor.get().getEditorScreen().getModelRenderer().setModel( model );
 
         updateJointCombos();
     }
@@ -1052,7 +1053,7 @@ public class MainGui extends JFrame {
             default:
         }
 
-        GdxApplication.get().getEditorScreen().setModelObject(ni.object);
+        SkrGdxAppPhysModelEditor.get().getEditorScreen().setModelObject(ni.object);
     }
 
 
@@ -1271,7 +1272,7 @@ public class MainGui extends JFrame {
     }
 
     void addNewShape() {
-        ShapeController shc = GdxApplication.get().getEditorScreen().getCurrentShapeController();
+        ShapeController shc = SkrGdxAppPhysModelEditor.get().getEditorScreen().getCurrentShapeController();
         if ( shc == null )
             return;
 
@@ -1564,12 +1565,12 @@ public class MainGui extends JFrame {
                     if ( description == null)
                         return;
 
-                    GdxApplication.get().getSimulationScreen().setModelDescription( description );
-                    GdxApplication.get().toggleSimulationScreen();
-                    GdxApplication.get().getSimulationScreen().startSimulation();
+                    SkrGdxAppPhysModelEditor.get().getSimulationScreen().setModelDescription( description );
+                    SkrGdxAppPhysModelEditor.get().toggleSimulationScreen();
+                    SkrGdxAppPhysModelEditor.get().getSimulationScreen().startSimulation();
 
                 } else {
-                    GdxApplication.get().toggleEditorScreen();
+                    SkrGdxAppPhysModelEditor.get().toggleEditorScreen();
                 }
             }
         });
@@ -1580,7 +1581,7 @@ public class MainGui extends JFrame {
         Gdx.app.postRunnable( new Runnable() {
             @Override
             public void run() {
-                GdxApplication.get().getSimulationScreen().startSimulation();
+                SkrGdxAppPhysModelEditor.get().getSimulationScreen().startSimulation();
             }
         });
     }
@@ -1591,7 +1592,7 @@ public class MainGui extends JFrame {
 
             @Override
             public void run() {
-                GdxApplication.get().getSimulationScreen().doStep();
+                SkrGdxAppPhysModelEditor.get().getSimulationScreen().doStep();
             }
         });
     }
@@ -1600,7 +1601,7 @@ public class MainGui extends JFrame {
         Gdx.app.postRunnable(new Runnable() {
             @Override
             public void run() {
-                GdxApplication.get().getSimulationScreen().setPause(chbPauseSimulation.isSelected());
+                SkrGdxAppPhysModelEditor.get().getSimulationScreen().setPause(chbPauseSimulation.isSelected());
             }
         });
     }
@@ -1610,8 +1611,8 @@ public class MainGui extends JFrame {
             @Override
             public void run() {
                 boolean state = chbDisplayGrid.isSelected();
-                GdxApplication.get().getEditorScreen().setDisplayGrid( state );
-                GdxApplication.get().getSimulationScreen().setDisplayGrid( state );
+                SkrGdxAppPhysModelEditor.get().getEditorScreen().setDisplayGrid( state );
+                SkrGdxAppPhysModelEditor.get().getSimulationScreen().setDisplayGrid( state );
             }
         });
     }
@@ -1621,8 +1622,8 @@ public class MainGui extends JFrame {
             @Override
             public void run() {
                 boolean state = chbDebugRender.isSelected();
-                GdxApplication.get().getEditorScreen().setDoDebugRender(state);
-                GdxApplication.get().getSimulationScreen().setDoDebugRender(state);
+                SkrGdxAppPhysModelEditor.get().getEditorScreen().setDoDebugRender(state);
+                SkrGdxAppPhysModelEditor.get().getSimulationScreen().setDoDebugRender(state);
             }
         });
     }
@@ -1636,7 +1637,7 @@ public class MainGui extends JFrame {
         panelAnchorA.setVisible( true );
         panelAnchorB.setVisible( true );
         JointDef.JointType type = (JointDef.JointType) comboJointType.getSelectedItem();
-        AnchorPointController ctrlr = GdxApplication.get().getEditorScreen().getAnchorPointController();
+        AnchorPointController ctrlr = SkrGdxAppPhysModelEditor.get().getEditorScreen().getAnchorPointController();
 
         switch ( type ) {
             case Unknown:
@@ -1711,17 +1712,17 @@ public class MainGui extends JFrame {
         } catch ( NumberFormatException e ) {
             return;
         }
-        BodyItemController ctrlr = GdxApplication.get().getEditorScreen().getBodyItemController();
+        BodyItemController ctrlr = SkrGdxAppPhysModelEditor.get().getEditorScreen().getBodyItemController();
         ctrlr.setWorldCenterOfMass( x, y );
     }
 
     void resetMassData() {
-        BodyItemController ctrlr = GdxApplication.get().getEditorScreen().getBodyItemController();
+        BodyItemController ctrlr = SkrGdxAppPhysModelEditor.get().getEditorScreen().getBodyItemController();
         ctrlr.resetMassData();
     }
 
     private void setMassCorrectionEnabled() {
-        BodyItemController ctrlr = GdxApplication.get().getEditorScreen().getBodyItemController();
+        BodyItemController ctrlr = SkrGdxAppPhysModelEditor.get().getEditorScreen().getBodyItemController();
         ctrlr.setEnableMassCorrection( chbEnableMassCorrection.isSelected() );
 
     }
@@ -1735,7 +1736,7 @@ public class MainGui extends JFrame {
     }
 
     void selectBodyItemToAnchorPointcController( int selId ) {
-        AnchorPointController ctrlr = GdxApplication.get().getEditorScreen().getAnchorPointController();
+        AnchorPointController ctrlr = SkrGdxAppPhysModelEditor.get().getEditorScreen().getAnchorPointController();
         if ( selId == 0 ) {
             ctrlr.setSelectedBodyItem((BodyItem) comboBodyASelector.getSelectedItem(), 0);
         } else {

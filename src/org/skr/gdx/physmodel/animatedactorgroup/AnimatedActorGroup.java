@@ -10,7 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.SnapshotArray;
-import org.skr.PhysModelEditor.gdx.editor.GdxApplication;
+import org.skr.gdx.SkrGdxApplication;
 
 import java.util.Stack;
 
@@ -171,7 +171,7 @@ public class AnimatedActorGroup extends Group {
 
         stateTime = 0;
 
-        TextureAtlas atlas = GdxApplication.get().getAtlas();
+        TextureAtlas atlas = SkrGdxApplication.get().getAtlas();
 
         if ( atlas != null ) {
 
