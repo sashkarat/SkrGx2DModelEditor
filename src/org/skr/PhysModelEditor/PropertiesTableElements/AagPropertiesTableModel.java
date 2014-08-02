@@ -190,16 +190,16 @@ public class AagPropertiesTableModel extends PropertiesBaseTableModel {
                     } else {
                         aag.setTextureName(SkrGdxApplication.get().getRegions().get(regIndex));
                     }
-                    aag.updateTextures();
+                    aag.updateTextures( SkrGdxApplication.get().getAtlas() );
                 }
                 break;
             case PROP_FRAMEDURATION:
                 aag.setFrameDuration( (Float) aValue );
-                aag.updateTextures();
+                aag.updateTextures( SkrGdxApplication.get().getAtlas()  );
                 break;
             case PROP_PLAYMODE:
                 aag.setPlayMode(getPlayModeByIndex( (Integer) aValue ) );
-                aag.updateTextures();
+                aag.updateTextures( SkrGdxApplication.get().getAtlas()  );
                 break;
             case PROP_WIDTH:
                 aag.setWidth( (Float) aValue );

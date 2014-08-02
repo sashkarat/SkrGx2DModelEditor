@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.physics.box2d.Joint;
 import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.physics.box2d.World;
+import org.skr.gdx.SkrGdxApplication;
 import org.skr.gdx.physmodel.animatedactorgroup.AnimatedActorGroup;
 import org.skr.gdx.physmodel.jointitems.*;
 
@@ -23,7 +24,7 @@ public class JointItemFactory {
         }
 
         if ( desc.getAagDescription() != null ) {
-            ji.setAagBackground( new AnimatedActorGroup( desc.getAagDescription() ) );
+            ji.setAagBackground( new AnimatedActorGroup( desc.getAagDescription() , SkrGdxApplication.get().getAtlas() ) );
         }
 
         JointDef jd = ji.createJointDef(desc);

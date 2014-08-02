@@ -2,6 +2,7 @@ package org.skr.gdx.physmodel;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
@@ -13,6 +14,7 @@ import org.skr.gdx.physmodel.animatedactorgroup.AnimatedActorGroup;
 import org.skr.gdx.PhysWorld;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.xml.soap.Text;
 
 /**
  * Created by rat on 31.05.14.
@@ -79,14 +81,18 @@ public class PhysModel {
     private Array<BodyItem> bodyItems = new Array<BodyItem>();
     private Array<JointItem> jointItems = new Array<JointItem>();
 
+    TextureAtlas atlas;
 
 
-    public PhysModel( World world ) {
+
+    public PhysModel( World world, TextureAtlas atlas ) {
         this.world = world;
+        this.atlas = atlas;
     }
 
-    public PhysModel( Description description, World world ) {
+    public PhysModel( Description description, World world, TextureAtlas atlas ) {
         this.world = world;
+        this.atlas = atlas;
         uploadFromDescription( description );
     }
 
@@ -94,11 +100,19 @@ public class PhysModel {
         return this.world;
     }
 
-    public void uploadFromDescription( Description desc) {
+    public TextureAtlas getAtlas() {
+        return atlas;
+    }
+
+    public void setAtlas(TextureAtlas atlas) {
+        this.atlas = atlas;
+    }
+
+    public void uploadFromDescription( Description desc ) {
         setName( desc.getName() );
 
         if ( desc.getBackgroundAagDesc() != null) {
-            AnimatedActorGroup aag = new AnimatedActorGroup( desc.getBackgroundAagDesc() );
+            AnimatedActorGroup aag = new AnimatedActorGroup( desc.getBackgroundAagDesc(), atlas );
             setBackgroundActor( aag );
         }
 
@@ -230,7 +244,7 @@ public class PhysModel {
         }
 
         if (bd.aagDescription != null) {
-            bi.setAagBackground(new AnimatedActorGroup(bd.getAagDescription()));
+            bi.setAagBackground(new AnimatedActorGroup(bd.getAagDescription(), atlas ));
         }
 
         if ( bd.isOverrideMassData() ) {
@@ -247,7 +261,7 @@ public class PhysModel {
 
     public void uploadAtlas() {
         if ( backgroundActor != null )
-            backgroundActor.updateTextures();
+            backgroundActor.updateTextures( atlas );
     }
 
     @Override
@@ -328,7 +342,7 @@ public class PhysModel {
     }
     //================ Static ================================
 
-    public static PhysModel loadFromFile( FileHandle fileHandle ) {
+    public static PhysModel loadFromFile( FileHandle fileHandle, TextureAtlas atlas ) {
 
         Json js = new Json();
         PhysModel physModel = null;
@@ -336,7 +350,7 @@ public class PhysModel {
         try {
 
             Description description = js.fromJson(Description.class, fileHandle);
-            physModel = new PhysModel( description, PhysWorld.getPrimaryWorld() );
+            physModel = new PhysModel( description, PhysWorld.getPrimaryWorld(), atlas );
         } catch ( SerializationException e) {
             Gdx.app.error("PhysModel.loadFromFile", e.getMessage() );
             e.printStackTrace();

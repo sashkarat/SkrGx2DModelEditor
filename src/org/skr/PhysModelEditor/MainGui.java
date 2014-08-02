@@ -648,7 +648,7 @@ public class MainGui extends JFrame {
 
         PhysWorld.clearPrimaryWorld();
 
-        model = new PhysModel( PhysWorld.getPrimaryWorld() );
+        model = new PhysModel( PhysWorld.getPrimaryWorld(), SkrGdxApplication.get().getAtlas()  );
         model.setName("noname");
         model.uploadAtlas();
 
@@ -683,7 +683,7 @@ public class MainGui extends JFrame {
         ApplicationSettings.get().setLastDirectory( fl.getParent() );
 
         PhysWorld.clearPrimaryWorld();
-        model = PhysModel.loadFromFile( Gdx.files.absolute( fl.getAbsolutePath()) );
+        model = PhysModel.loadFromFile( Gdx.files.absolute( fl.getAbsolutePath()), SkrGdxApplication.get().getAtlas()  );
         model.uploadAtlas();
 
         setGuiElementEnable(mainSplitPanel, true);
@@ -833,7 +833,7 @@ public class MainGui extends JFrame {
 
         switch ( ni.type ) {
             case ROOT:
-                newAg = new AnimatedActorGroup();
+                newAg = new AnimatedActorGroup( SkrGdxApplication.get().getAtlas()  );
                 newAg.setName("noname");
                 model.setBackgroundActor(newAg);
                 newNode = new DefaultMutableTreeNode(new NodeInfo(newAg, NodeInfo.Type.AAG));
@@ -844,7 +844,7 @@ public class MainGui extends JFrame {
                 if ( ni.object == null )
                     return null;
                 AnimatedActorGroup parentAg = (AnimatedActorGroup) ni.object;
-                newAg = new AnimatedActorGroup();
+                newAg = new AnimatedActorGroup( SkrGdxApplication.get().getAtlas()  );
                 newAg.setName( "noname" );
                 parentAg.addChild( newAg );
                 newNode = new DefaultMutableTreeNode( new NodeInfo( newAg, NodeInfo.Type.AAG ) );
@@ -857,7 +857,7 @@ public class MainGui extends JFrame {
 
                 if ( bi.getAagBackground() != null )
                     return null;
-                newAg = new AnimatedActorGroup();
+                newAg = new AnimatedActorGroup( SkrGdxApplication.get().getAtlas()  );
                 newAg.setName( "noname" );
                 bi.setAagBackground( newAg );
                 newNode = new DefaultMutableTreeNode( new NodeInfo( newAg, NodeInfo.Type.AAG ) );
@@ -1094,7 +1094,7 @@ public class MainGui extends JFrame {
                 AnimatedActorGroup aag = (AnimatedActorGroup) ni.object;
                 AagDescription aagDesc = aag.getDescription();
                 aagDesc.setName( aagDesc.getName() + "Cpy" );
-                AnimatedActorGroup newAag = new AnimatedActorGroup( aagDesc );
+                AnimatedActorGroup newAag = new AnimatedActorGroup( aagDesc, SkrGdxApplication.get().getAtlas()  );
                 pAag.addChild( newAag );
                 newNode = createTreeAagNode( parentNode, newAag );
                 break;

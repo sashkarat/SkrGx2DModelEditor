@@ -41,18 +41,17 @@ public class AnimatedActorGroup extends Group {
     boolean keepAspectRatio = false;
     boolean drawable = true;
 
-
     private TextureRegion currentRegion;
     private Animation animation;
     private float stateTime = 0;
     private int count;
 
-    public AnimatedActorGroup() {
-        updateTextures();
+    public AnimatedActorGroup( TextureAtlas atlas ) {
+        updateTextures( atlas );
     }
 
-    public AnimatedActorGroup( AagDescription desc ) {
-        uploadFromDescription( desc );
+    public AnimatedActorGroup( AagDescription desc, TextureAtlas atlas  ) {
+        uploadFromDescription( desc, atlas );
     }
 
 
@@ -130,14 +129,14 @@ public class AnimatedActorGroup extends Group {
         return desc;
     }
 
-    public void uploadFromDescription( AagDescription desc ) {
+    public void uploadFromDescription( AagDescription desc, TextureAtlas atlas ) {
 
         Actor[] old_children = getChildren().toArray();
         for ( Actor a : old_children)
             removeActor( a );
 
         for ( AagDescription d : desc.getChildren() )
-            addChild( new AnimatedActorGroup( d ) );
+            addChild( new AnimatedActorGroup( d, atlas ) );
 
         setName( desc.getName() );
         setFrameDuration( desc.getFrameDuration() );
@@ -153,12 +152,12 @@ public class AnimatedActorGroup extends Group {
 
         setTextureName( desc.getTextureName() );
 
-        updateTextures();
+        updateTextures( atlas );
 
 
     }
 
-    public void updateTextures() {
+    public void updateTextures( TextureAtlas atlas ) {
 
         if ( animation != null )
             animation = null;
@@ -170,8 +169,6 @@ public class AnimatedActorGroup extends Group {
         }
 
         stateTime = 0;
-
-        TextureAtlas atlas = SkrGdxApplication.get().getAtlas();
 
         if ( atlas != null ) {
 
@@ -188,7 +185,7 @@ public class AnimatedActorGroup extends Group {
 
         for ( Actor a: children ) {
             if ( a instanceof AnimatedActorGroup ) {
-                ((AnimatedActorGroup) a).updateTextures();
+                ((AnimatedActorGroup) a).updateTextures( atlas );
             }
         }
     }

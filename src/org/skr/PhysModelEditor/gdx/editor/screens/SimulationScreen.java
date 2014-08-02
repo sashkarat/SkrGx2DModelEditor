@@ -1,5 +1,6 @@
 package org.skr.PhysModelEditor.gdx.editor.screens;
 
+import org.skr.gdx.SkrGdxApplication;
 import org.skr.gdx.editor.BaseScreen;
 import org.skr.gdx.PhysModelRenderer;
 import org.skr.gdx.PhysWorld;
@@ -54,7 +55,7 @@ public class SimulationScreen extends BaseScreen {
         resetModel();
         if ( description == null )
             return;
-        PhysModel model = new PhysModel(this.description, PhysWorld.getTestWorld());
+        PhysModel model = new PhysModel( this.description, PhysWorld.getTestWorld(), SkrGdxApplication.get().getAtlas() );
         modelRenderer.setModel(model);
     }
 

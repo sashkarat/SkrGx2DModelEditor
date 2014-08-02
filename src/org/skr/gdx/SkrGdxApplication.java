@@ -19,8 +19,6 @@ public abstract class SkrGdxApplication extends Game {
 
     Screen currentScreen;
 
-
-
     public interface ChangeAtlasListener {
         public void atlasUpdated( TextureAtlas atlas);
 
