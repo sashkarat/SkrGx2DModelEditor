@@ -9,10 +9,14 @@ import com.badlogic.gdx.physics.box2d.Shape;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.PropertiesTableElements.*;
-import org.skr.PhysModelEditor.controller.*;
-import org.skr.physmodel.*;
-import org.skr.physmodel.animatedactorgroup.AagDescription;
-import org.skr.physmodel.animatedactorgroup.AnimatedActorGroup;
+import org.skr.PhysModelEditor.gdx.editor.GdxApplication;
+import org.skr.gdx.PhysWorld;
+import org.skr.PhysModelEditor.gdx.editor.controllers.*;
+import org.skr.gdx.editor.controller.Controller;
+import org.skr.gdx.physmodel.*;
+import org.skr.gdx.physmodel.animatedactorgroup.AagDescription;
+import org.skr.gdx.physmodel.animatedactorgroup.AnimatedActorGroup;
+import org.skr.PhysModelEditor.gdx.editor.screens.EditorScreen;
 
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
@@ -330,20 +334,20 @@ public class MainGui extends JFrame {
             }
         });
 
-        ShapeController.setStaticShapeControllerListener( new ShapeController.ShapeControllerListener() {
+        ShapeController.setStaticShapeControllerListener(new ShapeController.ShapeControllerListener() {
             @Override
             public void controlPointChanged(ShapeDescription shapeDescription, Controller.ControlPoint controlPoint) {
-                shapeControlPointChanged( shapeDescription, controlPoint);
+                shapeControlPointChanged(shapeDescription, controlPoint);
             }
 
             @Override
             public void positionChanged(ShapeDescription shapeDescription) {
-                shapePositionChanged( shapeDescription );
+                shapePositionChanged(shapeDescription);
             }
 
             @Override
             public void radiusChanged(ShapeDescription shapeDescription) {
-                shapeRadiusChanged( shapeDescription );
+                shapeRadiusChanged(shapeDescription);
             }
         });
 
@@ -1275,7 +1279,7 @@ public class MainGui extends JFrame {
             float x = Float.valueOf(tfNewShapePosX.getText());
             float y = Float.valueOf(tfNewShapePosY.getText());
 
-            if ( shc instanceof CircleShapeController ) {
+            if ( shc instanceof CircleShapeController) {
                 ((CircleShapeController) shc).setDefaultRadius( Float.valueOf( tfRadius.getText() ));
             }
 
@@ -1729,8 +1733,6 @@ public class MainGui extends JFrame {
             comboBodyBSelector.setSelectedItem( bi );
         }
     }
-
-
 
     void selectBodyItemToAnchorPointcController( int selId ) {
         AnchorPointController ctrlr = GdxApplication.get().getEditorScreen().getAnchorPointController();

@@ -1,7 +1,7 @@
 package org.skr.PhysModelEditor.PropertiesTableElements;
 
 import com.badlogic.gdx.utils.Array;
-import org.skr.physmodel.PhysModel;
+import org.skr.gdx.physmodel.PhysModel;
 
 import javax.swing.*;
 

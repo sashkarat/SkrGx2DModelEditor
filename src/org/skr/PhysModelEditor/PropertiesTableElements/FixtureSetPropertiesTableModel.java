@@ -2,7 +2,7 @@ package org.skr.PhysModelEditor.PropertiesTableElements;
 
 import com.badlogic.gdx.physics.box2d.Shape;
 import com.badlogic.gdx.utils.Array;
-import org.skr.physmodel.FixtureSet;
+import org.skr.gdx.physmodel.FixtureSet;
 
 import javax.swing.*;
 

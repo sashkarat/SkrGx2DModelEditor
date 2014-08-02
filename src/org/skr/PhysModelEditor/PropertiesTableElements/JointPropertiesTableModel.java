@@ -3,8 +3,8 @@ package org.skr.PhysModelEditor.PropertiesTableElements;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.utils.Array;
-import org.skr.physmodel.BodyItem;
-import org.skr.physmodel.JointItem;
+import org.skr.gdx.physmodel.BodyItem;
+import org.skr.gdx.physmodel.JointItem;
 
 import javax.swing.*;
 import java.util.HashMap;
