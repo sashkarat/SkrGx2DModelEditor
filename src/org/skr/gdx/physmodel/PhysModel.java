@@ -4,8 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.physics.box2d.*;
-import com.badlogic.gdx.physics.box2d.CircleShape;
-import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.SerializationException;
@@ -14,7 +12,7 @@ import org.skr.gdx.physmodel.animatedactorgroup.AnimatedActorGroup;
 import org.skr.gdx.PhysWorld;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.xml.soap.Text;
+import java.util.UUID;
 
 /**
  * Created by rat on 31.05.14.
@@ -22,24 +20,38 @@ import javax.xml.soap.Text;
 
 public class PhysModel {
 
-    //That is test section. It does nothing.
-
-    static {
-        FixtureDef fd;
-
-        CircleShape cs = new CircleShape();
-        PolygonShape ps = new PolygonShape();
-        EdgeShape es = new EdgeShape();
-        ChainShape chs = new ChainShape();
-    }
-
-
     static  public class Description {
+
+        Object userObject;
+
+        String uuid = "";
 
         String name = "";
         AagDescription backgroundAagDesc = null;
         Array<BodyItemDescription> bodiesDesc = null;
         Array<JointItemDescription> jointsDesc = null;
+
+        @SuppressWarnings("UnusedDeclaration")
+        public Object getUserObject() {
+            return userObject;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        public void setUserObject(Object userObject) {
+            this.userObject = userObject;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(UUID uuid) {
+            this.uuid = uuid.toString();
+        }
+
+        public void setUuid( String uuid ) {
+            this.uuid = uuid;
+        }
 
         public String getName() {
             return name;
@@ -75,8 +87,8 @@ public class PhysModel {
     }
 
     private final World world;
-
-    private String name = "";
+    protected UUID uuid;
+    protected String name = "";
     private AnimatedActorGroup backgroundActor;
     private Array<BodyItem> bodyItems = new Array<BodyItem>();
     private Array<JointItem> jointItems = new Array<JointItem>();
@@ -88,6 +100,7 @@ public class PhysModel {
     public PhysModel( World world, TextureAtlas atlas ) {
         this.world = world;
         this.atlas = atlas;
+        this.uuid = UUID.randomUUID();
     }
 
     public PhysModel( Description description, World world, TextureAtlas atlas ) {
@@ -100,16 +113,23 @@ public class PhysModel {
         return this.world;
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     public TextureAtlas getAtlas() {
         return atlas;
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     public void setAtlas(TextureAtlas atlas) {
         this.atlas = atlas;
     }
 
     public void uploadFromDescription( Description desc ) {
-        setName( desc.getName() );
+        this.name = desc.getName();
+        String strUuid = desc.getUuid();
+        if ( strUuid.isEmpty() )
+            this.uuid = UUID.randomUUID();
+        else
+            this.uuid = UUID.fromString( strUuid );
 
         if ( desc.getBackgroundAagDesc() != null) {
             AnimatedActorGroup aag = new AnimatedActorGroup( desc.getBackgroundAagDesc(), atlas );
@@ -151,7 +171,8 @@ public class PhysModel {
 
     public Description getDescription() {
         Description desc = new Description();
-        desc.setName( getName() );
+        desc.setUuid( this.uuid );
+        desc.setName(getName());
         if ( backgroundActor != null ) {
             desc.setBackgroundAagDesc( backgroundActor.getDescription() );
         }
@@ -199,6 +220,9 @@ public class PhysModel {
         this.name = name;
     }
 
+    public UUID getUuid() {
+        return uuid;
+    }
 
     public AnimatedActorGroup getBackgroundActor() {
         return backgroundActor;
@@ -277,7 +301,6 @@ public class PhysModel {
             if ( ji.getBodyAId() == bodyItem.getId() ||
                     ji.getBodyBId() == bodyItem.getId() ) {
                 jointItemsTmp.add( ji );
-                continue;
             }
         }
 
@@ -303,9 +326,8 @@ public class PhysModel {
             return null;
         if ( !(body.getUserData() instanceof BodyItem) )
             return  null;
-        BodyItem bi = (BodyItem) body.getUserData();
 
-        return bi;
+        return (BodyItem) body.getUserData();
     }
 
     public JointItem findJointItem( int id ) {
@@ -322,8 +344,7 @@ public class PhysModel {
         Object o = joint.getUserData();
         if ( !(o instanceof JointItem ))
             return null;
-        JointItem ji = (JointItem) o;
-        return ji;
+        return (JointItem) o;
     }
 
 
@@ -342,52 +363,65 @@ public class PhysModel {
     }
     //================ Static ================================
 
-    public static PhysModel loadFromFile( FileHandle fileHandle, TextureAtlas atlas ) {
-
+    public static Description loadModelDescription( FileHandle fileHandle ) {
         Json js = new Json();
-        PhysModel physModel = null;
-
+        Description desc = null;
         try {
-
-            Description description = js.fromJson(Description.class, fileHandle);
-            physModel = new PhysModel( description, PhysWorld.getPrimaryWorld(), atlas );
+            desc = js.fromJson(Description.class, fileHandle);
         } catch ( SerializationException e) {
-            Gdx.app.error("PhysModel.loadFromFile", e.getMessage() );
+            Gdx.app.error("PhysModel.loadModelDescription", e.getMessage() );
             e.printStackTrace();
         }
 
-        if ( physModel!= null ) {
-            Gdx.app.log("PhysModel.loadFromFile", "Model \"" + physModel.getName() + "\" OK");
+        return desc;
+    }
+
+
+    public static PhysModel loadFromFile( FileHandle fileHandle, TextureAtlas atlas ) {
+
+        PhysModel physModel;
+
+        Description desc = loadModelDescription( fileHandle );
+
+        if ( desc == null ) {
+            return null;
         }
+
+        physModel = new PhysModel( desc, PhysWorld.getPrimaryWorld(), atlas );
+
+        Gdx.app.log("PhysModel.loadFromFile", "Model \"" + physModel.getName() + "\" OK");
 
         physModel.uploadAtlas();
 
         return physModel;
     }
 
-    public static void saveToFile(PhysModel physModel, FileHandle fileHandle) {
-
+    public static boolean saveModelDescription( Description desc, FileHandle fileHandle ) {
         Json js = new Json();
         boolean ok = true;
         try {
-
-            Description description = physModel.getDescription();
-            js.toJson(description, Description.class, fileHandle );
+            js.toJson( desc, Description.class, fileHandle );
         } catch ( SerializationException e) {
-            Gdx.app.error("PhysModel.saveToFile", e.getMessage() );
+            Gdx.app.error("PhysModel.saveDescription", e.getMessage() );
             ok = false;
             e.printStackTrace();
         }
 
-        if ( ok ) {
+        return ok;
+    }
+
+    public static void saveToFile(PhysModel physModel, FileHandle fileHandle) {
+
+        Description desc = physModel.getDescription();
+
+        if ( saveModelDescription( desc, fileHandle ) ) {
             Gdx.app.log("PhysModel.saveToFile", "Model \"" + physModel.getName() +
                     "\"; File: \"" + fileHandle + "\" OK");
         }
     }
 
     public static FileNameExtensionFilter getFileFilter() {
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("PhysModel files:", "physmodel");
-        return  filter;
+        return new FileNameExtensionFilter("PhysModel files:", "physmodel");
     }
 
     public static void destroyPhysics( PhysModel model ) {

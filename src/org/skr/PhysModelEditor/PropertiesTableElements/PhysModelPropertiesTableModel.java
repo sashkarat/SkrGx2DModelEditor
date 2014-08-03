@@ -31,6 +31,7 @@ public class PhysModelPropertiesTableModel extends PropertiesBaseTableModel {
 
         switch ( rowIndex ) {
             case 0:
+            case 1:
                 return PropertyType.STRING;
         }
 
@@ -49,7 +50,7 @@ public class PhysModelPropertiesTableModel extends PropertiesBaseTableModel {
 
     @Override
     public int getPropertiesCount() {
-        return 1;
+        return 2;
     }
 
     @Override
@@ -57,6 +58,8 @@ public class PhysModelPropertiesTableModel extends PropertiesBaseTableModel {
         switch ( rowIndex ) {
             case 0:
                 return "Name";
+            case 1:
+                return "Uuid";
             default:
                 return "";
         }
@@ -71,6 +74,8 @@ public class PhysModelPropertiesTableModel extends PropertiesBaseTableModel {
         switch ( rowIndex ) {
             case 0:
                 return model.getName();
+            case 1:
+                return model.getUuid().toString();
             default:
                 return null;
         }
@@ -78,7 +83,14 @@ public class PhysModelPropertiesTableModel extends PropertiesBaseTableModel {
 
     @Override
     public boolean isPropertyEditable(int rowIndex) {
-        return true;
+        switch ( rowIndex ) {
+            case 0:
+                return true;
+            case 1:
+                return false;
+            default:
+                return false;
+        }
     }
 
     @Override
