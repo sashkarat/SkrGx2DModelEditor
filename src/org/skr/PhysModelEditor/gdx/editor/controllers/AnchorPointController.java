@@ -279,42 +279,15 @@ public class AnchorPointController extends Controller {
     }
 
     @Override
-    protected void onMouseClicked(Vector2 localCoord, Vector2 stageCoord, int button) {
+    protected boolean onMouseClicked(Vector2 localCoord, Vector2 stageCoord, int button) {
         if ( button == Input.Buttons.LEFT && getSelectedControlPoint() == null ) {
-            processBodyItemSelection( stageCoord );
+            //TODO: recode this;
         }
+
+        return false;
     }
 
     private final static Vector2 localV = new Vector2();
-    private static int biSelId = 0;
-    QueryCallback qcb = new QueryCallback() {
-        @Override
-        public boolean reportFixture(Fixture fixture) {
 
-            if ( bodyItemSelectionListener == null ) {
-                return false;
-            }
-            Body b = fixture.getBody();
-            BodyItem bi = (BodyItem) b.getUserData();
 
-            if ( biSelId == 0 ) {
-                selectedBodyItem_A = bi;
-            } else {
-                selectedBodyItem_B = bi;
-            }
-            bodyItemSelectionListener.bodySelected( bi, biSelId );
-            biSelId = (biSelId == 0 ) ? 1 : 0;
-            return false;
-        }
-    };
-
-    private void processBodyItemSelection(Vector2 stageCoord) {
-
-        localV.set(stageCoord);
-        PhysWorld.get().toPhys( localV );
-
-        PhysWorld.getPrimaryWorld().QueryAABB( qcb,
-                localV.x - 0.1f, localV.y - 0.1f,
-                localV.x + 0.1f, localV.y + 0.1f );
-    }
 }

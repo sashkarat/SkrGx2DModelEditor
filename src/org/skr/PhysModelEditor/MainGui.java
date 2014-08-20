@@ -652,6 +652,8 @@ public class MainGui extends JFrame {
         model.setName("noname");
         model.uploadAtlas();
 
+        currentModelFileName = "";
+
         setGuiElementEnable(mainSplitPanel, true);
 
         modelToGui();
@@ -724,6 +726,10 @@ public class MainGui extends JFrame {
 
             if ( !currentModelFileName.toLowerCase().endsWith( "." + ff.getExtensions()[0]) ) {
                 currentModelFileName += ("." + ff.getExtensions()[0]);
+            }
+
+            if ( saveAs ) {
+                model.changeUuid();
             }
 
         }
@@ -925,7 +931,7 @@ public class MainGui extends JFrame {
                     parentAg.removeChild( ag );
                 } else if ( niParent.type == NodeInfo.Type.BODY_ITEM) {
                     BodyItem bi = ( BodyItem ) niParent.object;
-                    bi.setAagBackground( null );
+                    bi.removeAagBackground( );
                 }
 
                 break;

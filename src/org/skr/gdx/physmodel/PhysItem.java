@@ -23,12 +23,17 @@ public class PhysItem extends Group {
         return aagBackground;
     }
 
+    public void removeAagBackground() {
+        if ( this.aagBackground != null )
+            removeActor( this.aagBackground);
+        this.aagBackground = null;
+    }
+
     public void setAagBackground(AnimatedActorGroup aagBackground) {
 
         if ( this.aagBackground != null  )
             removeActor( this.aagBackground );
         this.aagBackground = aagBackground;
-
         addActor( aagBackground );
     }
 

@@ -100,21 +100,23 @@ public abstract class BaseScreen implements Screen, InputProcessor {
         if ( button == Input.Buttons.MIDDLE ) {
             downPosX = screenX;
             downPosY = screenY;
+            return true;
         }
         return false;
     }
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        if ( !mouseDragged )
-            clicked( screenX, screenY, button );
+        if ( !mouseDragged ) {
+            return clicked(screenX, screenY, button);
+        }
         mouseDragged = false;
         return false;
     }
 
 
-    protected void clicked( int screenX, int screenY, int button ) {
-        //dumb
+    protected boolean clicked( int screenX, int screenY, int button ) {
+        return false;
     }
 
     @Override
@@ -130,6 +132,7 @@ public abstract class BaseScreen implements Screen, InputProcessor {
 
             camera.translate( - offsetX * camera.zoom, offsetY * camera.zoom, 0);
 
+            return true;
         }
 
         return false;

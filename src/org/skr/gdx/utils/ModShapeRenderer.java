@@ -1,4 +1,4 @@
-package org.skr.gdx;
+package org.skr.gdx.utils;
 
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;

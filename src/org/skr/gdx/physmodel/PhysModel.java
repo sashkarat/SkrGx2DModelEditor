@@ -123,6 +123,10 @@ public class PhysModel {
         this.atlas = atlas;
     }
 
+    public void changeUuid() {
+        this.uuid = UUID.randomUUID();
+    }
+
     public void uploadFromDescription( Description desc ) {
         this.name = desc.getName();
         String strUuid = desc.getUuid();

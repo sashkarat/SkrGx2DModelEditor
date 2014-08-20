@@ -1,16 +1,20 @@
 package org.skr.gdx.physmodel.animatedactorgroup;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Matrix3;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.SnapshotArray;
-import org.skr.gdx.SkrGdxApplication;
+import org.skr.gdx.utils.ModShapeRenderer;
+import org.skr.gdx.utils.RectangleExt;
+import org.skr.gdx.utils.Utils;
 
 import java.util.Stack;
 
@@ -18,6 +22,8 @@ import java.util.Stack;
  * Created by rat on 31.05.14.
  */
 public class AnimatedActorGroup extends Group {
+
+    private static ModShapeRenderer modShapeRenderer = null;
 
     public interface RenderableUserObject {
         public void render( AnimatedActorGroup aag, Batch batch );
@@ -45,6 +51,8 @@ public class AnimatedActorGroup extends Group {
     private Animation animation;
     private float stateTime = 0;
     private int count;
+
+    RectangleExt boundingBox = new RectangleExt();
 
     public AnimatedActorGroup( TextureAtlas atlas ) {
         updateTextures( atlas );
@@ -158,6 +166,7 @@ public class AnimatedActorGroup extends Group {
     }
 
     public void updateTextures( TextureAtlas atlas ) {
+
 
         if ( animation != null )
             animation = null;
@@ -296,10 +305,62 @@ public class AnimatedActorGroup extends Group {
         stateTime += delta;
         currentRegion = animation.getKeyFrame( stateTime );
 
+        updateBoundingBox();
+    }
+
+
+    public RectangleExt getBoundingBox() {
+        return boundingBox;
+    }
+
+    private final static RectangleExt box = new RectangleExt();
+
+    private final RectangleExt chBBox = new RectangleExt();
+
+    private void updateBoundingBox() {
+
+        box.set( getX() - getWidth()/2, getY() - getHeight()/2, getWidth(), getHeight() );
+
+        boundingBox.set(Utils.getBBox(box, getWidth() / 2, getHeight() / 2, getRotation()));
+
+        for ( int i = 0; i < getChildren().size; i++) {
+            AnimatedActorGroup aagCh = (AnimatedActorGroup) getChildren().get( i );
+
+            chBBox.set(aagCh.getBoundingBox());
+            chBBox.setX( chBBox.getX() + getX() );
+            chBBox.setY( chBBox.getY() + getY() );
+
+            chBBox.set( Utils.getBBox(chBBox, getX() - chBBox.getX(), getY() - chBBox.getY(), getRotation()) );
+
+            boundingBox.set( Utils.getBBox( boundingBox, chBBox ) );
+        }
+
+    }
+
+
+    private void drawBoundingBox( Batch batch, float parentAlpha ) {
+        batch.end();
+        modShapeRenderer.setProjectionMatrix( batch.getProjectionMatrix() );
+        modShapeRenderer.setTransformMatrix( batch.getTransformMatrix() );
+
+        modShapeRenderer.begin(ShapeRenderer.ShapeType.Line );
+
+
+        if ( boundingBox != null ) {
+            modShapeRenderer.setColor( 0.7f, 0.7f, 0.7f, 1);
+            modShapeRenderer.rect(boundingBox.getX(), boundingBox.getY(),
+                    boundingBox.getWidth(), boundingBox.getHeight());
+        }
+
+        modShapeRenderer.end();
+        batch.begin();
     }
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
+
+        if ( modShapeRenderer == null )
+            modShapeRenderer = new ModShapeRenderer();
 
 
         if ( isDrawable() && currentRegion != null ) {
@@ -310,6 +371,11 @@ public class AnimatedActorGroup extends Group {
             float hH = getHeight() / 2;
 
             batch.draw(currentRegion, getX() - hW, getY() - hH, hW, hH, getWidth(), getHeight(), 1, 1, getRotation());
+
+            if ( getParent() == null || !(getParent() instanceof AnimatedActorGroup) ) {
+                    drawBoundingBox(batch, parentAlpha );
+            }
+
         }
 
         Object obj = getUserObject();
@@ -318,6 +384,8 @@ public class AnimatedActorGroup extends Group {
                 ((RenderableUserObject) obj).render(this, batch);
             }
         }
+
+
 
         super.draw( batch, parentAlpha );
 

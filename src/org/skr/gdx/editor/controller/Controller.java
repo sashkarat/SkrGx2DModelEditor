@@ -7,8 +7,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Array;
-import org.skr.gdx.ModShapeRenderer;
-import org.skr.gdx.RectangleExt;
+import org.skr.gdx.utils.ModShapeRenderer;
+import org.skr.gdx.utils.RectangleExt;
 
 /**
  * Created by rat on 03.06.14.
@@ -478,8 +478,9 @@ public abstract  class Controller  {
         return false;
     }
 
-    protected void onMouseClicked( Vector2 localCoord, Vector2 stageCoord, int button ) {
+    protected boolean onMouseClicked( Vector2 localCoord, Vector2 stageCoord, int button ) {
         //dumb
+        return false;
     }
 
 
@@ -494,7 +495,7 @@ public abstract  class Controller  {
 
     private boolean controlPointMovingEnabled = false;
 
-    public void touchDown( Vector2 stageCoord ) {
+    public boolean touchDown( Vector2 stageCoord ) {
         localCoord.set(stageCoord);
         stageToObject(localCoord);
 
@@ -521,6 +522,12 @@ public abstract  class Controller  {
 
         downStagePos.set( stageCoord );
         downLocalPos.set( localCoord );
+
+        if ( selectedControlPoint != null ) {
+            return true;
+        }
+
+        return false;
     }
 
     private enum MoveDir {
@@ -531,7 +538,7 @@ public abstract  class Controller  {
 
     private MoveDir moveDir = MoveDir.Free;
 
-    public void touchDragged( Vector2 stageCoord ) {
+    public boolean touchDragged( Vector2 stageCoord ) {
 
         localCoord.set(stageCoord);
         stageToObject(localCoord);
@@ -590,34 +597,46 @@ public abstract  class Controller  {
                     }
                 }
             }
+
+            downStagePos.set( stageCoord );
+            downLocalPos.set( localCoord );
+            return true;
         }
 
-        downStagePos.set( stageCoord );
-        downLocalPos.set( localCoord );
+        return false;
     }
 
-    public void touchUp( Vector2 stageCoord, int button ) {
+    public boolean touchUp( Vector2 stageCoord, int button ) {
 
         localCoord.set(stageCoord);
         stageToObject(localCoord);
 
+        boolean res = false;
+
         switch ( selectionMode ) {
             case SELECT_BY_CLICK:
+                if ( selectedControlPoint != null )
+                    res = true;
                 break;
             case PRESSED_ONLY:
                 if ( selectedControlPoint != null ) {
                     selectedControlPoint.setSelected(false);
+                    res = true;
                 }
                 selectedControlPoint = null;
                 break;
         }
         moveDir = MoveDir.Free;
+
+        return res;
     }
 
-    public void mouseClicked( Vector2 stageCoord, int button ) {
+    public boolean mouseClicked( Vector2 stageCoord, int button ) {
         localCoord.set(stageCoord);
         stageToObject(localCoord);
-        onMouseClicked( localCoord, stageCoord, button);
+        if ( onMouseClicked( localCoord, stageCoord, button) )
+            return true;
+        return false;
     }
 
     protected void setControlPointVisible( ControlPoint cp, boolean state ) {

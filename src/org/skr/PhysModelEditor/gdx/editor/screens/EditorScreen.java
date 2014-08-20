@@ -163,10 +163,17 @@ public class EditorScreen extends BaseScreen {
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         boolean res = super.touchDown( screenX, screenY, pointer, button);
+        if ( res )
+            return res;
         if ( button == Input.Buttons.LEFT && currentController != null ) {
             coordV.set( screenX, screenY );
-            currentController.touchDown(getStage().screenToStageCoordinates(coordV));
+            res =  currentController.touchDown(getStage().screenToStageCoordinates(coordV));
         }
+        if ( res )
+            return res;
+
+        Gdx.app.log("EditorScreen.touchDown", "Event unprocessed");
+
         return res;
     }
 
@@ -176,26 +183,42 @@ public class EditorScreen extends BaseScreen {
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
         boolean res = super.touchUp( screenX,screenY, pointer, button );
 
+        if ( res )
+            return res;
+
         if ( button == Input.Buttons.LEFT && currentController != null ) {
             coordV.set( screenX, screenY );
-            currentController.touchUp( getStage().screenToStageCoordinates(coordV), button );
+            res = currentController.touchUp( getStage().screenToStageCoordinates(coordV), button );
         }
 
+        if ( res )
+            return res;
 
+        Gdx.app.log("EditorScreen.touchUp", "Event unprocessed");
 
         return res;
     }
 
     @Override
-    protected void clicked(int screenX, int screenY, int button) {
-        if ( button == Input.Buttons.MIDDLE )  {
-            coordV.set( screenX, screenY );
-            processBodyItemSelection(getStage().screenToStageCoordinates(coordV));
-        } else if ( currentController != null ) {
-            coordV.set( screenX, screenY );
-            currentController.mouseClicked( getStage().screenToStageCoordinates(coordV), button );
+    protected boolean clicked(int screenX, int screenY, int button) {
 
+        boolean res = false;
+        if ( currentController != null ) {
+            coordV.set( screenX, screenY );
+            res = currentController.mouseClicked( getStage().screenToStageCoordinates(coordV), button );
         }
+
+        if ( res )
+            return res;
+        if ( button == Input.Buttons.LEFT )  {
+            coordV.set( screenX, screenY );
+            res = processBodyItemSelection(getStage().screenToStageCoordinates(coordV));
+        }
+
+        if ( res )
+            return res;
+        Gdx.app.log("EditorScreen.clicked", "Event unhandled");
+        return false;
     }
 
     QueryCallback qcb = new QueryCallback() {
@@ -214,15 +237,10 @@ public class EditorScreen extends BaseScreen {
 
     private static final Vector2 localV = new Vector2();
 
-    private void processBodyItemSelection(Vector2 stageCoord) {
+    private boolean processBodyItemSelection(Vector2 stageCoord) {
 
-        localV.set(stageCoord);
-        PhysWorld.get().toPhys( localV );
-
-        PhysWorld.getPrimaryWorld().QueryAABB( qcb,
-                localV.x - 0.1f, localV.y - 0.1f,
-                localV.x + 0.1f, localV.y + 0.1f );
-
+        //TODO: recode this
+        return false;
     }
 
     @Override
@@ -230,10 +248,18 @@ public class EditorScreen extends BaseScreen {
 
         boolean res = super.touchDragged( screenX, screenY, pointer );
 
+        if ( res )
+            return res;
+
         if ( Gdx.input.isButtonPressed( Input.Buttons.LEFT ) && currentController != null ) {
             coordV.set( screenX, screenY );
-            currentController.touchDragged( getStage().screenToStageCoordinates(coordV) );
+            res = currentController.touchDragged( getStage().screenToStageCoordinates(coordV) );
         }
+        if ( res )
+            return res;
+
+        Gdx.app.log("EditorScreen.touchDragged", "Event unhandled");
+
         return res;
     }
 }
