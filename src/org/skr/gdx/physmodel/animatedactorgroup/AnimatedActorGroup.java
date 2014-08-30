@@ -1,6 +1,5 @@
 package org.skr.gdx.physmodel.animatedactorgroup;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
@@ -20,6 +19,7 @@ import java.util.Stack;
 
 /**
  * Created by rat on 31.05.14.
+ *
  */
 public class AnimatedActorGroup extends Group {
 
@@ -32,7 +32,7 @@ public class AnimatedActorGroup extends Group {
 
     public interface GlobalSizeChangedListener {
         public void sizeChanged(AnimatedActorGroup aag);
-    };
+    }
 
     private static GlobalSizeChangedListener globalSizeChangedListener;
 
@@ -165,8 +165,7 @@ public class AnimatedActorGroup extends Group {
 
     }
 
-    public void updateTextures( TextureAtlas atlas ) {
-
+    public boolean updateTextures( TextureAtlas atlas ) {
 
         if ( animation != null )
             animation = null;
@@ -174,7 +173,7 @@ public class AnimatedActorGroup extends Group {
             currentRegion = null;
 
         if ( textureName.isEmpty() ) {
-            return;
+            return false;
         }
 
         stateTime = 0;
@@ -184,6 +183,12 @@ public class AnimatedActorGroup extends Group {
             Array<TextureAtlas.AtlasRegion> tex = atlas.findRegions(textureName);
             animation = new Animation(frameDuration, tex, playMode);
             stateTime = 0;
+            int l = animation.getKeyFrames().length;
+            if ( l == 0 ) {
+                animation = null;
+                currentRegion = null;
+                return false;
+            }
             currentRegion = animation.getKeyFrame(stateTime);
 
         }
@@ -194,9 +199,12 @@ public class AnimatedActorGroup extends Group {
 
         for ( Actor a: children ) {
             if ( a instanceof AnimatedActorGroup ) {
-                ((AnimatedActorGroup) a).updateTextures( atlas );
+                if ( !((AnimatedActorGroup) a).updateTextures( atlas ) )
+                    continue;
             }
         }
+
+        return true;
     }
 
     @Override
@@ -305,12 +313,58 @@ public class AnimatedActorGroup extends Group {
         stateTime += delta;
         currentRegion = animation.getKeyFrame( stateTime );
 
-        updateBoundingBox();
+//        updateBoundingBox();
     }
 
 
     public RectangleExt getBoundingBox() {
+        updateBoundingBox();
         return boundingBox;
+    }
+
+    public boolean contains( Vector2 localPoint ) {
+
+        float w2 = Math.abs( getWidth() / 2 );
+
+        if( localPoint.x <  - w2 ) {
+            return false;
+        }
+        if ( localPoint.x > w2 ) {
+            return false;
+        }
+
+        float h2 = Math.abs( getHeight() /2 );
+
+        if ( localPoint.y < -h2 )
+            return false;
+
+        if ( localPoint.y > h2 )
+            return false;
+
+        return true;
+    }
+
+
+    public AnimatedActorGroup getAag(Vector2 localCoord) {
+
+        AnimatedActorGroup aagRes;
+
+        Vector2 chCoord = new Vector2();
+
+        for ( Actor a : getChildren() ) {
+            if (!( a instanceof AnimatedActorGroup) )
+                continue;
+            AnimatedActorGroup aag = (AnimatedActorGroup) a;
+            chCoord.set(localCoord);
+            aag.parentToLocalCoordinates(chCoord);
+            aagRes = aag.getAag(chCoord);
+            if ( aagRes != null )
+                return aagRes;
+        }
+        if ( contains( localCoord ) ) {
+            return this;
+        }
+        return null;
     }
 
     private final static RectangleExt box = new RectangleExt();
@@ -372,9 +426,9 @@ public class AnimatedActorGroup extends Group {
 
             batch.draw(currentRegion, getX() - hW, getY() - hH, hW, hH, getWidth(), getHeight(), 1, 1, getRotation());
 
-            if ( getParent() == null || !(getParent() instanceof AnimatedActorGroup) ) {
-                    drawBoundingBox(batch, parentAlpha );
-            }
+//            if ( getParent() == null || !(getParent() instanceof AnimatedActorGroup) ) {
+//                    drawBoundingBox(batch, parentAlpha );
+//            }
 
         }
 

@@ -67,4 +67,9 @@ public class RectangleExt extends Rectangle {
     public float getCenterY() {
         return this.y + this.height / 2;
     }
+
+    public static String getRecStr( RectangleExt r ) {
+        return " l: " + r.getLeft() + " r: " + r.getRight() +
+                " b: " + r.getBottom() + " t: " + r.getTop();
+    }
 }

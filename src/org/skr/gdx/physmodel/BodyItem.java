@@ -1,6 +1,5 @@
 package org.skr.gdx.physmodel;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
@@ -23,17 +22,24 @@ public class BodyItem extends PhysItem {
     private int id = -1;
 
     public BodyItem( int id ) {
-        if ( id < 0 ) {
-            this.id = ++g_id;
-        } else {
-            this.id = id;
-            if ( g_id < id )
-                g_id = id;
-        }
+        this.id = genNextId(id);
     }
 
     public int getId() {
         return id;
+    }
+
+    public static int genNextId(int id) {
+        int res = -1;
+        if ( id < 0 ) {
+            res = ++g_id;
+        } else {
+            res = id;
+            if ( g_id < id )
+                g_id = id;
+        }
+
+        return res;
     }
 
     Body body = null;
@@ -93,7 +99,42 @@ public class BodyItem extends PhysItem {
         fixtureSet.removeAllFixtures();
     }
 
-    public void updateTransform() {
+    public RectangleExt getBoundingBox() {
+        updateBoundingBox();
+        return boundingBox;
+    }
+
+
+    private final static RectangleExt chBBox = new RectangleExt();
+
+    public FixtureSet getFixtureSet( Vector2 viewLocalPoint ) {
+
+        for ( FixtureSet fs : fixtureSets ) {
+            for ( Fixture fx : fs.getFixtures() ) {
+                chBBox.set(getX(), getY(), 0, 0 );
+                switch ( fx.getType() ) {
+                    case Circle:
+                        getBoundingBoxForCircleShape( chBBox, (CircleShape) fx.getShape() );
+                        break;
+                    case Edge:
+                        getBoundingBoxForEdgeShape( chBBox, (EdgeShape) fx.getShape() );
+                        break;
+                    case Polygon:
+                        getBoundingBoxForPolygonShape( chBBox, (PolygonShape) fx.getShape());
+                        break;
+                    case Chain:
+                        getBoundingBoxForChainShape( chBBox, (ChainShape) fx.getShape() );
+                        break;
+                }
+
+                if ( chBBox.contains( viewLocalPoint ) )
+                    return fs;
+            }
+        }
+        return null;
+    };
+
+    private void updateTransform() {
         if ( body == null )
             return;
         Vector2 pos = PhysWorld.get().physToView( body.getPosition() );
@@ -103,14 +144,11 @@ public class BodyItem extends PhysItem {
     }
 
 
-    private final static RectangleExt chBBox = new RectangleExt();
 
-    private static String getRecStr( RectangleExt r ) {
-        return " l: " + r.getLeft() + " r: " + r.getRight() +
-                " b: " + r.getBottom() + " t: " + r.getTop();
-    }
 
-    public void updateBoundingBox() {
+
+
+    private void updateBoundingBox() {
 
         boundingBox.set(getX(), getY(), 0, 0 );
         chBBox.set(getX(), getY(), 0, 0 );
@@ -205,7 +243,7 @@ public class BodyItem extends PhysItem {
     public void act(float delta) {
         updateTransform();
         super.act(delta);
-        updateBoundingBox();
+//        updateBoundingBox();
     }
 
 
@@ -236,7 +274,7 @@ public class BodyItem extends PhysItem {
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
 
-        drawBoundingBox( batch, parentAlpha );
+//        drawBoundingBox( batch, parentAlpha );
     }
 
     static final Matrix3 mtx = new Matrix3();

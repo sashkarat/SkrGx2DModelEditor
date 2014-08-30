@@ -93,9 +93,15 @@ public abstract class BaseScreen implements Screen, InputProcessor {
     private static  float downPosX = 0;
     private static  float downPosY = 0;
     private boolean mouseDragged = false;
+    private boolean screenDraggeed = false;
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+
+        if ( (System.currentTimeMillis() - dClickTime) > 500 ) {
+            dClickButton = -1000;
+        }
+
         mouseDragged = false;
         if ( button == Input.Buttons.MIDDLE ) {
             downPosX = screenX;
@@ -104,21 +110,6 @@ public abstract class BaseScreen implements Screen, InputProcessor {
         }
         return false;
     }
-
-    @Override
-    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        if ( !mouseDragged ) {
-            return clicked(screenX, screenY, button);
-        }
-        mouseDragged = false;
-        return false;
-    }
-
-
-    protected boolean clicked( int screenX, int screenY, int button ) {
-        return false;
-    }
-
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
         mouseDragged = true;
@@ -131,12 +122,63 @@ public abstract class BaseScreen implements Screen, InputProcessor {
             downPosY = screenY;
 
             camera.translate( - offsetX * camera.zoom, offsetY * camera.zoom, 0);
-
+            screenDraggeed = true;
             return true;
         }
 
         return false;
     }
+
+    @Override
+    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        if ( screenDraggeed ) {
+            screenDraggeed = false;
+            return true;
+        }
+
+        if ( !mouseDragged ) {
+            if ( processClicking(screenX, screenY, button) )
+                return true;
+        }
+        mouseDragged = false;
+        return false;
+    }
+
+    long dClickTime = 0;
+    int dClickButton = -1000;
+
+    protected boolean processClicking( int x, int y, int button ) {
+        if ( clicked( x, y, button ) ) {
+            dClickButton = -1;
+            return true;
+        }
+        if ( dClickButton == -1000 ) {
+            dClickButton = button;
+            dClickTime = System.currentTimeMillis();
+            return  false;
+        }
+
+        if ( dClickButton != button ) {
+            dClickButton = -1000;
+            return false;
+        }
+
+        if ( (System.currentTimeMillis() - dClickTime) > 500 ) {
+            dClickButton = -1000;
+            return false;
+        }
+        return doubleClicked( x, y, button );
+
+    }
+
+    protected boolean clicked( int screenX, int screenY, int button ) {
+        return false;
+    }
+
+    protected boolean doubleClicked(int screenX, int screenY, int button ) {
+        return false;
+    }
+
 
     @Override
     public boolean mouseMoved(int screenX, int screenY) {

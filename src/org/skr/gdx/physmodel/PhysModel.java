@@ -28,8 +28,8 @@ public class PhysModel {
 
         String name = "";
         AagDescription backgroundAagDesc = null;
-        Array<BodyItemDescription> bodiesDesc = null;
-        Array<JointItemDescription> jointsDesc = null;
+        Array<BodyItemDescription> bodiesDesc = new Array<BodyItemDescription>();
+        Array<JointItemDescription> jointsDesc = new Array<JointItemDescription>(00);
 
         @SuppressWarnings("UnusedDeclaration")
         public Object getUserObject() {
@@ -288,8 +288,10 @@ public class PhysModel {
 
 
     public void uploadAtlas() {
-        if ( backgroundActor != null )
-            backgroundActor.updateTextures( atlas );
+        if ( backgroundActor != null ) {
+            if ( !backgroundActor.updateTextures(atlas) )
+                backgroundActor = null;
+        }
     }
 
     @Override

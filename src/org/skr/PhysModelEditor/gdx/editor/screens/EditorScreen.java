@@ -3,10 +3,8 @@ package org.skr.PhysModelEditor.gdx.editor.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.Fixture;
-import com.badlogic.gdx.physics.box2d.QueryCallback;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.utils.Array;
 import org.skr.gdx.editor.BaseScreen;
 import org.skr.gdx.PhysModelRenderer;
 import org.skr.gdx.PhysWorld;
@@ -15,17 +13,29 @@ import org.skr.gdx.editor.controller.Controller;
 import org.skr.gdx.physmodel.BodyItem;
 import org.skr.gdx.physmodel.FixtureSet;
 import org.skr.gdx.physmodel.PhysModel;
+import org.skr.gdx.physmodel.animatedactorgroup.AnimatedActorGroup;
 
 /**
  * Created by rat on 02.06.14.
  */
 public class EditorScreen extends BaseScreen {
 
-    public interface BodyItemSelectionListener {
-        public void bodyItemSelected( BodyItem bi );
+    public static enum SelectionMode {
+        DISABLED,
+        BODY_ITEM,
+        FIXTURE_SET,
+        AAG
     }
 
+    public interface ItemSelectionListener {
+        public void singleItemSelected(Object object );
+        public void itemAddedToSelection(Object object, boolean removed );
+
+    }
+
+    private PhysModel model;
     private PhysModelRenderer modelRenderer;
+    private SelectionMode selectionMode = SelectionMode.DISABLED;
 
     private ActorController actorController;
     private BodyItemController bodyItemController;
@@ -33,9 +43,12 @@ public class EditorScreen extends BaseScreen {
     private EdgeShapeController edgeShapeController;
     private ChainShapeController chainShapeController;
     private PolygonShapeController polygonShapeController;
-    private AnchorPointController anchorPointController;
+    private JointCreatorController jointCreatorController;
+    private MultiBodyItemsController multiBodyItemsController;
     private Controller currentController = null;
-    private BodyItemSelectionListener bodyItemSelectionListener;
+    private ItemSelectionListener itemSelectionListener;
+
+    private Array<Object> selectedItems = new Array<Object>();
 
     public EditorScreen() {
 
@@ -51,17 +64,34 @@ public class EditorScreen extends BaseScreen {
         edgeShapeController = new EdgeShapeController( getStage() );
         chainShapeController = new ChainShapeController( getStage() );
         polygonShapeController = new PolygonShapeController( getStage() );
-        anchorPointController = new AnchorPointController( getStage() );
+        jointCreatorController = new JointCreatorController( getStage() );
+        multiBodyItemsController = new MultiBodyItemsController( getStage() );
 
     }
 
-
-    public BodyItemSelectionListener getBodyItemSelectionListener() {
-        return bodyItemSelectionListener;
+    public PhysModel getModel() {
+        return model;
     }
 
-    public void setBodyItemSelectionListener(BodyItemSelectionListener bodyItemSelectionListener) {
-        this.bodyItemSelectionListener = bodyItemSelectionListener;
+    public void setModel(PhysModel model) {
+        this.model = model;
+        modelRenderer.setModel( model );
+    }
+
+    public SelectionMode getSelectionMode() {
+        return selectionMode;
+    }
+
+    public void setSelectionMode(SelectionMode selectionMode) {
+        this.selectionMode = selectionMode;
+    }
+
+    public ItemSelectionListener getItemSelectionListener() {
+        return itemSelectionListener;
+    }
+
+    public void setItemSelectionListener(ItemSelectionListener itemSelectionListener) {
+        this.itemSelectionListener = itemSelectionListener;
     }
 
     public PhysModelRenderer getModelRenderer() {
@@ -69,31 +99,31 @@ public class EditorScreen extends BaseScreen {
     }
 
 
-    public void setModelObject(Object object) {
+    public void setModelObject( Object object ) {
+
+        if ( currentController == multiBodyItemsController )
+            multiBodyItemsController.getBodyItems().clear();
 
         currentController = null;
+        selectedItems.clear();
+
+
 
         if ( actorController.getActor() != null ) {
             actorController.getActor().setUserObject( null );
         }
 
         if ( object instanceof BodyItem ) {
-            BodyItem bi = ( BodyItem ) object;
-            bodyItemController.setBodyItem( bi );
+            BodyItem bi = (BodyItem) object;
+            bodyItemController.setBodyItem(bi);
             currentController = bodyItemController;
-            return;
-        }
-
-        if ( object instanceof Actor ) {
+        } else if ( object instanceof Actor ) {
 
             Actor a = (Actor) object;
             a.setUserObject( actorController );
             actorController.setActor( a );
             currentController = actorController;
-            return;
-        }
-
-        if ( object instanceof FixtureSet ) {
+        } else if ( object instanceof FixtureSet ) {
             FixtureSet fs = ( FixtureSet ) object;
 
             switch ( fs.getShapeType() ) {
@@ -116,14 +146,35 @@ public class EditorScreen extends BaseScreen {
                     break;
             }
 
+        } else if ( object == model.getJointItems() ) {
+            currentController = jointCreatorController;
+            jointCreatorController.setModel( model );
+        }
+
+        selectedItems.add( object );
+    }
+
+    public void clearSelectedItems() {
+        multiBodyItemsController.getBodyItems().clear();
+        selectedItems.clear();
+    }
+
+    public void addModelObject( Object object) {
+
+        currentController = null;
+
+        if ( selectedItems.contains( object, true ) ) {
             return;
         }
+        selectedItems.add( object );
 
-        if ( object instanceof PhysModel ) {
-            currentController = anchorPointController;
+        if ( object instanceof BodyItem ) {
+            BodyItem bi = (BodyItem) object;
+            multiBodyItemsController.getBodyItems().add( bi );
+            currentController = multiBodyItemsController;
         }
-
     }
+
 
     public ActorController getActorController() {
         return actorController;
@@ -133,8 +184,8 @@ public class EditorScreen extends BaseScreen {
         return bodyItemController;
     }
 
-    public AnchorPointController getAnchorPointController() {
-        return anchorPointController;
+    public JointCreatorController getJointCreatorController() {
+        return jointCreatorController;
     }
 
     public ShapeController getCurrentShapeController() {
@@ -212,7 +263,7 @@ public class EditorScreen extends BaseScreen {
             return res;
         if ( button == Input.Buttons.LEFT )  {
             coordV.set( screenX, screenY );
-            res = processBodyItemSelection(getStage().screenToStageCoordinates(coordV));
+            res = processSelection(getStage().screenToStageCoordinates(coordV));
         }
 
         if ( res )
@@ -221,27 +272,170 @@ public class EditorScreen extends BaseScreen {
         return false;
     }
 
-    QueryCallback qcb = new QueryCallback() {
+    @Override
+    protected boolean doubleClicked(int screenX, int screenY, int button) {
 
-        @Override
-        public boolean reportFixture(Fixture fixture) {
-            Body b = fixture.getBody();
-            BodyItem bi = (BodyItem) b.getUserData();
+        if ( currentController != null ) {
+            coordV.set( screenX, screenY );
 
-            if ( bodyItemSelectionListener != null )
-                bodyItemSelectionListener.bodyItemSelected( bi );
-
-            return false;
+            return currentController.mouseDoubleClicked( getStage().screenToStageCoordinates(coordV), button );
         }
-    };
 
-    private static final Vector2 localV = new Vector2();
-
-    private boolean processBodyItemSelection(Vector2 stageCoord) {
-
-        //TODO: recode this
         return false;
     }
+
+    private boolean processSelection(Vector2 stageCoord) {
+
+        switch ( selectionMode ) {
+            case DISABLED:
+                return false;
+            case BODY_ITEM:
+                return processBodyItemSelection( stageCoord );
+            case FIXTURE_SET:
+                return processFixtureSetSelection( stageCoord );
+            case AAG:
+                return processAagSelection( stageCoord );
+        }
+        return false;
+    }
+
+    private void itemSelected( Object object ) {
+
+        boolean remove = false;
+
+        if ( !Gdx.input.isKeyPressed( Input.Keys.CONTROL_LEFT ) ) {
+            selectedItems.clear();
+            selectedItems.add( object );
+            if ( itemSelectionListener != null ) {
+                itemSelectionListener.singleItemSelected( object );
+            }
+            return;
+        }
+
+
+        if ( selectedItems.contains( object, true ) ) {
+            selectedItems.removeValue(object, true);
+            if ( currentController == multiBodyItemsController ) {
+                multiBodyItemsController.getBodyItems().removeValue((BodyItem) object, true );
+            }
+            remove = true;
+        }
+
+        if ( itemSelectionListener != null ) {
+            itemSelectionListener.itemAddedToSelection(object, remove );
+        }
+    }
+
+    private boolean processBodyItemSelection( Vector2 stageCoord ) {
+        if ( model == null )
+            return false;
+
+        Vector2 localC = new Vector2();
+        Vector2 localC2 = new Vector2();
+
+        BodyItem selection = null;
+
+        for ( BodyItem bi : model.getBodyItems() ) {
+
+            localC.set( stageCoord );
+            bi.parentToLocalCoordinates( localC );
+            localC2.set( localC );
+
+            FixtureSet fs = bi.getFixtureSet( localC );
+            if ( fs != null ) {
+                selection = bi;
+                Gdx.app.log("EditorScreen.processBodyItemSelection", " FS: " + fs.getName() );
+                break;
+            }
+
+            if ( bi.getAagBackground() != null ) {
+                AnimatedActorGroup aag = processAagSelection(localC2, bi.getAagBackground());
+                if ( aag != null ) {
+                    Gdx.app.log("EditorScreen.processBodyItemSelection", " AAG: " + aag.getName() );
+                    selection = bi;
+                    break;
+                }
+            }
+        }
+
+        if ( selection == null )
+            return false;
+
+        Gdx.app.log("EditorScreen.processBodyItemSelection", "BI: " + selection.getName() + " ID: " +
+        selection.getId() );
+        itemSelected( selection );
+        return true;
+    }
+
+    private boolean processAagSelection( Vector2 stageCoord ) {
+        if ( model == null )
+            return false;
+
+        AnimatedActorGroup selectedAag;
+
+        if ( model.getBackgroundActor() != null ) {
+            selectedAag = processAagSelection( stageCoord, model.getBackgroundActor() );
+            if ( selectedAag != null ) {
+                Gdx.app.log("EditorScreen.processAagSelection", "AAG: " + selectedAag );
+                itemSelected( selectedAag );
+                return true;
+            }
+        }
+
+        Vector2 localCoord = new Vector2();
+
+        for ( BodyItem bi: model.getBodyItems() ) {
+
+            if ( bi.getAagBackground() == null )
+                continue;
+            localCoord.set( stageCoord );
+            bi.parentToLocalCoordinates(localCoord);
+            selectedAag = processAagSelection( localCoord, bi.getAagBackground() );
+            if ( selectedAag != null ) {
+                itemSelected( selectedAag );
+                return true;
+            }
+
+        }
+
+        return false;
+    }
+
+
+
+    private AnimatedActorGroup processAagSelection( Vector2 parentCoord, AnimatedActorGroup parentAag ) {
+
+        Vector2 localCoord = new Vector2( parentCoord );
+
+        localCoord = parentAag.parentToLocalCoordinates( localCoord );
+
+        AnimatedActorGroup resAag = parentAag.getAag( localCoord );
+        if ( resAag != null ) {
+            Gdx.app.log("EditorScreen.processAagSelection", " AAG: " + resAag );
+        }
+        return resAag;
+    }
+
+
+    private boolean processFixtureSetSelection( Vector2 stageCoord ) {
+        if ( model == null )
+            return false;
+        Vector2 localCoord = new Vector2( stageCoord );
+        for ( BodyItem bi : model.getBodyItems() ) {
+            localCoord.set( stageCoord );
+            localCoord = bi.parentToLocalCoordinates( localCoord );
+            FixtureSet fs = bi.getFixtureSet( localCoord );
+            if ( fs == null )
+                continue;
+            Gdx.app.log("EditorScreen.processFixtureSetSelection",
+                    "FS: " + fs.getName() );
+            itemSelected( fs );
+            return  true;
+        }
+
+        return false;
+    }
+
 
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {

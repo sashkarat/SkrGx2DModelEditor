@@ -483,6 +483,10 @@ public abstract  class Controller  {
         return false;
     }
 
+    protected boolean onMouseDoubleClicked( Vector2 localCoord, Vector2 stageCoord, int button ) {
+        return false;
+    }
+
 
     private final Vector2 downLocalPos = new Vector2();
     private final Vector2 downStagePos = new Vector2();
@@ -634,7 +638,16 @@ public abstract  class Controller  {
     public boolean mouseClicked( Vector2 stageCoord, int button ) {
         localCoord.set(stageCoord);
         stageToObject(localCoord);
-        if ( onMouseClicked( localCoord, stageCoord, button) )
+
+        if (onMouseClicked(localCoord, stageCoord, button))
+            return true;
+        return false;
+    }
+
+    public boolean mouseDoubleClicked( Vector2 stageCoord, int button ) {
+        localCoord.set( stageCoord );
+        stageToObject( localCoord );
+        if ( onMouseDoubleClicked( localCoord, stageCoord, button ) )
             return true;
         return false;
     }

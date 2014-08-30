@@ -121,7 +121,23 @@ public class Test {
 
 //        test1();
 //        test2();
-        test3();
+//        test3();
+        Vector2 axis = new Vector2( 1, 1 );
+        Vector2 point = new Vector2( -2, 1 );
+
+        float a1 = point.angle();
+        float a2 = axis.angle();
+
+        float da = a1 - a2;
+
+//        da = Math.abs( da );
+        if ( da > 180 )
+            da = 360 - da;
+
+        point.rotate( 360 - da * 2 );
+
+        System.out.println("DA: " + da + " POINT: " + point );
+
     }
 
 }

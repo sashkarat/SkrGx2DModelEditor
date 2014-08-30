@@ -3,6 +3,7 @@ package org.skr.PhysModelEditor;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl.LwjglAWTCanvas;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.physics.box2d.Shape;
@@ -23,6 +24,7 @@ import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -32,6 +34,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.HashMap;
+import java.util.UUID;
 
 /**
  * Created by rat on 30.05.14.
@@ -46,12 +50,6 @@ public class MainGui extends JFrame {
     private JPanel gdxPanel;
     private JTree treePhysModel;
     private JTabbedPane tabbedPaneEditors;
-    private JButton btnNewModel;
-    private JButton btnLoadModel;
-    private JButton btnSaveModel;
-    private JButton btnSaveModelAs;
-    private JTextField tfTextureAtlasFile;
-    private JButton btnSelectTextureFile;
     private JSplitPane mainSplitPanel;
     private JTable tableProperties;
     private JPanel panelProperties;
@@ -124,13 +122,25 @@ public class MainGui extends JFrame {
     private JButton btnSetMassCenter;
     private JButton btnResetMassData;
     private JCheckBox chbEnableMassCorrection;
-    private JRadioButton rbControllerInput;
-    private JRadioButton rbScreenInput;
+    private JComboBox comboSelectionMode;
+    private JPanel panelSelectionMode;
+    private JPanel panelTools;
+    private JTextField tfMirrorAxisX;
+    private JTextField tfMirrorAxisY;
+    private JButton btnMirrorModel;
+    private JComboBox comboMirrorDirection;
+    private JLabel lblTextureAtlasFile;
+    private JSpinner spinToolDupNumber;
+    private JTextField tfToolDupXOffset;
+    private JTextField tfToolDupYOffset;
+    private JTextField tfToolDupRotation;
+    private JButton btnToolDup;
 
     private SkrGdxAppPhysModelEditor gApp;
     private String currentModelFileName = "";
     private PhysModel model = null;
 
+    private DefaultTableModel emptyTableModel = new DefaultTableModel();
     private PhysModelPropertiesTableModel physModelPropertiesTableModel;
     private AagPropertiesTableModel aagPropertiesTableModel;
     private BodyPropertiesTableModel bodyPropertiesTableModel;
@@ -139,56 +149,22 @@ public class MainGui extends JFrame {
     private JointPropertiesTableModel jointPropertiesTableModel;
 
     private JointItemDescription jiDesc;
+    private ModelTreeNode jointsGroupNode;
+    private ModelTreeNode bodiesGroupNode;
 
+    private EditorScreen editorScreen;
 
-    public static final class NodeInfo {
-        public enum Type {
-            ROOT, AAG, BODY_ITEM, FIXTURE_SET, JOINT_ITEM;
-        }
-
-        public Object object;
-        public Type type;
-
-        public NodeInfo(Object object, Type type) {
-            this.object = object;
-            this.type = type;
-        }
-
-        @Override
-        public String toString() {
-
-            switch (this.type) {
-                case ROOT:
-                    if ( object != null ) {
-                        PhysModel model = (PhysModel) object;
-                        return "Model: " + model.getName();
-                    } else {
-                        return "Model: ";
-                    }
-                case AAG:
-                    if ( object != null ) {
-                        AnimatedActorGroup ag = (AnimatedActorGroup) object;
-                        return "Actor: " + ag.getName();
-                    }
-                case BODY_ITEM:
-                    if ( object != null ) {
-                        BodyItem bi = ( BodyItem ) object;
-                        return "Body: " + bi.getName();
-                    }
-                case FIXTURE_SET:
-                    FixtureSet fs = ( FixtureSet ) object;
-                    return "FixtureSet: " + fs.getName();
-                case JOINT_ITEM:
-                    JointItem ji = (JointItem) object;
-                    return "Joint: " + ji.getName();
-            }
-
-            return "";
-        }
-    }
-
+    private String textureAtlasFilePath = "";
 
     MainGui() {
+
+        spinToolDupNumber.setModel( new SpinnerNumberModel(1,0,9999,1) );
+
+        for ( EditorScreen.SelectionMode m : EditorScreen.SelectionMode.values() )
+            comboSelectionMode.addItem( m );
+
+        for (PhysModelProcessing.MirrorDirection d : PhysModelProcessing.MirrorDirection.values() )
+            comboMirrorDirection.addItem( d );
 
         setGuiElementEnable( panelSimulationControls, false);
 
@@ -198,6 +174,9 @@ public class MainGui extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setContentPane(rootPanel);
         gdxPanel.add(gdxCanvas.getCanvas(), BorderLayout.CENTER);
+
+
+
         pack();
         setSize(1280, 800);
 
@@ -206,9 +185,7 @@ public class MainGui extends JFrame {
 
         gdxPanel.requestFocusInWindow();
 
-        ButtonGroup group = new ButtonGroup();
-        group.add( rbControllerInput );
-        group.add( rbScreenInput );
+        treePhysModel.setModel( new DefaultTreeModel( null ));
 
         physModelPropertiesTableModel = new PhysModelPropertiesTableModel( treePhysModel );
         aagPropertiesTableModel = new AagPropertiesTableModel( treePhysModel );
@@ -244,7 +221,7 @@ public class MainGui extends JFrame {
             }
         });
 
-        treePhysModel.getSelectionModel().setSelectionMode( TreeSelectionModel.SINGLE_TREE_SELECTION );
+        treePhysModel.getSelectionModel().setSelectionMode( TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION );
         treePhysModel.setShowsRootHandles( true );
 
 
@@ -255,7 +232,9 @@ public class MainGui extends JFrame {
         Gdx.app.postRunnable(new Runnable() {
             @Override
             public void run() {
-                SkrGdxAppPhysModelEditor.get().getEditorScreen().getActorController().setControlPointListener(
+                editorScreen = SkrGdxAppPhysModelEditor.get().getEditorScreen();
+
+                editorScreen.getActorController().setControlPointListener(
                         new Controller.controlPointListener() {
                             @Override
                             public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
@@ -263,14 +242,33 @@ public class MainGui extends JFrame {
                             }
                         }
                 );
-            }
-        });
 
+                editorScreen.setItemSelectionListener( new EditorScreen.ItemSelectionListener() {
+                    @Override
+                    public void singleItemSelected(Object object) {
+                        processSingleItemSelection( object );
+                    }
 
-        Gdx.app.postRunnable( new Runnable() {
-            @Override
-            public void run() {
-                SkrGdxAppPhysModelEditor.get().getEditorScreen().getBodyItemController().setControlPointListener(
+                    @Override
+                    public void itemAddedToSelection(Object object, boolean removed) {
+                        processItemSelection( object, removed );
+                    }
+                });
+
+                editorScreen.getJointCreatorController().setBodyItemSelectionListener(
+                        new JointCreatorController.BodyItemSelectionListener() {
+                            @Override
+                            public void bodyASelected(BodyItem bi) {
+                                selectBodyItemA( bi );
+                            }
+                            @Override
+                            public void bodyBSelected(BodyItem bi) {
+                                selectBodyItemB(bi);
+                            }
+                        }
+                );
+
+                editorScreen.getBodyItemController().setControlPointListener(
                         new Controller.controlPointListener() {
                             @Override
                             public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
@@ -278,60 +276,23 @@ public class MainGui extends JFrame {
                             }
                         }
                 );
-            }
-        });
-
-        Gdx.app.postRunnable( new Runnable() {
-            @Override
-            public void run() {
-                jiDesc = SkrGdxAppPhysModelEditor.get().getEditorScreen().getAnchorPointController().getDescription();
-                SkrGdxAppPhysModelEditor.get().getEditorScreen().getAnchorPointController().setControlPointListener(
+                jiDesc = editorScreen.getJointCreatorController().getDescription();
+                editorScreen.getJointCreatorController().setControlPointListener(
                         new Controller.controlPointListener() {
                             @Override
                             public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
                                 loadAnchorPointsPosition();
                             }
-                        });
-            }
-        });
+                        }
+                );
 
-        Gdx.app.postRunnable( new Runnable() {
-            @Override
-            public void run() {
-                final BodyItemController ctrl = SkrGdxAppPhysModelEditor.get().getEditorScreen().getBodyItemController();
+                final BodyItemController ctrl = editorScreen.getBodyItemController();
                 ctrl.setControlPointListener( new Controller.controlPointListener() {
                     @Override
                     public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
                         onBodyItemControllerCenterChanged( ctrl );
                     }
                 });
-
-            }
-        });
-
-        Gdx.app.postRunnable( new Runnable() {
-            @Override
-            public void run() {
-                SkrGdxAppPhysModelEditor.get().getEditorScreen().setBodyItemSelectionListener( new EditorScreen.BodyItemSelectionListener() {
-                    @Override
-                    public void bodyItemSelected(BodyItem bi) {
-                        processBodyItemSelection( bi );
-                    }
-                });
-            }
-        });
-
-        Gdx.app.postRunnable( new Runnable() {
-            @Override
-            public void run() {
-                SkrGdxAppPhysModelEditor.get().getEditorScreen().getAnchorPointController().setBodyItemSelectionListener(
-                        new AnchorPointController.BodyItemSelectionListener() {
-                            @Override
-                            public void bodySelected(BodyItem bi, int id) {
-                                selectBodyItemToJointCreator( bi, id );
-                            }
-                        }
-                );
             }
         });
 
@@ -352,9 +313,6 @@ public class MainGui extends JFrame {
             }
         });
 
-
-
-
         for (JointDef.JointType jt : JointDef.JointType.values() ) {
             comboJointType.addItem( jt );
         }
@@ -364,37 +322,6 @@ public class MainGui extends JFrame {
         modelToGui();
 
         // ====================================================================================
-
-        btnNewModel.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                newModel();
-            }
-        });
-        btnLoadModel.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                loadModel();
-            }
-        });
-        btnSaveModel.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                saveModel(false);
-            }
-        });
-        btnSaveModelAs.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                saveModel(true);
-            }
-        });
-        btnSelectTextureFile.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                selectTextureAtlasFile();
-            }
-        });
 
         treePhysModel.addTreeSelectionListener(new TreeSelectionListener() {
             @Override
@@ -411,7 +338,7 @@ public class MainGui extends JFrame {
         btnRemNode.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                removeNode();
+                processNodesRemoving();
             }
         });
         btnAddShape.addActionListener(new ActionListener() {
@@ -480,13 +407,13 @@ public class MainGui extends JFrame {
         btnSetAnchorA.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeA );
+                setAnchorPointFromGui(JointCreatorController.AnchorControlPoint.AcpType.typeA );
             }
         });
         btnSetAnchorB.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeB);
+                setAnchorPointFromGui(JointCreatorController.AnchorControlPoint.AcpType.typeB);
             }
         });
         btnCreateJoint.addActionListener(new ActionListener() {
@@ -543,19 +470,19 @@ public class MainGui extends JFrame {
         btnSetAxis.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                setAnchorPointFromGui( AnchorPointController.AnchorControlPoint.AcpType.typeAxis );
+                setAnchorPointFromGui( JointCreatorController.AnchorControlPoint.AcpType.typeAxis );
             }
         });
         btnSetGroundAnchorA.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                setAnchorPointFromGui( AnchorPointController.AnchorControlPoint.AcpType.typeC );
+                setAnchorPointFromGui( JointCreatorController.AnchorControlPoint.AcpType.typeC );
             }
         });
         btnSetGroundAnchorB.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                setAnchorPointFromGui( AnchorPointController.AnchorControlPoint.AcpType.typeD );
+                setAnchorPointFromGui(JointCreatorController.AnchorControlPoint.AcpType.typeD);
             }
         });
         btnDuplicate.addActionListener(new ActionListener() {
@@ -591,38 +518,133 @@ public class MainGui extends JFrame {
         comboBodyBSelector.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                selectBodyItemToAnchorPointcController( 1 );
+                selectBodyItemToAnchorPointcController(1);
+            }
+        });
+        comboSelectionMode.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                changeSelectionMode();
+            }
+        });
+        btnMirrorModel.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                processMirroring();
+            }
+        });
+
+        createMenu();
+        btnToolDup.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                processArrayDuplication();
             }
         });
     }
 
 
+    void createMenu() {
+        JMenuBar menuBar = new JMenuBar();
+
+        JMenu menu = new JMenu("Model");
+
+        JMenuItem mnuItem = new JMenuItem("New");
+        mnuItem.addActionListener( new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                newModel();
+            }
+        });
+        menu.add( mnuItem );
+
+        mnuItem = new JMenuItem("Load");
+        mnuItem.addActionListener( new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loadModel();
+            }
+        });
+        menu.add(mnuItem);
+
+
+        mnuItem = new JMenuItem("Save");
+        mnuItem.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveModel( false );
+            }
+        });
+        menu.add(mnuItem);
+
+
+        mnuItem = new JMenuItem("Save As ...");
+        mnuItem.addActionListener( new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveModel( true );
+            }
+        });
+        menu.add(mnuItem);
+        menu.addSeparator();
+
+        mnuItem = new JMenuItem("Import Body Items");
+        mnuItem.addActionListener( new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                importModel();
+            }
+        });
+        menu.add(mnuItem);
+
+        mnuItem = new JMenuItem("Export selection");
+        mnuItem.addActionListener( new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                exportSelection();
+            }
+        });
+        menu.add(mnuItem);
+        menu.addSeparator();
+
+        mnuItem = new JMenuItem("Set Texture Atlas File");
+        mnuItem.addActionListener( new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                selectTextureAtlasFile();
+            }
+        });
+        menu.add( mnuItem );
+
+        menuBar.add( menu );
+
+        setJMenuBar(menuBar);
+    }
+
     void uploadGuiFromSettings() {
-        tfTextureAtlasFile.setText( ApplicationSettings.get().getTextureAtlasFile() );
+        textureAtlasFilePath = ApplicationSettings.get().getTextureAtlasFile();
+        lblTextureAtlasFile.setText( "Texture Atlas File: " + textureAtlasFilePath );
     }
 
 
+    private final static DialogTextureAtlasSelector atlasFileSelector = new DialogTextureAtlasSelector();
+
     void selectTextureAtlasFile() {
 
-        final JFileChooser fch = new JFileChooser();
-        int res;
+        atlasFileSelector.setTfTextureAtlasFilePath( textureAtlasFilePath );
+        atlasFileSelector.setTitle(" Set Texture atlas file ");
 
-        fch.setCurrentDirectory( new File(ApplicationSettings.get().getLastDirectory()) );
-
-        res = fch.showDialog( null, "Select");
-
-        if ( res != JFileChooser.APPROVE_OPTION )
+        if ( !atlasFileSelector.execute( ApplicationSettings.get().getLastDirectory() ) )
             return;
 
-        tfTextureAtlasFile.setText(fch.getSelectedFile().getAbsolutePath());
-
+        textureAtlasFilePath = atlasFileSelector.getTextureAtlasFilePath();
         uploadTextureAtlas();
     }
 
 
     void uploadTextureAtlas() {
 
-        File fl = new File( tfTextureAtlasFile.getText() );
+        File fl = new File( textureAtlasFilePath );
 
         if ( !fl.exists() )
             return;
@@ -630,12 +652,13 @@ public class MainGui extends JFrame {
         Gdx.app.postRunnable( new Runnable() {
             @Override
             public void run() {
-                gApp.loadAtlas( tfTextureAtlasFile.getText() );
+                gApp.loadAtlas( textureAtlasFilePath );
             }
         });
 
-        ApplicationSettings.get().setTextureAtlasFile(tfTextureAtlasFile.getText());
+        ApplicationSettings.get().setTextureAtlasFile( textureAtlasFilePath );
         ApplicationSettings.get().setLastDirectory( fl.getParent() );
+        lblTextureAtlasFile.setText( "Texture Atlas File: " + textureAtlasFilePath );
     }
 
     void onAtlasLoaded( TextureAtlas atlas ) {
@@ -645,6 +668,7 @@ public class MainGui extends JFrame {
     }
 
     void newModel() {
+
 
         PhysWorld.clearPrimaryWorld();
 
@@ -690,9 +714,10 @@ public class MainGui extends JFrame {
 
         setGuiElementEnable(mainSplitPanel, true);
 
+        currentModelFileName = fl.getAbsolutePath();
+
         modelToGui();
 
-        currentModelFileName = fl.getAbsolutePath();
 
     }
 
@@ -732,6 +757,7 @@ public class MainGui extends JFrame {
                 model.changeUuid();
             }
 
+            setTitle("PhysModel file: " + currentModelFileName);
         }
         model.save( Gdx.files.absolute(currentModelFileName) );
 
@@ -739,14 +765,14 @@ public class MainGui extends JFrame {
 
 
 
-
     void modelToGui() {
+        if ( editorScreen == null )
+            return;
+        editorScreen.setModel( model );
         loadTree();
         physModelPropertiesTableModel.setModel(model);
-
-        SkrGdxAppPhysModelEditor.get().getEditorScreen().getModelRenderer().setModel( model );
-
         updateJointCombos();
+        setTitle("PhysModel file: " + currentModelFileName);
     }
 
     void selectNode( DefaultMutableTreeNode node ) {
@@ -758,42 +784,34 @@ public class MainGui extends JFrame {
 
     void addNode() {
 
-        if ( treePhysModel.getLastSelectedPathComponent() == null )
+        if ( model == null )
             return;
 
-        DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePhysModel.getLastSelectedPathComponent();
-
+        if ( treePhysModel.getLastSelectedPathComponent() == null )
+            return;
         DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
-        NodeInfo ni = ( NodeInfo ) node.getUserObject();
-        DefaultMutableTreeNode newNode = null;
-        switch ( ni.type ) {
+
+        TreePath [] selectedPaths = treePhysModel.getSelectionPaths();
+
+        if ( selectedPaths.length > 1 )
+            return;
+
+        ModelTreeNode node = (ModelTreeNode) treePhysModel.getLastSelectedPathComponent();
+
+        ModelTreeNode newNode = null;
+        switch ( node.getType()) {
             case ROOT:
-
                 if ( model.getBackgroundActor() == null ) {
-                    int res = showRootAddNodeSelectorDialog();
-
-                    if ( res == 1 ) {
-                        newNode = addNewBody( node );
-                        break;
-                    } else if ( res == 0 ) {
                         newNode = addNewAag( node );
-                        break;
-                    } else if ( res < 0 ) {
-                        return;
-                    }
-                }
-
-                if ( model.getBackgroundActor() != null ) {
-                    newNode = addNewBody( node );
+                } else {
+                    return;
                 }
                 break;
-
             case AAG:
-                addNewAag( node );
+                newNode = addNewAag( node );
                 break;
-
             case BODY_ITEM:
-                BodyItem bi = ( BodyItem ) ni.object;
+                BodyItem bi = ( BodyItem ) node.getUserObject();
                 if ( bi.getAagBackground() != null ) {
                     newNode = addNewFixtureSet( node );
                 } else {
@@ -805,9 +823,15 @@ public class MainGui extends JFrame {
                     }
                 }
                 break;
-
+            case BODIES_GROUP:
+                newNode = addNewBodyItem(node);
+                break;
             case FIXTURE_SET:
                 return;
+            case JOINT_ITEM:
+                break;
+            case JOINTS_GROUP:
+                break;
             default:
                 tableProperties.setModel( null );
         }
@@ -820,64 +844,61 @@ public class MainGui extends JFrame {
         }
     }
 
-    DefaultMutableTreeNode addNewBody( DefaultMutableTreeNode parentNode ) {
+    ModelTreeNode addNewBodyItem(ModelTreeNode parentNode) {
         BodyItem bi = model.addBodyItem("noname");
-        DefaultMutableTreeNode newNode = new DefaultMutableTreeNode( new NodeInfo(bi, NodeInfo.Type.BODY_ITEM) );
+        ModelTreeNode newNode = new ModelTreeNode(ModelTreeNode.Type.BODY_ITEM, bi);
         parentNode.add( newNode );
         return newNode;
 
     }
 
 
-    DefaultMutableTreeNode addNewAag( DefaultMutableTreeNode parentNode ) {
-
-        NodeInfo ni = ( NodeInfo ) parentNode.getUserObject();
+    ModelTreeNode addNewAag( ModelTreeNode parentNode ) {
 
         AnimatedActorGroup newAg;
 
-        DefaultMutableTreeNode newNode = null;
+        ModelTreeNode newNode = null;
 
-        switch ( ni.type ) {
+        switch ( parentNode.getType() ) {
             case ROOT:
                 newAg = new AnimatedActorGroup( SkrGdxApplication.get().getAtlas()  );
                 newAg.setName("noname");
                 model.setBackgroundActor(newAg);
-                newNode = new DefaultMutableTreeNode(new NodeInfo(newAg, NodeInfo.Type.AAG));
+                newNode = new ModelTreeNode(ModelTreeNode.Type.AAG, newAg);
                 parentNode.add( newNode );
                 break;
 
             case AAG:
-                if ( ni.object == null )
+                if ( parentNode.getUserObject() == null )
                     return null;
-                AnimatedActorGroup parentAg = (AnimatedActorGroup) ni.object;
+                AnimatedActorGroup parentAg = (AnimatedActorGroup) parentNode.getUserObject();
                 newAg = new AnimatedActorGroup( SkrGdxApplication.get().getAtlas()  );
                 newAg.setName( "noname" );
                 parentAg.addChild( newAg );
-                newNode = new DefaultMutableTreeNode( new NodeInfo( newAg, NodeInfo.Type.AAG ) );
+                newNode = new ModelTreeNode(ModelTreeNode.Type.AAG, newAg );
                 parentNode.add( newNode );
                 break;
             case BODY_ITEM:
-                if ( ni.object == null )
+                if ( parentNode.getUserObject() == null )
                     return null;
-                BodyItem bi = (BodyItem) ni.object;
+                BodyItem bi = (BodyItem) parentNode.getUserObject();
 
                 if ( bi.getAagBackground() != null )
                     return null;
                 newAg = new AnimatedActorGroup( SkrGdxApplication.get().getAtlas()  );
                 newAg.setName( "noname" );
                 bi.setAagBackground( newAg );
-                newNode = new DefaultMutableTreeNode( new NodeInfo( newAg, NodeInfo.Type.AAG ) );
+                newNode = new ModelTreeNode(ModelTreeNode.Type.AAG, newAg );
                 parentNode.add( newNode );
                 break;
         }
         return newNode;
     }
 
-    DefaultMutableTreeNode addNewFixtureSet(DefaultMutableTreeNode parentNode) {
-        NodeInfo ni = (NodeInfo) parentNode.getUserObject();
-        BodyItem bi = ( BodyItem ) ni.object;
+    ModelTreeNode addNewFixtureSet(ModelTreeNode parentNode) {
+        BodyItem bi = ( BodyItem ) parentNode.getUserObject();
         FixtureSet fs = bi.addNewFixtureSet("noname");
-        DefaultMutableTreeNode nn = new DefaultMutableTreeNode(new NodeInfo(fs, NodeInfo.Type.FIXTURE_SET));
+        ModelTreeNode nn = new ModelTreeNode(ModelTreeNode.Type.FIXTURE_SET, fs);
         parentNode.add( nn );
         return nn;
     }
@@ -901,111 +922,171 @@ public class MainGui extends JFrame {
         return n;
     }
 
-    void removeNode() {
-        DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePhysModel.getLastSelectedPathComponent();
-        DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
+    int showRemoveNodeYesNoDialog() {
+        int n = JOptionPane.showOptionDialog(this, "Are you shure ?", "Remove Node",
+                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, null, null );
+        Gdx.app.log("MainGui.showRemoveNodeYesNoDialog", "Res: " + n);
+        return n;
+    }
 
-        NodeInfo ni = ( NodeInfo ) node.getUserObject();
+    void processNodesRemoving() {
 
-        NodeInfo niParent = null;
+        if ( model == null )
+            return;
 
-        if ( parentNode != null ) {
-            niParent = ( NodeInfo ) parentNode.getUserObject();
+        if ( showRemoveNodeYesNoDialog() > 0 )
+            return;
+
+
+        TreePath [] selectedPaths = treePhysModel.getSelectionPaths();
+
+        ModelTreeNode parentNode = null;
+
+        for ( TreePath tp : selectedPaths ) {
+            ModelTreeNode node = (ModelTreeNode) tp.getLastPathComponent();
+            parentNode = removeNode( node );
         }
 
+        cleanupJointsGroup();
+        if ( parentNode != null )
+            selectNode( parentNode );
+    }
+
+
+    ModelTreeNode removeNode( ModelTreeNode node ) {
+        ModelTreeNode parentNode = (ModelTreeNode) node.getParent();
         DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
 
-        boolean checkRemovedJoints = false;
-
-        switch ( ni.type ) {
+        switch ( node.getType() ) {
 
             case ROOT:
-                return;
+                return null;
             case AAG:
 
-                if ( niParent.type == NodeInfo.Type.ROOT ) {
+                if ( parentNode.getType() == ModelTreeNode.Type.ROOT ) {
                     model.setBackgroundActor(null);
-                } else if ( niParent.type == NodeInfo.Type.AAG ) {
-                    AnimatedActorGroup parentAg = (AnimatedActorGroup) niParent.object;
-                    AnimatedActorGroup ag = (AnimatedActorGroup) ni.object;
+                } else if ( parentNode.getType() == ModelTreeNode.Type.AAG ) {
+                    AnimatedActorGroup parentAg = (AnimatedActorGroup) parentNode.getUserObject();
+                    AnimatedActorGroup ag = (AnimatedActorGroup) node.getUserObject();
                     parentAg.removeChild( ag );
-                } else if ( niParent.type == NodeInfo.Type.BODY_ITEM) {
-                    BodyItem bi = ( BodyItem ) niParent.object;
+                } else if ( parentNode.getType() == ModelTreeNode.Type.BODY_ITEM) {
+                    BodyItem bi = ( BodyItem ) parentNode.getUserObject();
                     bi.removeAagBackground( );
                 }
 
                 break;
             case BODY_ITEM: {
-                BodyItem bi = (BodyItem) ni.object;
+                BodyItem bi = (BodyItem) node.getUserObject();
                 model.removeBody(bi);
-                checkRemovedJoints = true;
                 break;
             }
 
+            case BODIES_GROUP:
+                return null;
             case FIXTURE_SET: {
-                BodyItem bi = (BodyItem) niParent.object;
-                bi.removeFixtureSet( (FixtureSet) ni.object );
-
+                BodyItem bi = (BodyItem) parentNode.getUserObject();
+                bi.removeFixtureSet( (FixtureSet) node.getUserObject() );
                 break;
             }
             case JOINT_ITEM:
-                JointItem ji = (JointItem) ni.object;
+                JointItem ji = (JointItem) node.getUserObject();
                 model.removeJointItem( ji );
                 updateJointCombos();
                 break;
+            case JOINTS_GROUP:
+                return null;
         }
-        md.removeNodeFromParent( node );
+        parentNode.remove( node );
         md.nodeStructureChanged( parentNode );
-        if ( checkRemovedJoints) {
-            Array< DefaultMutableTreeNode> removeList = new Array<DefaultMutableTreeNode>();
-            int c = md.getChildCount( md.getRoot() );
-            for ( int i = 0; i < c; i++) {
-                node = (DefaultMutableTreeNode) md.getChild( md.getRoot(), i);
-                ni = (NodeInfo) node.getUserObject();
-                if ( ni.type != NodeInfo.Type.JOINT_ITEM )
-                    continue;
-                JointItem ji = (JointItem) ni.object;
-                if ( model.findJointItem( ji.getId() ) == null )
-                    removeList.add( node );
-            }
-
-            for ( DefaultMutableTreeNode nd : removeList ) {
-                if ( node.getParent() != null )
-                    md.removeNodeFromParent( node );
-            }
-            md.nodeStructureChanged((javax.swing.tree.TreeNode) md.getRoot());
-        }
-        selectNode( parentNode );
+        return parentNode;
     }
 
-    void processBodyItemSelection( BodyItem bi ) {
+    void cleanupJointsGroup() {
+
+        Array< ModelTreeNode> removeList = new Array<ModelTreeNode>();
+
+        int c = jointsGroupNode.getChildCount();
+        for ( int i = 0; i < c; i++) {
+            ModelTreeNode node = (ModelTreeNode) jointsGroupNode.getChildAt(i);
+            if ( node.getType() != ModelTreeNode.Type.JOINT_ITEM )
+                continue;
+            JointItem ji = (JointItem) node.getUserObject();
+            if ( model.getJointItems().contains( ji, true ))
+                continue;
+            removeList.add( node );
+        }
+
+        for ( ModelTreeNode nd : removeList ) {
+            jointsGroupNode.remove(nd);
+        }
+
         DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
-        DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) md.getRoot();
-        boolean res  = false;
-        for ( int i = 0; i < rootNode.getChildCount(); i++ ) {
-            DefaultMutableTreeNode chNode = (DefaultMutableTreeNode) rootNode.getChildAt( i );
-            NodeInfo ni = (NodeInfo) chNode.getUserObject();
-            if ( ni.type != NodeInfo.Type.BODY_ITEM )
-                continue;
-            BodyItem chBi = (BodyItem) ni.object;
-            if ( chBi != bi )
-                continue;
-            treePhysModel.setSelectionPath(new TreePath( chNode.getPath() ) );
-            res = true;
+        md.nodeStructureChanged( jointsGroupNode );
+    }
+
+    void processSingleItemSelection ( Object object ) {
+        DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
+        ModelTreeNode tn = findNode((ModelTreeNode) md.getRoot(), object );
+        if ( tn == null )
+            return;
+        TreePath tp = new TreePath( tn.getPath() );
+        treePhysModel.setSelectionPath(tp);
+        treePhysModel.scrollPathToVisible( tp );
+        processTreeSelection(null);
+    }
+
+    void processItemSelection(Object object, boolean removed ) {
+        DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
+        ModelTreeNode tn = findNode((ModelTreeNode) md.getRoot(), object );
+        if ( tn == null )
+            return;
+        TreePath tp = new TreePath( tn.getPath() );
+        if ( !removed ) {
+            treePhysModel.addSelectionPath(tp);
+            treePhysModel.scrollPathToVisible( tp );
+        } else {
+            treePhysModel.removeSelectionPath( tp );
         }
 
-        if ( res )
-            processTreeSelection( null );
+        processTreeSelection(null);
     }
+
+    ModelTreeNode findNode(ModelTreeNode parentNode, Object object ) {
+        if ( parentNode.getUserObject() == object ) {
+            return parentNode;
+        }
+
+        for ( int index = 0; index < parentNode.getChildCount(); index ++ ) {
+            ModelTreeNode tn = (ModelTreeNode) parentNode.getChildAt( index );
+            tn = findNode( tn, object);
+            if ( tn != null )
+                return tn;
+        }
+        return null;
+    }
+
 
     void processTreeSelection( TreeSelectionEvent e) {
 
         propertiesCellEditor.cancelCellEditing();
         tabbedPaneEditors.removeAll();
 
+
+        tableProperties.setModel( emptyTableModel );
         setGuiElementEnable(panelShapeEditor, false);
 
-        DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePhysModel.getLastSelectedPathComponent();
+        TreePath[] selectionPaths = treePhysModel.getSelectionPaths();
+
+        if ( selectionPaths == null )
+            return;
+
+        if ( selectionPaths.length > 1 ) {
+            processTreeMultiSelection();
+            return;
+        }
+
+        ModelTreeNode node = (ModelTreeNode) treePhysModel.getLastSelectedPathComponent();
+        DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
 
         if ( node == null )
             return;
@@ -1013,91 +1094,141 @@ public class MainGui extends JFrame {
         if ( node.getUserObject() == null )
             return;
 
-        NodeInfo ni = (NodeInfo) node.getUserObject();
-
-        switch ( ni.type ) {
+        switch ( node.getType() ) {
             case ROOT:
                 tableProperties.setModel( physModelPropertiesTableModel );
-                tabbedPaneEditors.add("Joint creator", panelJointCreator );
-                updateJointCreatorGui();
-                setGuiElementEnable( panelJointCreator, true);
-                updateJointCreatorPanelFeatures();
+                tabbedPaneEditors.add( "Tools", panelTools );
+                setGuiElementEnable( panelTools, true);
                 break;
 
             case AAG:
-                aagPropertiesTableModel.setAag((AnimatedActorGroup) ni.object);
+                aagPropertiesTableModel.setAag((AnimatedActorGroup) node.getUserObject());
                 tableProperties.setModel( aagPropertiesTableModel );
                 tableProperties.updateUI();
+                tabbedPaneEditors.add( "Tools", panelTools );
+                setGuiElementEnable( panelTools, true);
                 break;
 
             case BODY_ITEM:
-                BodyItem bi = ( BodyItem ) ni.object;
+                BodyItem bi = ( BodyItem ) node.getUserObject();
                 bodyPropertiesTableModel.setBodyItem( bi );
                 tableProperties.setModel( bodyPropertiesTableModel );
                 tableProperties.updateUI();
                 setGuiElementEnable( panelBodyItemEditor, true);
                 tabbedPaneEditors.add("Body Editor", panelBodyItemEditor);
                 chbEnableMassCorrection.setSelected( false );
+                tabbedPaneEditors.add( "Tools", panelTools );
+                setGuiElementEnable( panelTools, true);
                 break;
 
+            case BODIES_GROUP:
+                break;
             case FIXTURE_SET:
-                FixtureSet fs = ( FixtureSet ) ni.object;
+                FixtureSet fs = ( FixtureSet ) node.getUserObject();
                 fixtureSetPropertiesTableModel.setFixtureSet( fs );
                 tableProperties.setModel( fixtureSetPropertiesTableModel );
                 tableProperties.updateUI();
                 tabbedPaneEditors.add( "Shape Editor", panelShapeEditor );
                 setGuiElementEnable( panelShapeEditor, true );
                 updateShapeEditorFeatures( fs );
+                tabbedPaneEditors.add( "Tools", panelTools );
+                setGuiElementEnable( panelTools, true);
                 break;
 
             case JOINT_ITEM:
-                JointItem ji = (JointItem) ni.object;
+                JointItem ji = (JointItem) node.getUserObject();
                 jointPropertiesTableModel.setJointItem( ji );
                 tableProperties.setModel( jointPropertiesTableModel );
                 tableProperties.updateUI();
                 break;
+            case JOINTS_GROUP:
+                tabbedPaneEditors.add("Joint creator", panelJointCreator );
+                updateJointCreatorGui();
+                setGuiElementEnable( panelJointCreator, true);
+                updateJointCreatorPanelFeatures();
+                break;
             default:
         }
 
-        SkrGdxAppPhysModelEditor.get().getEditorScreen().setModelObject(ni.object);
+        editorScreen.setModelObject(node.getUserObject() );
     }
 
 
+    void processTreeMultiSelection() {
+        TreePath[] selectionPaths = treePhysModel.getSelectionPaths();
+        ModelTreeNode baseNode = (ModelTreeNode) selectionPaths[0].getLastPathComponent();
+
+        Array< TreePath > disabledPaths = new Array<TreePath>();
+
+        for ( TreePath tp : selectionPaths ) {
+            ModelTreeNode node = (ModelTreeNode) tp.getLastPathComponent();
+            if ( node.getType() != baseNode.getType() ) {
+                disabledPaths.add( tp );
+            }
+        }
+
+        for ( TreePath tp : disabledPaths ) {
+            treePhysModel.removeSelectionPath( tp );
+        }
+
+        editorScreen.clearSelectedItems();
+
+        for ( TreePath tp : treePhysModel.getSelectionPaths() ) {
+            ModelTreeNode node = (ModelTreeNode) tp.getLastPathComponent();
+            editorScreen.addModelObject( node.getUserObject() );
+        }
+
+    }
+
     void processTreeNodeDuplication() {
+
+        if ( model == null )
+            return;
 
         propertiesCellEditor.cancelCellEditing();
         tabbedPaneEditors.removeAll();
 
         setGuiElementEnable(panelShapeEditor, false);
 
-        DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePhysModel.getLastSelectedPathComponent();
+        TreePath [] selectedPaths = treePhysModel.getSelectionPaths();
+
+        ModelTreeNode newNode = null;
+
+        for (TreePath tp : selectedPaths ) {
+            ModelTreeNode node = (ModelTreeNode) tp.getLastPathComponent();
+            newNode = duplicateNode( node );
+        }
+
+        ModelTreeNode node = (ModelTreeNode) treePhysModel.getLastSelectedPathComponent();
 
         if ( node == null )
             return;
 
-        if ( node.getUserObject() == null )
-            return;
-
-        NodeInfo ni = (NodeInfo) node.getUserObject();
-        DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) node.getParent();
-        DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
-        DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) md.getRoot();
-        NodeInfo parentNi = null;
-        if ( parentNode != null ) {
-            parentNi = (NodeInfo) parentNode.getUserObject();
+        if ( newNode != null ) {
+            selectNode( newNode );
         }
+    }
 
-        DefaultMutableTreeNode newNode = null;
 
-        switch ( ni.type ) {
+    private ModelTreeNode duplicateNode( ModelTreeNode node ) {
+        if ( node.getUserObject() == null )
+            return null;
+
+        ModelTreeNode parentNode = (ModelTreeNode) node.getParent();
+        DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
+        ModelTreeNode rootNode = (ModelTreeNode) md.getRoot();
+
+        ModelTreeNode newNode = null;
+
+        switch ( node.getType() ) {
             case ROOT:
-                return;
+                return null;
             case AAG:
 
-                if ( parentNi.type != NodeInfo.Type.AAG )
-                    return;
-                AnimatedActorGroup pAag = (AnimatedActorGroup) parentNi.object;
-                AnimatedActorGroup aag = (AnimatedActorGroup) ni.object;
+                if ( parentNode.getType() != ModelTreeNode.Type.AAG )
+                    return null;
+                AnimatedActorGroup pAag = (AnimatedActorGroup) parentNode.getUserObject();
+                AnimatedActorGroup aag = (AnimatedActorGroup) node.getUserObject();
                 AagDescription aagDesc = aag.getDescription();
                 aagDesc.setName( aagDesc.getName() + "Cpy" );
                 AnimatedActorGroup newAag = new AnimatedActorGroup( aagDesc, SkrGdxApplication.get().getAtlas()  );
@@ -1107,25 +1238,25 @@ public class MainGui extends JFrame {
 
             case BODY_ITEM:
 
-                BodyItem bi = (BodyItem) ni.object;
+                BodyItem bi = (BodyItem) node.getUserObject();
                 BodyItemDescription bd = bi.createBodyItemDescription();
                 bd.setName( bd.getName() + "Cpy");
                 bd.setId( -1 );
                 BodyItem dupBi = model.addBodyItem( bd );
-                newNode = createTreeBodyNode( dupBi );
+                newNode = createTreeBodyItemNode(dupBi);
 
                 break;
             case FIXTURE_SET:
 
-                BodyItem bodyItem = (BodyItem) parentNi.object;
-                FixtureSet fs = (FixtureSet) ni.object;
+                BodyItem bodyItem = (BodyItem) parentNode.getUserObject();
+                FixtureSet fs = (FixtureSet) node.getUserObject();
                 FixtureSetDescription fd = fs.getDescription();
                 FixtureSet newFs = bodyItem.addNewFixtureSet( fd );
                 newNode = createTreeFixtureSetNode( parentNode, newFs );
 
                 break;
             case JOINT_ITEM:
-                return;
+                return null;
 
 
         }
@@ -1135,14 +1266,8 @@ public class MainGui extends JFrame {
             md.nodeStructureChanged(parentNode);
         }
 
-        if ( newNode != null ) {
-            selectNode( newNode );
-        }
-
+        return newNode;
     }
-
-
-
 
     private void setGuiElementEnable(Container c, boolean state) {
 
@@ -1161,10 +1286,9 @@ public class MainGui extends JFrame {
         c.setEnabled( state );
     }
 
-    private DefaultMutableTreeNode createTreeAagNode( DefaultMutableTreeNode parent, AnimatedActorGroup aag ) {
+    private ModelTreeNode createTreeAagNode( ModelTreeNode parent, AnimatedActorGroup aag ) {
 
-        DefaultMutableTreeNode aagNode = new DefaultMutableTreeNode(
-                new NodeInfo( aag, NodeInfo.Type.AAG) );
+        ModelTreeNode aagNode = new ModelTreeNode( ModelTreeNode.Type.AAG, aag );
 
         for ( int i = 0; i < aag.getChildrenCount(); i++) {
             createTreeAagNode( aagNode, aag.getChild(i) );
@@ -1175,21 +1299,15 @@ public class MainGui extends JFrame {
         return aagNode;
     }
 
-    private DefaultMutableTreeNode createTreeFixtureSetNode( DefaultMutableTreeNode bodyNode, FixtureSet fs ) {
-        DefaultMutableTreeNode fsNode = new DefaultMutableTreeNode(
-                new NodeInfo( fs, NodeInfo.Type.FIXTURE_SET) );
+    private ModelTreeNode createTreeFixtureSetNode( ModelTreeNode bodyNode, FixtureSet fs ) {
+        ModelTreeNode fsNode = new ModelTreeNode(ModelTreeNode.Type.FIXTURE_SET, fs);
         bodyNode.add( fsNode );
-
         return fsNode;
     }
 
-    private DefaultMutableTreeNode createTreeBodyNode(BodyItem bi ) {
+    private ModelTreeNode createTreeBodyItemNode(BodyItem bi) {
 
-        DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
-        DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) md.getRoot();
-
-        DefaultMutableTreeNode bodyNode = new DefaultMutableTreeNode(
-                new NodeInfo( bi, NodeInfo.Type.BODY_ITEM) );
+        ModelTreeNode bodyNode = new ModelTreeNode(ModelTreeNode.Type.BODY_ITEM, bi );
 
         if ( bi.getAagBackground() != null ) {
             createTreeAagNode( bodyNode, bi.getAagBackground() );
@@ -1199,22 +1317,17 @@ public class MainGui extends JFrame {
             createTreeFixtureSetNode( bodyNode, fs );
         }
 
-        rootNode.add( bodyNode );
+        bodiesGroupNode.add( bodyNode );
 
         return bodyNode;
     }
 
     private DefaultMutableTreeNode createTreeJointItemNode( JointItem ji ) {
-        DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
-        DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode) md.getRoot();
-
-        DefaultMutableTreeNode jiNode = new DefaultMutableTreeNode(
-                new NodeInfo( ji, NodeInfo.Type.JOINT_ITEM ) );
-
+        ModelTreeNode jiNode = new ModelTreeNode(ModelTreeNode.Type.JOINT_ITEM, ji );
         if ( ji.getAagBackground() != null ) {
             createTreeAagNode( jiNode, ji.getAagBackground() );
         }
-        rootNode.add( jiNode );
+        jointsGroupNode.add( jiNode );
         return jiNode;
     }
 
@@ -1225,16 +1338,23 @@ public class MainGui extends JFrame {
             return;
         }
 
-        DefaultMutableTreeNode root = new DefaultMutableTreeNode( new NodeInfo( model, NodeInfo.Type.ROOT ) );
+        ModelTreeNode root = new ModelTreeNode( ModelTreeNode.Type.ROOT, model );
         treePhysModel.setModel(new DefaultTreeModel(root));
 
         if ( model.getBackgroundActor() != null ) {
             createTreeAagNode(root, model.getBackgroundActor());
         }
 
+        bodiesGroupNode = new ModelTreeNode(ModelTreeNode.Type.BODIES_GROUP, model.getBodyItems() );
+        root.add( bodiesGroupNode );
+
         for ( BodyItem bi : model.getBodyItems() ) {
-            createTreeBodyNode( bi );
+            createTreeBodyItemNode(bi);
         }
+
+        jointsGroupNode = new ModelTreeNode(ModelTreeNode.Type.JOINTS_GROUP, model.getJointItems() );
+        root.add( jointsGroupNode );
+
 
         for ( JointItem ji : model.getJointItems() ) {
             createTreeJointItemNode( ji );
@@ -1418,7 +1538,7 @@ public class MainGui extends JFrame {
     }
 
 
-    void setAnchorPointFromGui( AnchorPointController.AnchorControlPoint.AcpType type ) {
+    void setAnchorPointFromGui( JointCreatorController.AnchorControlPoint.AcpType type ) {
         Vector2 av = null;
         JTextField tf_x = null;
         JTextField tf_y = null;
@@ -1481,13 +1601,13 @@ public class MainGui extends JFrame {
         jiDesc.setBodyBId( biB.getId() );
         jiDesc.setCollideConnected(chbCollideConnected.isSelected());
 
-        setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeA);
-        setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeB);
+        setAnchorPointFromGui(JointCreatorController.AnchorControlPoint.AcpType.typeA);
+        setAnchorPointFromGui(JointCreatorController.AnchorControlPoint.AcpType.typeB);
         if ( jiDesc.getType() == JointDef.JointType.PulleyJoint ) {
-            setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeC);
-            setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeD);
+            setAnchorPointFromGui(JointCreatorController.AnchorControlPoint.AcpType.typeC);
+            setAnchorPointFromGui(JointCreatorController.AnchorControlPoint.AcpType.typeD);
         } else if ( jiDesc.getType() == JointDef.JointType.PrismaticJoint ) {
-            setAnchorPointFromGui(AnchorPointController.AnchorControlPoint.AcpType.typeAxis);
+            setAnchorPointFromGui(JointCreatorController.AnchorControlPoint.AcpType.typeAxis);
         }
 
         try {
@@ -1510,20 +1630,15 @@ public class MainGui extends JFrame {
             jiDesc.setJointBId( jiB.getId() );
         }
 
-
-        DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePhysModel.getLastSelectedPathComponent();
-        DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
-        NodeInfo ni = ( NodeInfo ) node.getUserObject();
-        if ( ni.type != NodeInfo.Type.ROOT)
-            return;
-
         JointItem ji = model.addNewJointItem( jiDesc );
         if ( ji == null)
             return;
-        DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(new NodeInfo(ji, NodeInfo.Type.JOINT_ITEM));
-        node.add( newNode );
-        md.nodeChanged( node );
-        md.nodeStructureChanged(node);
+
+        DefaultTreeModel md = (DefaultTreeModel) treePhysModel.getModel();
+        ModelTreeNode newNode = new ModelTreeNode(ModelTreeNode.Type.JOINT_ITEM, ji );
+        jointsGroupNode.add( newNode );
+        md.nodeChanged( jointsGroupNode );
+        md.nodeStructureChanged(jointsGroupNode);
         updateJointCombos();
 
         selectNode( newNode );
@@ -1643,57 +1758,57 @@ public class MainGui extends JFrame {
         panelAnchorA.setVisible( true );
         panelAnchorB.setVisible( true );
         JointDef.JointType type = (JointDef.JointType) comboJointType.getSelectedItem();
-        AnchorPointController ctrlr = SkrGdxAppPhysModelEditor.get().getEditorScreen().getAnchorPointController();
+        JointCreatorController ctrlr = SkrGdxAppPhysModelEditor.get().getEditorScreen().getJointCreatorController();
 
         switch ( type ) {
             case Unknown:
                 panelJointCreatorFeatures.setVisible( false );
-                ctrlr.setMode(AnchorPointController.Mode.NoPoints);
+                ctrlr.setMode(JointCreatorController.Mode.NoPoints);
                 break;
             case RevoluteJoint:
-                ctrlr.setMode(AnchorPointController.Mode.OnePointMode);
+                ctrlr.setMode(JointCreatorController.Mode.OnePointMode);
                 panelAnchorB.setVisible( false );
                 break;
             case PrismaticJoint:
-                ctrlr.setMode(AnchorPointController.Mode.OnePointAndAxisMode);
+                ctrlr.setMode(JointCreatorController.Mode.OnePointAndAxisMode);
                 panelAxis.setVisible( true );
                 panelAnchorB.setVisible( false );
                 break;
             case DistanceJoint:
-                ctrlr.setMode(AnchorPointController.Mode.TwoPointsMode);
+                ctrlr.setMode(JointCreatorController.Mode.TwoPointsMode);
                 break;
             case PulleyJoint:
                 panelGroundAnchors.setVisible( true );
-                ctrlr.setMode(AnchorPointController.Mode.FourPointsMode );
+                ctrlr.setMode(JointCreatorController.Mode.FourPointsMode );
                 panelRatio.setVisible( true );
                 break;
             case MouseJoint:
                 break;
             case GearJoint:
-                ctrlr.setMode(AnchorPointController.Mode.NoPoints);
+                ctrlr.setMode(JointCreatorController.Mode.NoPoints);
                 panelRatio.setVisible( true );
                 panelJoints.setVisible( true );
                 panelAnchorA.setVisible( false );
                 panelAnchorB.setVisible( false );
                 break;
             case WheelJoint:
-                ctrlr.setMode(AnchorPointController.Mode.OnePointAndAxisMode);
+                ctrlr.setMode(JointCreatorController.Mode.OnePointAndAxisMode);
                 panelAxis.setVisible( true );
                 panelAnchorB.setVisible( false );
                 break;
             case WeldJoint:
-                ctrlr.setMode(AnchorPointController.Mode.OnePointMode);
+                ctrlr.setMode(JointCreatorController.Mode.OnePointMode);
                 panelAnchorB.setVisible( false );
                 break;
             case FrictionJoint:
-                ctrlr.setMode(AnchorPointController.Mode.OnePointMode);
+                ctrlr.setMode(JointCreatorController.Mode.OnePointMode);
                 panelAnchorB.setVisible( false );
                 break;
             case RopeJoint:
-                ctrlr.setMode(AnchorPointController.Mode.TwoPointsMode);
+                ctrlr.setMode(JointCreatorController.Mode.TwoPointsMode);
                 break;
             case MotorJoint:
-                ctrlr.setMode(AnchorPointController.Mode.NoPoints);
+                ctrlr.setMode(JointCreatorController.Mode.NoPoints);
                 panelAnchorA.setVisible( false );
                 panelAnchorB.setVisible( false );
                 break;
@@ -1733,22 +1848,345 @@ public class MainGui extends JFrame {
 
     }
 
-    void selectBodyItemToJointCreator( BodyItem bi,int id ) {
-        if ( id == 0 ) {
-            comboBodyASelector.setSelectedItem( bi );
-        } else {
-            comboBodyBSelector.setSelectedItem( bi );
-        }
+    void selectBodyItemA( BodyItem bi ) {
+        comboBodyASelector.setSelectedItem( bi );
+    }
+
+    void selectBodyItemB(BodyItem bi) {
+        comboBodyBSelector.setSelectedItem( bi );
     }
 
     void selectBodyItemToAnchorPointcController( int selId ) {
-        AnchorPointController ctrlr = SkrGdxAppPhysModelEditor.get().getEditorScreen().getAnchorPointController();
+        JointCreatorController ctrlr = SkrGdxAppPhysModelEditor.get().getEditorScreen().getJointCreatorController();
         if ( selId == 0 ) {
-            ctrlr.setSelectedBodyItem((BodyItem) comboBodyASelector.getSelectedItem(), 0);
+            ctrlr.setSelectedBodyItemA((BodyItem) comboBodyASelector.getSelectedItem());
         } else {
-            ctrlr.setSelectedBodyItem((BodyItem) comboBodyBSelector.getSelectedItem(), 1);
+            ctrlr.setSelectedBodyItemB((BodyItem) comboBodyBSelector.getSelectedItem());
         }
     }
+
+    void changeSelectionMode() {
+        EditorScreen.SelectionMode selMode = (EditorScreen.SelectionMode) comboSelectionMode.getSelectedItem();
+        editorScreen.setSelectionMode( selMode );
+    }
+
+    void processMirroring() {
+
+        if ( model == null )
+            return;
+
+
+        TreePath [] selectedPaths = treePhysModel.getSelectionPaths();
+        PhysModelProcessing.MirrorDirection dir = (PhysModelProcessing.MirrorDirection) comboMirrorDirection.getSelectedItem();
+
+        for ( TreePath tp : selectedPaths ) {
+            ModelTreeNode node = (ModelTreeNode) tp.getLastPathComponent();
+
+            switch ( node.getType() ) {
+                case ROOT:
+                    mirrorModel( dir );
+                    return;
+                case AAG:
+                    mirrorAag( node, dir);
+                    break;
+                case BODY_ITEM:
+                    mirrorBodyItem( node, dir );
+                    break;
+                case BODIES_GROUP:
+                    break;
+                case FIXTURE_SET:
+                    mirrorFixtureSet( node, dir );
+                    break;
+                case JOINT_ITEM:
+                    break;
+                case JOINTS_GROUP:
+                    break;
+            }
+        }
+    }
+
+    void mirrorAag( ModelTreeNode node , PhysModelProcessing.MirrorDirection dir ) {
+        AnimatedActorGroup aag = (AnimatedActorGroup) node.getUserObject();
+        AagDescription desc = aag.getDescription();
+        PhysModelProcessing.mirrorAagDescription( desc, dir);
+        aag.uploadFromDescription( desc, SkrGdxApplication.get().getAtlas() );
+    }
+
+    void mirrorBodyItem( ModelTreeNode node, PhysModelProcessing.MirrorDirection dir ) {
+        BodyItem bi = (BodyItem) node.getUserObject();
+        BodyItemDescription desc = bi.createBodyItemDescription();
+        PhysModelProcessing.mirrorBodyItemDescription( desc, dir );
+        model.removeBody( bi );
+        bi = model.addBodyItem( desc );
+        node.setUserObject( bi );
+        cleanupJointsGroup();
+    }
+
+    void mirrorFixtureSet( ModelTreeNode node, PhysModelProcessing.MirrorDirection dir ) {
+        FixtureSet fs = (FixtureSet) node.getUserObject();
+        FixtureSetDescription fsDesc = fs.getDescription();
+
+        PhysModelProcessing.mirrorFixtureSetDescription( fsDesc, dir );
+
+        BodyItem bi = fs.getBodyItem();
+        bi.removeFixtureSet( fs );
+        fs = bi.addNewFixtureSet( fsDesc );
+
+        node.setUserObject( fs );
+    }
+
+    void mirrorModel( PhysModelProcessing.MirrorDirection dir ) {
+        PhysModel.Description desc = model.getDescription();
+
+        PhysModelProcessing.mirrorModelDescription(desc, dir);
+
+        PhysWorld.clearPrimaryWorld();
+        model = new PhysModel( desc,PhysWorld.getPrimaryWorld(), SkrGdxApplication.get().getAtlas() );
+
+        modelToGui();
+    }
+
+    void exportSelection() {
+
+        TreePath [] selectedPaths = treePhysModel.getSelectionPaths();
+
+        if ( selectedPaths == null )
+            return;
+
+
+        PhysModel.Description desc = new PhysModel.Description();
+        desc.setName( model.getName() + "-export");
+        desc.setUuid( UUID.randomUUID() );
+
+        Array<Integer> exportedId = new Array<Integer>();
+
+        for( TreePath tp : selectedPaths ) {
+            ModelTreeNode tn = (ModelTreeNode) tp.getLastPathComponent();
+            switch ( tn.getType() ) {
+                case ROOT:
+                    return;
+                case AAG:
+                    return;
+                case BODY_ITEM:
+                    BodyItem bi = (BodyItem) tn.getUserObject();
+                    BodyItemDescription bid = bi.createBodyItemDescription();
+                    desc.getBodyDescriptions().add( bid );
+                    exportedId.add( bi.getId() );
+                    break;
+                case BODIES_GROUP:
+                    return;
+                case FIXTURE_SET:
+                    return;
+                case JOINT_ITEM:
+                    return;
+                case JOINTS_GROUP:
+                    return;
+            }
+        }
+
+        for ( JointItem ji : model.getJointItems() ) {
+            int bAId = ji.getBodyAId();
+            int bBId = ji.getBodyBId();
+            if ( !exportedId.contains( bAId, false ) )
+                continue;
+            if ( !exportedId.contains( bBId, false ) )
+                continue;
+            JointItemDescription jid = ji.createJointItemDescription();
+            desc.getJointsDesc().add( jid );
+        }
+
+
+        FileNameExtensionFilter ff = PhysModel.getFileFilter();
+
+        final JFileChooser fch = new JFileChooser();
+        int res;
+
+        fch.setCurrentDirectory( new File( ApplicationSettings.get().getLastDirectory() ) );
+        fch.setFileFilter( ff );
+
+        res = fch.showSaveDialog(this);
+
+        if ( res != JFileChooser.APPROVE_OPTION ) {
+            return;
+        }
+
+        File fl = fch.getSelectedFile();
+
+        ApplicationSettings.get().setLastDirectory( fl.getParent() );
+
+        String exportFileNamePath = fl.getAbsolutePath();
+
+        if ( !exportFileNamePath.toLowerCase().endsWith( "." + ff.getExtensions()[0]) ) {
+            exportFileNamePath += ("." + ff.getExtensions()[0]);
+        }
+        PhysModel.saveModelDescription( desc, Gdx.files.absolute( exportFileNamePath ) );
+    }
+
+
+
+    void importModel() {
+
+        if ( model == null )
+            return;
+
+        FileNameExtensionFilter ff = PhysModel.getFileFilter();
+        final JFileChooser fch = new JFileChooser();
+        int res;
+
+
+        fch.setCurrentDirectory( new File( ApplicationSettings.get().getLastDirectory() ) );
+        fch.setFileFilter( ff );
+
+
+        res = fch.showOpenDialog( this );
+
+        if ( res != JFileChooser.APPROVE_OPTION )
+            return;
+
+        File fl = fch.getSelectedFile();
+
+        if (!fl.exists())
+            return;
+
+        ApplicationSettings.get().setLastDirectory( fl.getParent() );
+
+        PhysModel.Description desc = PhysModel.loadModelDescription( Gdx.files.absolute( fl.getAbsolutePath()) );
+
+        HashMap<Integer, Integer > idRemapTable = new HashMap<Integer, Integer>();
+
+        for ( BodyItemDescription bid : desc.getBodyDescriptions() ) {
+            int id = bid.getId();
+            int newId = BodyItem.genNextId( -1 );
+
+            idRemapTable.put( id, newId );
+            bid.setId( newId );
+
+            BodyItem bi = model.addBodyItem( bid );
+
+            createTreeBodyItemNode( bi );
+        }
+
+        HashMap< Integer, Integer > jidRemapTable = new HashMap<Integer, Integer>();
+
+        for ( JointItemDescription jid : desc.getJointsDesc() ) {
+            int id = jid.getId();
+            int newId = JointItem.genNextId( -1 );
+            jid.setId( newId );
+            jidRemapTable.put( id, newId );
+
+            int bId = jid.getBodyAId();
+            if ( !idRemapTable.containsKey( bId) )
+                continue;
+            jid.setBodyAId( idRemapTable.get( bId) );
+
+            bId = jid.getBodyBId();
+            if ( !idRemapTable.containsKey( bId ) )
+                continue;
+            jid.setBodyBId( idRemapTable.get( bId ) );
+
+            if ( jid.getType() == JointDef.JointType.GearJoint ) {
+                int jId = jid.getJointAId();
+                if ( !jidRemapTable.containsKey( jId ) )
+                    continue;
+                jid.setJointAId( jidRemapTable.get( jId ) );
+
+                jId = jid.getJointBId();
+                if ( ! jidRemapTable.containsKey( jId ) )
+                    continue;
+                jid.setJointBId( jidRemapTable.get( jId ) );
+            }
+
+            JointItem ji = model.addNewJointItem( jid );
+
+            createTreeJointItemNode( ji );
+        }
+    }
+
+
+
+    void processArrayDuplication() {
+        int number = (Integer) spinToolDupNumber.getValue();
+        if ( number == 0 )
+            return;
+        float xOffset;
+        float yOffset;
+        float rotation;
+        try {
+            xOffset = Float.parseFloat(tfToolDupXOffset.getText());
+            yOffset = Float.parseFloat(tfToolDupYOffset.getText());
+            rotation = Float.parseFloat(tfToolDupRotation.getText());
+        } catch ( NumberFormatException e ) {
+            return;
+        }
+
+        TreePath [] selectedPaths = treePhysModel.getSelectionPaths();
+
+        if ( selectedPaths == null )
+            return;
+        for ( TreePath tp : selectedPaths ) {
+            ModelTreeNode node = (ModelTreeNode) tp.getLastPathComponent();
+            switch (node.getType()) {
+                case ROOT:
+                    continue;
+                case AAG:
+                    break;
+                case BODY_ITEM:
+                    break;
+                case BODIES_GROUP:
+                    continue;
+                case FIXTURE_SET:
+                    break;
+                case JOINT_ITEM:
+                    continue;
+                case JOINTS_GROUP:
+                    continue;
+            }
+
+            duplicateNodeAsArray( node, number, xOffset, yOffset, rotation );
+        }
+
+    }
+
+
+    void duplicateNodeAsArray( ModelTreeNode node, int number, float xOffset, float yOffset, float rotation ) {
+
+        for ( int i = 0; i < number; i++ ) {
+
+            ModelTreeNode newNode = duplicateNode( node );
+            if ( newNode == null )
+                continue;
+            switch (newNode.getType()) {
+                case ROOT:
+                    continue;
+                case AAG:
+                    AnimatedActorGroup baseAag = (AnimatedActorGroup) node.getUserObject();
+                    AnimatedActorGroup aag = (AnimatedActorGroup) newNode.getUserObject();
+                    aag.setPosition( baseAag.getX() + i * xOffset, baseAag.getY() + i * yOffset );
+                    aag.setRotation( baseAag.getRotation() + i * rotation );
+                    break;
+                case BODY_ITEM:
+                    BodyItem baseBi = (BodyItem) node.getUserObject();
+                    BodyItem bi = (BodyItem) newNode.getUserObject();
+                    bi.getBody().setTransform(  baseBi.getBody().getPosition().x + i * xOffset,
+                            baseBi.getBody().getPosition().y + i * yOffset,
+                            baseBi.getBody().getAngle() + i * MathUtils.degreesToRadians * rotation );
+
+                    break;
+                case BODIES_GROUP:
+                    continue;
+                case FIXTURE_SET:
+                    break;
+                case JOINT_ITEM:
+                    continue;
+                case JOINTS_GROUP:
+                    continue;
+            }
+
+        }
+
+    }
+
+    //TODO: implement Undo/Redo by Descriptions Array
 
     //======================= main ================================
 
@@ -1761,4 +2199,5 @@ public class MainGui extends JFrame {
             }
         });
     }
+
 }

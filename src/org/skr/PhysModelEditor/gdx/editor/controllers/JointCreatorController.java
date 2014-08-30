@@ -1,25 +1,26 @@
 package org.skr.PhysModelEditor.gdx.editor.controllers;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.Fixture;
-import com.badlogic.gdx.physics.box2d.QueryCallback;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import org.skr.gdx.PhysWorld;
 import org.skr.gdx.editor.controller.Controller;
 import org.skr.gdx.physmodel.BodyItem;
+import org.skr.gdx.physmodel.FixtureSet;
 import org.skr.gdx.physmodel.JointItemDescription;
+import org.skr.gdx.physmodel.PhysModel;
 
 /**
  * Created by rat on 12.07.14.
  */
 
-public class AnchorPointController extends Controller {
+public class JointCreatorController extends Controller {
 
 
+    PhysModel model;
     JointItemDescription jdesc = new JointItemDescription();
 
     public enum Mode {
@@ -49,14 +50,16 @@ public class AnchorPointController extends Controller {
     }
 
     public static interface BodyItemSelectionListener {
-        public void bodySelected( BodyItem bi, int id );
+        public void bodyASelected( BodyItem bi );
+        public void bodyBSelected( BodyItem bi );
     }
 
-    BodyItem selectedBodyItem_A = null;
-    BodyItem selectedBodyItem_B = null;
+    BodyItem selectedBodyItemA = null;
+    BodyItem selectedBodyItemB = null;
 
     BodyItemSelectionListener bodyItemSelectionListener;
 
+    Mode mode = Mode.NoPoints;
 
     public BodyItemSelectionListener getBodyItemSelectionListener() {
         return bodyItemSelectionListener;
@@ -66,12 +69,36 @@ public class AnchorPointController extends Controller {
         this.bodyItemSelectionListener = bodyItemSelectionListener;
     }
 
-    public void setSelectedBodyItem( BodyItem bi, int selId ) {
-        if ( selId == 0 ) {
-            selectedBodyItem_A = bi;
+    boolean selectBodyItemA = true;
+
+    public void setSelectedBodyItem( BodyItem bi ) {
+        if (selectBodyItemA) {
+            selectedBodyItemA = bi;
+            selectBodyItemA = false;
+            if ( bodyItemSelectionListener != null )
+                bodyItemSelectionListener.bodyASelected( bi );
         } else {
-            selectedBodyItem_B = bi;
+            selectedBodyItemB = bi;
+            selectBodyItemA = true;
+            if ( bodyItemSelectionListener != null )
+                bodyItemSelectionListener.bodyBSelected( bi );
         }
+    }
+
+    public BodyItem getSelectedBodyItemA() {
+        return selectedBodyItemA;
+    }
+
+    public void setSelectedBodyItemA(BodyItem selectedBodyItemA) {
+        this.selectedBodyItemA = selectedBodyItemA;
+    }
+
+    public BodyItem getSelectedBodyItemB() {
+        return selectedBodyItemB;
+    }
+
+    public void setSelectedBodyItemB(BodyItem selectedBodyItemB) {
+        this.selectedBodyItemB = selectedBodyItemB;
     }
 
     private void createControlPoints() {
@@ -108,11 +135,19 @@ public class AnchorPointController extends Controller {
         updateControlPointFromObject( cp );
     }
 
-    public AnchorPointController(Stage stage) {
+    public JointCreatorController(Stage stage) {
         super(stage);
         createControlPoints();
         setPosControlPoint( null );
         setEnableBbControl( false );
+    }
+
+    public PhysModel getModel() {
+        return model;
+    }
+
+    public void setModel(PhysModel model) {
+        this.model = model;
     }
 
     @Override
@@ -137,11 +172,11 @@ public class AnchorPointController extends Controller {
     protected void draw() {
         drawControlPoints();
 
-        if ( selectedBodyItem_A != null ) {
-            drawBodyItemSelection( selectedBodyItem_A, cA );
+        if ( selectedBodyItemA != null ) {
+            drawBodyItemSelection(selectedBodyItemA, cA );
         }
-        if ( selectedBodyItem_B != null ) {
-            drawBodyItemSelection( selectedBodyItem_B, cB );
+        if ( selectedBodyItemB != null ) {
+            drawBodyItemSelection(selectedBodyItemB, cB );
         }
 
         if ( getControlPoints().get(2).isVisible() ) {
@@ -253,6 +288,8 @@ public class AnchorPointController extends Controller {
 
     public void setMode( Mode mode ) {
 
+        this.mode = mode;
+
         for( ControlPoint cp :  getControlPoints() )
         cp.setVisible( false );
 
@@ -280,14 +317,94 @@ public class AnchorPointController extends Controller {
 
     @Override
     protected boolean onMouseClicked(Vector2 localCoord, Vector2 stageCoord, int button) {
-        if ( button == Input.Buttons.LEFT && getSelectedControlPoint() == null ) {
-            //TODO: recode this;
+        if ( button == Input.Buttons.MIDDLE && getSelectedControlPoint() == null ) {
+            return processBodyItemSelection( stageCoord );
         }
-
         return false;
     }
 
-    private final static Vector2 localV = new Vector2();
+    @Override
+    protected boolean onMouseDoubleClicked(Vector2 localCoord, Vector2 stageCoord, int button) {
+        if ( button == Input.Buttons.LEFT && getSelectedControlPoint() == null )
+            offsetControlPoints( stageCoord );
+        return false;
+    }
 
+
+    protected void offsetControlPoints( Vector2 stageCoord ) {
+        AnchorControlPoint cp = (AnchorControlPoint) getControlPoints().get(0);
+        Vector2 offset = getAveragePosition();
+        offset.set( stageCoord.sub(offset));
+
+        cp.offsetPos( offset.x, offset.y);
+        updateDescFromCp(cp);
+        cp = (AnchorControlPoint) getControlPoints().get(1);
+        cp.offsetPos(offset.x, offset.y);
+        updateDescFromCp(cp);
+        cp = (AnchorControlPoint) getControlPoints().get(3);
+        cp.offsetPos(offset.x, offset.y);
+        updateDescFromCp(cp);
+        cp = (AnchorControlPoint) getControlPoints().get(4);
+        cp.offsetPos(offset.x, offset.y);
+        updateDescFromCp(cp);
+    }
+
+    private Vector2 getAveragePosition() {
+        Vector2 pos = new Vector2();
+
+        AnchorControlPoint cp = (AnchorControlPoint) getControlPoints().get(0);
+        pos.set( cp.getX(), cp.getY() );
+        switch ( mode ) {
+            case NoPoints:
+                return pos;
+            case TwoPointsMode:
+                cp = (AnchorControlPoint) getControlPoints().get(1);
+                pos.add( cp.getX(), cp.getY() );
+                pos.scl( 0.5f, 0.5f );
+                break;
+            case OnePointMode:
+                break;
+            case OnePointAndAxisMode:
+                break;
+            case FourPointsMode:
+                cp = (AnchorControlPoint) getControlPoints().get(1);
+                pos.add( cp.getX(), cp.getY() );
+                cp = (AnchorControlPoint) getControlPoints().get(3);
+                pos.add( cp.getX(), cp.getY() );
+                cp = (AnchorControlPoint) getControlPoints().get(4);
+                pos.add( cp.getX(), cp.getY() );
+                pos.scl(0.25f, 0.25f);
+                break;
+        }
+
+        return pos;
+    }
+
+    private boolean processBodyItemSelection( Vector2 stageCoord ) {
+        if ( model == null )
+            return false;
+
+        Vector2 localC = new Vector2();
+
+        BodyItem selection = null;
+
+        for ( BodyItem bi : model.getBodyItems() ) {
+            localC.set(stageCoord);
+            bi.parentToLocalCoordinates(localC);
+            FixtureSet fs = bi.getFixtureSet( localC );
+            if ( fs != null ) {
+                selection = bi;
+                Gdx.app.log("JointCreatorController.processBodyItemSelection", " FS: " + fs.getName() );
+                break;
+            }
+        }
+
+        if ( selection == null )
+            return false;
+
+        Gdx.app.log("JointCreatorController.processBodyItemSelection", "BI: " + selection.getName());
+        setSelectedBodyItem( selection );
+        return true;
+    }
 
 }

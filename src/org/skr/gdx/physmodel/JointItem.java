@@ -17,19 +17,25 @@ public abstract class JointItem extends PhysItem {
     private PhysModel model;
 
     protected JointItem( int id, PhysModel model ) {
-        if ( id < 0 ) {
-            this.id = ++g_id;
-        } else {
-            this.id = id;
-            if ( id > g_id )
-                g_id = this.id;
-        }
 
+        this.id = genNextId( id );
         this.model = model;
     }
 
     public final int getId() {
         return id;
+    }
+
+    public static int genNextId( int id ) {
+        int res = -1;
+        if ( id < 0 ) {
+            res = ++g_id;
+        } else {
+            res = id;
+            if ( id > g_id )
+                g_id = id;
+        }
+        return res;
     }
 
     public final Joint getJoint() {
