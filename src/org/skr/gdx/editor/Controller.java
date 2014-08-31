@@ -1,4 +1,4 @@
-package org.skr.gdx.editor.controller;
+package org.skr.gdx.editor;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -542,72 +542,89 @@ public abstract  class Controller  {
 
     private MoveDir moveDir = MoveDir.Free;
 
+    private static final Vector2 tVec1 = new Vector2();
+    private static final Vector2 tVec2 = new Vector2();
+
     public boolean touchDragged( Vector2 stageCoord ) {
 
         localCoord.set(stageCoord);
         stageToObject(localCoord);
 
-        if ( selectedControlPoint != null ) {
-            offsetLocal.set( localCoord ).sub( downLocalPos );
-            offsetStage.set( stageCoord ).sub( downStagePos );
+        if ( selectedControlPoint == null )
+            return false;
 
-            if ( Gdx.input.isKeyPressed( Input.Keys.SHIFT_LEFT ) && (moveDir == MoveDir.Free) ) {
-                if ( Math.abs(offsetStage .x) < Math.abs( offsetStage.y) ) {
-                    moveDir = MoveDir.Vertical;
-                } else  {
-                    moveDir = MoveDir.Horizontal;
-                }
-            } else if ( !Gdx.input.isKeyPressed( Input.Keys.SHIFT_LEFT ) ) {
-                moveDir = MoveDir.Free;
-            }
+        offsetLocal.set( localCoord ).sub( downLocalPos );
+        offsetStage.set( stageCoord ).sub( downStagePos );
 
-            switch ( moveDir ) {
-                case Free:
-                    break;
-                case Vertical:
-                    offsetStage.set(0, offsetStage.y);
-                    break;
-                case Horizontal:
-                    offsetStage.set(offsetStage.x, 0);
-                    break;
-            }
-
-            if ( Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) ) {
-                float ang = localCoord.angle() - downLocalPos.angle();
-                rotateAtControlPoint(selectedControlPoint, ang);
-
-            } else {
-                if ( controlPointMovingEnabled ) {
-                    if ( selectedControlPoint == posControlPoint ) {
-                        movePosControlPoint( selectedControlPoint, offsetLocal, offsetStage );
-                    } else if ( selectedControlPoint == getBbDownLeftControlPoint() ) {
-                        moveBbControlPoint( selectedControlPoint, getBbTopRightControlPoint(),
-                                offsetLocal, offsetStage);
-                    } else if ( selectedControlPoint == getBbDownRightControlPoint() ) {
-                        moveBbControlPoint( selectedControlPoint, getBbTopLeftControlPoint(),
-                                offsetLocal, offsetStage);
-                    } else if ( selectedControlPoint == getBbTopLeftControlPoint() ) {
-                        moveBbControlPoint( selectedControlPoint, getBbDownRightControlPoint(),
-                                offsetLocal, offsetStage);
-                    } else if ( selectedControlPoint == getBbTopRightControlPoint() ) {
-                        moveBbControlPoint( selectedControlPoint, getBbDownLeftControlPoint(),
-                                offsetLocal, offsetStage);
-                    } else {
-                        moveControlPoint( selectedControlPoint, offsetLocal, offsetStage );
-                    }
-
-                    if ( controlPointListener != null ) {
-                        controlPointListener.changed( getControlledObject(), selectedControlPoint );
-                    }
-                }
-            }
+        if ( !controlPointMovingEnabled ) {
 
             downStagePos.set( stageCoord );
             downLocalPos.set( localCoord );
             return true;
         }
 
-        return false;
+        if ( Gdx.input.isKeyPressed( Input.Keys.SHIFT_LEFT ) && (moveDir == MoveDir.Free) ) {
+            if ( Math.abs(offsetStage .x) < Math.abs( offsetStage.y) ) {
+                moveDir = MoveDir.Vertical;
+            } else  {
+                moveDir = MoveDir.Horizontal;
+            }
+        } else if ( !Gdx.input.isKeyPressed( Input.Keys.SHIFT_LEFT ) ) {
+            moveDir = MoveDir.Free;
+        }
+
+        switch ( moveDir ) {
+            case Free:
+                break;
+            case Vertical:
+                offsetStage.set(0, offsetStage.y);
+                break;
+            case Horizontal:
+                offsetStage.set(offsetStage.x, 0);
+                break;
+        }
+
+        if ( moveDir != MoveDir.Free ) {
+            offsetLocal.set( offsetStage );
+            stageToObject( offsetLocal );
+        }
+
+
+        if ( Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT) ) {
+
+            float ang = stageCoord.angle() - downStagePos.angle();
+            rotateAtControlPoint(selectedControlPoint, ang);
+
+        } else {
+
+            if ( selectedControlPoint == posControlPoint ) {
+                movePosControlPoint( selectedControlPoint, offsetLocal, offsetStage );
+            } else if ( selectedControlPoint == getBbDownLeftControlPoint() ) {
+                moveBbControlPoint( selectedControlPoint, getBbTopRightControlPoint(),
+                        offsetLocal, offsetStage);
+            } else if ( selectedControlPoint == getBbDownRightControlPoint() ) {
+                moveBbControlPoint( selectedControlPoint, getBbTopLeftControlPoint(),
+                        offsetLocal, offsetStage);
+            } else if ( selectedControlPoint == getBbTopLeftControlPoint() ) {
+                moveBbControlPoint( selectedControlPoint, getBbDownRightControlPoint(),
+                        offsetLocal, offsetStage);
+            } else if ( selectedControlPoint == getBbTopRightControlPoint() ) {
+                moveBbControlPoint( selectedControlPoint, getBbDownLeftControlPoint(),
+                        offsetLocal, offsetStage);
+            } else {
+                moveControlPoint( selectedControlPoint, offsetLocal, offsetStage );
+            }
+        }
+
+
+        if ( controlPointListener != null ) {
+            controlPointListener.changed( getControlledObject(), selectedControlPoint );
+        }
+
+        downStagePos.set( stageCoord );
+        downLocalPos.set( localCoord );
+        return true;
+
     }
 
     public boolean touchUp( Vector2 stageCoord, int button ) {

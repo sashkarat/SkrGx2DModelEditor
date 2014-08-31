@@ -7,10 +7,9 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Array;
 import org.skr.gdx.PhysWorld;
-import org.skr.gdx.editor.controller.Controller;
+import org.skr.gdx.editor.Controller;
 import org.skr.gdx.physmodel.BodyItem;
 import org.skr.gdx.utils.RectangleExt;
-import org.skr.gdx.utils.Utils;
 
 /**
  * Created by rat on 27.08.14.

@@ -5,11 +5,15 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
+import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers.ChainShapeController;
+import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers.CircleShapeController;
+import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers.EdgeShapeController;
+import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers.PolygonShapeController;
 import org.skr.gdx.editor.BaseScreen;
 import org.skr.gdx.PhysModelRenderer;
 import org.skr.gdx.PhysWorld;
 import org.skr.PhysModelEditor.gdx.editor.controllers.*;
-import org.skr.gdx.editor.controller.Controller;
+import org.skr.gdx.editor.Controller;
 import org.skr.gdx.physmodel.BodyItem;
 import org.skr.gdx.physmodel.FixtureSet;
 import org.skr.gdx.physmodel.PhysModel;
@@ -188,6 +192,10 @@ public class EditorScreen extends BaseScreen {
         return jointCreatorController;
     }
 
+    public MultiBodyItemsController getMultiBodyItemsController() {
+        return multiBodyItemsController;
+    }
+
     public ShapeController getCurrentShapeController() {
         if ( currentController == null )
             return null;
@@ -223,7 +231,7 @@ public class EditorScreen extends BaseScreen {
         if ( res )
             return res;
 
-        Gdx.app.log("EditorScreen.touchDown", "Event unprocessed");
+//        Gdx.app.log("EditorScreen.touchDown", "Event unprocessed");
 
         return res;
     }
@@ -245,7 +253,7 @@ public class EditorScreen extends BaseScreen {
         if ( res )
             return res;
 
-        Gdx.app.log("EditorScreen.touchUp", "Event unprocessed");
+//        Gdx.app.log("EditorScreen.touchUp", "Event unprocessed");
 
         return res;
     }
@@ -268,7 +276,7 @@ public class EditorScreen extends BaseScreen {
 
         if ( res )
             return res;
-        Gdx.app.log("EditorScreen.clicked", "Event unhandled");
+//        Gdx.app.log("EditorScreen.clicked", "Event unhandled");
         return false;
     }
 
@@ -344,14 +352,14 @@ public class EditorScreen extends BaseScreen {
             FixtureSet fs = bi.getFixtureSet( localC );
             if ( fs != null ) {
                 selection = bi;
-                Gdx.app.log("EditorScreen.processBodyItemSelection", " FS: " + fs.getName() );
+//                Gdx.app.log("EditorScreen.processBodyItemSelection", " FS: " + fs.getName() );
                 break;
             }
 
             if ( bi.getAagBackground() != null ) {
                 AnimatedActorGroup aag = processAagSelection(localC2, bi.getAagBackground());
                 if ( aag != null ) {
-                    Gdx.app.log("EditorScreen.processBodyItemSelection", " AAG: " + aag.getName() );
+//                    Gdx.app.log("EditorScreen.processBodyItemSelection", " AAG: " + aag.getName() );
                     selection = bi;
                     break;
                 }
@@ -361,8 +369,8 @@ public class EditorScreen extends BaseScreen {
         if ( selection == null )
             return false;
 
-        Gdx.app.log("EditorScreen.processBodyItemSelection", "BI: " + selection.getName() + " ID: " +
-        selection.getId() );
+//        Gdx.app.log("EditorScreen.processBodyItemSelection", "BI: " + selection.getName() + " ID: " +
+//        selection.getId() );
         itemSelected( selection );
         return true;
     }
@@ -376,7 +384,7 @@ public class EditorScreen extends BaseScreen {
         if ( model.getBackgroundActor() != null ) {
             selectedAag = processAagSelection( stageCoord, model.getBackgroundActor() );
             if ( selectedAag != null ) {
-                Gdx.app.log("EditorScreen.processAagSelection", "AAG: " + selectedAag );
+//                Gdx.app.log("EditorScreen.processAagSelection", "AAG: " + selectedAag );
                 itemSelected( selectedAag );
                 return true;
             }
@@ -411,7 +419,7 @@ public class EditorScreen extends BaseScreen {
 
         AnimatedActorGroup resAag = parentAag.getAag( localCoord );
         if ( resAag != null ) {
-            Gdx.app.log("EditorScreen.processAagSelection", " AAG: " + resAag );
+//            Gdx.app.log("EditorScreen.processAagSelection", " AAG: " + resAag );
         }
         return resAag;
     }
@@ -427,8 +435,8 @@ public class EditorScreen extends BaseScreen {
             FixtureSet fs = bi.getFixtureSet( localCoord );
             if ( fs == null )
                 continue;
-            Gdx.app.log("EditorScreen.processFixtureSetSelection",
-                    "FS: " + fs.getName() );
+//            Gdx.app.log("EditorScreen.processFixtureSetSelection",
+//                    "FS: " + fs.getName() );
             itemSelected( fs );
             return  true;
         }
@@ -452,7 +460,7 @@ public class EditorScreen extends BaseScreen {
         if ( res )
             return res;
 
-        Gdx.app.log("EditorScreen.touchDragged", "Event unhandled");
+//        Gdx.app.log("EditorScreen.touchDragged", "Event unhandled");
 
         return res;
     }

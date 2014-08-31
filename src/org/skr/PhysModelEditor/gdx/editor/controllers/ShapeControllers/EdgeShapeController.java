@@ -1,8 +1,9 @@
-package org.skr.PhysModelEditor.gdx.editor.controllers;
+package org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeController;
 import org.skr.gdx.PhysWorld;
 import org.skr.gdx.physmodel.ShapeDescription;
 
@@ -40,7 +41,7 @@ public class EdgeShapeController extends ShapeController {
 
     @Override
     protected void createControlPoints() {
-        for ( ShapeDescription shd : fixtureSetDescription.getShapeDescriptions() )
+        for ( ShapeDescription shd : getFixtureSetDescription().getShapeDescriptions() )
             createShapeControlPoints( shd );
     }
 

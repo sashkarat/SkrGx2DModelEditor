@@ -7,7 +7,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Array;
 import org.skr.gdx.PhysWorld;
-import org.skr.gdx.editor.controller.Controller;
+import org.skr.gdx.editor.Controller;
 import org.skr.gdx.physmodel.BodyItem;
 import org.skr.gdx.physmodel.FixtureSet;
 import org.skr.gdx.physmodel.FixtureSetDescription;

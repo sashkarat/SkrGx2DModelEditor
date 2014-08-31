@@ -1,14 +1,15 @@
-package org.skr.PhysModelEditor.gdx.editor.controllers;
+package org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeController;
 import org.skr.gdx.PhysWorld;
 import org.skr.gdx.physmodel.ShapeDescription;
 
 /**
  * Created by rat on 14.06.14.
  */
-public class ChainShapeController extends  ShapeController{
+public class ChainShapeController extends ShapeController {
 
 
     public class ChainControlPoint extends ShapeControlPoint {
@@ -37,7 +38,7 @@ public class ChainShapeController extends  ShapeController{
     protected void createControlPoints() {
         getControlPoints().clear();
 
-        for ( ShapeDescription shd : fixtureSetDescription.getShapeDescriptions() ) {
+        for ( ShapeDescription shd : getFixtureSetDescription().getShapeDescriptions() ) {
             createShapeControlPoints( shd );
         }
     }

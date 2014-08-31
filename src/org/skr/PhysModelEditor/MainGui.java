@@ -11,10 +11,11 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.PropertiesTableElements.*;
 import org.skr.PhysModelEditor.gdx.editor.SkrGdxAppPhysModelEditor;
+import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers.CircleShapeController;
 import org.skr.gdx.SkrGdxApplication;
 import org.skr.gdx.PhysWorld;
 import org.skr.PhysModelEditor.gdx.editor.controllers.*;
-import org.skr.gdx.editor.controller.Controller;
+import org.skr.gdx.editor.Controller;
 import org.skr.gdx.physmodel.*;
 import org.skr.gdx.physmodel.animatedactorgroup.AagDescription;
 import org.skr.gdx.physmodel.animatedactorgroup.AnimatedActorGroup;
@@ -31,8 +32,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.io.File;
 import java.util.HashMap;
 import java.util.UUID;
@@ -156,9 +156,19 @@ public class MainGui extends JFrame {
 
     private String textureAtlasFilePath = "";
 
+    private Timer snapshotTimer;
+
+    private boolean modelChanged = false;
+
     MainGui() {
 
         spinToolDupNumber.setModel( new SpinnerNumberModel(1,0,9999,1) );
+        snapshotTimer = new Timer( 2000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onSnapshotTimer();
+            }
+        });
 
         for ( EditorScreen.SelectionMode m : EditorScreen.SelectionMode.values() )
             comboSelectionMode.addItem( m );
@@ -171,16 +181,17 @@ public class MainGui extends JFrame {
         gApp = new SkrGdxAppPhysModelEditor();
         final LwjglAWTCanvas gdxCanvas = new LwjglAWTCanvas( gApp );
 
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setContentPane(rootPanel);
         gdxPanel.add(gdxCanvas.getCanvas(), BorderLayout.CENTER);
 
-
-
         pack();
+
+        snapshotTimer.start();
+
         setSize(1280, 800);
 
-        MainGuiWindowListener guiWindowListener = new MainGuiWindowListener();
+        MainGuiWindowListener guiWindowListener = new MainGuiWindowListener( this );
         addWindowListener( guiWindowListener );
 
         gdxPanel.requestFocusInWindow();
@@ -229,89 +240,8 @@ public class MainGui extends JFrame {
         tabbedPaneEditors.removeAll();
 
 
-        Gdx.app.postRunnable(new Runnable() {
-            @Override
-            public void run() {
-                editorScreen = SkrGdxAppPhysModelEditor.get().getEditorScreen();
-
-                editorScreen.getActorController().setControlPointListener(
-                        new Controller.controlPointListener() {
-                            @Override
-                            public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
-                                actorChangedByController((Actor) controlledObject);
-                            }
-                        }
-                );
-
-                editorScreen.setItemSelectionListener( new EditorScreen.ItemSelectionListener() {
-                    @Override
-                    public void singleItemSelected(Object object) {
-                        processSingleItemSelection( object );
-                    }
-
-                    @Override
-                    public void itemAddedToSelection(Object object, boolean removed) {
-                        processItemSelection( object, removed );
-                    }
-                });
-
-                editorScreen.getJointCreatorController().setBodyItemSelectionListener(
-                        new JointCreatorController.BodyItemSelectionListener() {
-                            @Override
-                            public void bodyASelected(BodyItem bi) {
-                                selectBodyItemA( bi );
-                            }
-                            @Override
-                            public void bodyBSelected(BodyItem bi) {
-                                selectBodyItemB(bi);
-                            }
-                        }
-                );
-
-                editorScreen.getBodyItemController().setControlPointListener(
-                        new Controller.controlPointListener() {
-                            @Override
-                            public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
-                                bodyItemChangedByController((BodyItem) controlledObject);
-                            }
-                        }
-                );
-                jiDesc = editorScreen.getJointCreatorController().getDescription();
-                editorScreen.getJointCreatorController().setControlPointListener(
-                        new Controller.controlPointListener() {
-                            @Override
-                            public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
-                                loadAnchorPointsPosition();
-                            }
-                        }
-                );
-
-                final BodyItemController ctrl = editorScreen.getBodyItemController();
-                ctrl.setControlPointListener( new Controller.controlPointListener() {
-                    @Override
-                    public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
-                        onBodyItemControllerCenterChanged( ctrl );
-                    }
-                });
-            }
-        });
-
-        ShapeController.setStaticShapeControllerListener(new ShapeController.ShapeControllerListener() {
-            @Override
-            public void controlPointChanged(ShapeDescription shapeDescription, Controller.ControlPoint controlPoint) {
-                shapeControlPointChanged(shapeDescription, controlPoint);
-            }
-
-            @Override
-            public void positionChanged(ShapeDescription shapeDescription) {
-                shapePositionChanged(shapeDescription);
-            }
-
-            @Override
-            public void radiusChanged(ShapeDescription shapeDescription) {
-                shapeRadiusChanged(shapeDescription);
-            }
-        });
+        setupGdxApp();
+        setupHotKeyActions();
 
         for (JointDef.JointType jt : JointDef.JointType.values() ) {
             comboJointType.addItem( jt );
@@ -332,7 +262,7 @@ public class MainGui extends JFrame {
         btnAddNode.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                addNode();
+                processNodeAddition();
             }
         });
         btnRemNode.addActionListener(new ActionListener() {
@@ -488,7 +418,7 @@ public class MainGui extends JFrame {
         btnDuplicate.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                processTreeNodeDuplication();
+                processNodeDuplication();
             }
         });
         btnSetMassCenter.addActionListener(new ActionListener() {
@@ -544,12 +474,102 @@ public class MainGui extends JFrame {
     }
 
 
+    void setupGdxApp() {
+        Gdx.app.postRunnable(new Runnable() {
+            @Override
+            public void run() {
+                editorScreen = SkrGdxAppPhysModelEditor.get().getEditorScreen();
+
+                editorScreen.getActorController().setControlPointListener(
+                        new Controller.controlPointListener() {
+                            @Override
+                            public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
+                                actorChangedByController((Actor) controlledObject);
+                            }
+                        }
+                );
+
+                editorScreen.setItemSelectionListener(new EditorScreen.ItemSelectionListener() {
+                    @Override
+                    public void singleItemSelected(Object object) {
+                        processSingleItemSelection(object);
+                    }
+
+                    @Override
+                    public void itemAddedToSelection(Object object, boolean removed) {
+                        processItemSelection(object, removed);
+                    }
+                });
+
+                editorScreen.getBodyItemController().setControlPointListener(
+                        new Controller.controlPointListener() {
+                            @Override
+                            public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
+                                bodyItemChangedByController((BodyItem) controlledObject);
+                            }
+                        }
+                );
+
+                editorScreen.getMultiBodyItemsController().setControlPointListener(
+                        new Controller.controlPointListener() {
+                            @Override
+                            public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
+                                bodyItemsChangedByController();
+                            }
+                });
+
+                editorScreen.getJointCreatorController().setBodyItemSelectionListener(
+                        new JointCreatorController.BodyItemSelectionListener() {
+                            @Override
+                            public void bodyASelected(BodyItem bi) {
+                                selectBodyItemA( bi );
+                            }
+                            @Override
+                            public void bodyBSelected(BodyItem bi) {
+                                selectBodyItemB(bi);
+                            }
+                        }
+                );
+
+                jiDesc = editorScreen.getJointCreatorController().getDescription();
+                editorScreen.getJointCreatorController().setControlPointListener(
+                        new Controller.controlPointListener() {
+                            @Override
+                            public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
+                                loadAnchorPointsPosition();
+                            }
+                        }
+                );
+
+            }
+        });
+
+
+        ShapeController.setStaticShapeControllerListener(new ShapeController.ShapeControllerListener() {
+            @Override
+            public void controlPointChanged(ShapeDescription shapeDescription, Controller.ControlPoint controlPoint) {
+                shapeControlPointChanged(shapeDescription, controlPoint);
+            }
+
+            @Override
+            public void positionChanged(ShapeDescription shapeDescription) {
+                shapePositionChanged(shapeDescription);
+            }
+
+            @Override
+            public void radiusChanged(ShapeDescription shapeDescription) {
+                shapeRadiusChanged(shapeDescription);
+            }
+        });
+    }
+
     void createMenu() {
         JMenuBar menuBar = new JMenuBar();
 
         JMenu menu = new JMenu("Model");
 
         JMenuItem mnuItem = new JMenuItem("New");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK) );
         mnuItem.addActionListener( new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -559,6 +579,7 @@ public class MainGui extends JFrame {
         menu.add( mnuItem );
 
         mnuItem = new JMenuItem("Load");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.CTRL_MASK) );
         mnuItem.addActionListener( new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -569,6 +590,7 @@ public class MainGui extends JFrame {
 
 
         mnuItem = new JMenuItem("Save");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK) );
         mnuItem.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -579,6 +601,7 @@ public class MainGui extends JFrame {
 
 
         mnuItem = new JMenuItem("Save As ...");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK ) );
         mnuItem.addActionListener( new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -615,10 +638,101 @@ public class MainGui extends JFrame {
             }
         });
         menu.add( mnuItem );
+        menu.addSeparator();
+        mnuItem = new JMenuItem("Exit");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, ActionEvent.CTRL_MASK) );
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                processExitCall();
+            }
+        });
+        menu.add(mnuItem);
+
 
         menuBar.add( menu );
 
+        menu = new JMenu("Edit");
+
+        mnuItem = new JMenuItem("Undo");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK ) );
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                undo();
+            }
+        });
+        menu.add( mnuItem );
+
+        mnuItem = new JMenuItem("Redo");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK ) );
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                redo();
+            }
+        });
+        menu.add( mnuItem );
+        menu.addSeparator();
+
+        mnuItem = new JMenuItem("Add Item ");
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                processNodeAddition();
+            }
+        });
+        menu.add( mnuItem );
+
+        mnuItem = new JMenuItem("Duplicate Item ");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, ActionEvent.CTRL_MASK  ) );
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                processNodeDuplication();
+            }
+        });
+        menu.add( mnuItem );
+
+        mnuItem = new JMenuItem("Remove Item ");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0  ) );
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                processNodesRemoving();
+            }
+        });
+        menu.add( mnuItem );
+
+
+        menuBar.add( menu );
         setJMenuBar(menuBar);
+    }
+
+    void setupHotKeyActions() {
+        rootPanel.registerKeyboardAction(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                setSelectionMode(EditorScreen.SelectionMode.BODY_ITEM );
+            }
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_1, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
+        rootPanel.registerKeyboardAction(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                setSelectionMode(EditorScreen.SelectionMode.FIXTURE_SET );
+            }
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_2, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
+        rootPanel.registerKeyboardAction(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                setSelectionMode(EditorScreen.SelectionMode.AAG );
+            }
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_3, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
+        rootPanel.registerKeyboardAction(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                setSelectionMode(EditorScreen.SelectionMode.DISABLED );
+            }
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_0, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
     }
 
     void uploadGuiFromSettings() {
@@ -626,6 +740,14 @@ public class MainGui extends JFrame {
         lblTextureAtlasFile.setText( "Texture Atlas File: " + textureAtlasFilePath );
     }
 
+
+    public Timer getSnapshotTimer() {
+        return snapshotTimer;
+    }
+
+    public boolean isModelChanged() {
+        return modelChanged;
+    }
 
     private final static DialogTextureAtlasSelector atlasFileSelector = new DialogTextureAtlasSelector();
 
@@ -669,6 +791,14 @@ public class MainGui extends JFrame {
 
     void newModel() {
 
+        if ( model != null ) {
+            if ( showCloseModelYesNoDialog() != 0 )
+                return;
+            if ( ! onModelClosing() )
+                return;
+        }
+
+        clearHistory();
 
         PhysWorld.clearPrimaryWorld();
 
@@ -681,32 +811,45 @@ public class MainGui extends JFrame {
         setGuiElementEnable(mainSplitPanel, true);
 
         modelToGui();
+
+        modelChanged = true;
+        makeTheSnapshot();
     }
 
 
-
     void loadModel() {
+
+        if ( model != null ) {
+            if ( showCloseModelYesNoDialog() != 0 )
+                return;
+            if ( !onModelClosing() )
+                return;
+        }
 
         FileNameExtensionFilter ff = PhysModel.getFileFilter();
         final JFileChooser fch = new JFileChooser();
         int res;
 
 
-        fch.setCurrentDirectory( new File( ApplicationSettings.get().getLastDirectory() ) );
-        fch.setFileFilter( ff );
+        fch.setCurrentDirectory(new File(ApplicationSettings.get().getLastDirectory()));
+        fch.setFileFilter(ff);
 
 
         res = fch.showOpenDialog( this );
 
-        if ( res != JFileChooser.APPROVE_OPTION )
+        if ( res != JFileChooser.APPROVE_OPTION ) {
             return;
+        }
 
         File fl = fch.getSelectedFile();
 
-        if (!fl.exists())
+        if (!fl.exists()) {
             return;
+        }
 
-        ApplicationSettings.get().setLastDirectory( fl.getParent() );
+        ApplicationSettings.get().setLastDirectory(fl.getParent());
+
+        clearHistory();
 
         PhysWorld.clearPrimaryWorld();
         model = PhysModel.loadFromFile( Gdx.files.absolute( fl.getAbsolutePath()), SkrGdxApplication.get().getAtlas()  );
@@ -718,12 +861,32 @@ public class MainGui extends JFrame {
 
         modelToGui();
 
+        modelChanged = false;
+        makeTheSnapshot();
 
     }
 
 
+    public boolean onModelClosing() {
 
-    void saveModel(boolean saveAs) {
+        if ( model == null )
+            return true;
+
+        if ( modelChanged ) {
+            int n = JOptionPane.showOptionDialog(null, "Do you want to save the model?", "The model is changed.",
+                    JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, null, null);
+            if ( n == 0 ) {
+                saveModel( false );
+            } else if ( n == 2 ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
+    protected void saveModel(boolean saveAs) {
         if ( model == null )
             return;
 
@@ -760,7 +923,7 @@ public class MainGui extends JFrame {
             setTitle("PhysModel file: " + currentModelFileName);
         }
         model.save( Gdx.files.absolute(currentModelFileName) );
-
+        modelChanged = false;
     }
 
 
@@ -782,7 +945,7 @@ public class MainGui extends JFrame {
         processTreeSelection( null );
     }
 
-    void addNode() {
+    void processNodeAddition() {
 
         if ( model == null )
             return;
@@ -842,6 +1005,9 @@ public class MainGui extends JFrame {
         if ( newNode != null ) {
             selectNode( newNode );
         }
+
+        modelChanged = true;
+        makeTheSnapshot();
     }
 
     ModelTreeNode addNewBodyItem(ModelTreeNode parentNode) {
@@ -923,11 +1089,23 @@ public class MainGui extends JFrame {
     }
 
     int showRemoveNodeYesNoDialog() {
-        int n = JOptionPane.showOptionDialog(this, "Are you shure ?", "Remove Node",
+        int n = JOptionPane.showOptionDialog(this, "Are you sure?", "Remove Node!",
                 JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, null, null );
-        Gdx.app.log("MainGui.showRemoveNodeYesNoDialog", "Res: " + n);
         return n;
     }
+
+    int showCloseModelYesNoDialog() {
+        int n = JOptionPane.showOptionDialog(this, "Do you really want to close the current model?", "Close Model",
+                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, null, null );
+
+
+
+
+        return n;
+    }
+
+
+
 
     void processNodesRemoving() {
 
@@ -950,6 +1128,9 @@ public class MainGui extends JFrame {
         cleanupJointsGroup();
         if ( parentNode != null )
             selectNode( parentNode );
+
+        modelChanged = true;
+        makeTheSnapshot();
     }
 
 
@@ -1180,7 +1361,7 @@ public class MainGui extends JFrame {
 
     }
 
-    void processTreeNodeDuplication() {
+    void processNodeDuplication() {
 
         if ( model == null )
             return;
@@ -1207,6 +1388,9 @@ public class MainGui extends JFrame {
         if ( newNode != null ) {
             selectNode( newNode );
         }
+
+        modelChanged = true;
+        makeTheSnapshot();
     }
 
 
@@ -1363,11 +1547,20 @@ public class MainGui extends JFrame {
 
     private void bodyItemChangedByController( BodyItem bodyItem ) {
         bodyPropertiesTableModel.bodyItemChanged( bodyItem );
+        Vector2 center = bodyItem.getBody().getWorldCenter();
+        tfMassCenterWorldX.setText("" + center.x );
+        tfMassCenterWorldY.setText("" + center.y );
+        modelChanged();
+    }
+
+    private void bodyItemsChangedByController() {
+        modelChanged();
     }
 
     private void actorChangedByController(Actor actor) {
         if ( actor instanceof AnimatedActorGroup )
             aagPropertiesTableModel.actorChanged( (AnimatedActorGroup) actor );
+        modelChanged();
     }
 
 
@@ -1450,6 +1643,9 @@ public class MainGui extends JFrame {
         FixtureSet fs = fixtureSetPropertiesTableModel.getFixtureSet();
         fs.createFixtures( controller.getFixtureSetDescription().getShapeDescriptions() );
         fixtureSetPropertiesTableModel.fireTableDataChanged();
+
+        modelChanged = true;
+        makeTheSnapshot();
     }
 
     void shapeControlPointChanged( ShapeDescription shapeDescription, Controller.ControlPoint cp ) {
@@ -1643,6 +1839,9 @@ public class MainGui extends JFrame {
 
         selectNode( newNode );
 
+        modelChanged = true;
+        makeTheSnapshot();
+
     }
 
     void updateJointCombos() {
@@ -1815,16 +2014,6 @@ public class MainGui extends JFrame {
         }
     }
 
-    void onBodyItemControllerCenterChanged( BodyItemController controller ) {
-        BodyItem bi = controller.getBodyItem();
-
-        Vector2 cntr = bi.getBody().getWorldCenter();
-
-        tfMassCenterWorldX.setText("" + cntr.x );
-        tfMassCenterWorldY.setText("" + cntr.y );
-
-    }
-
     void setCenterOfMass() {
         float x, y;
         try {
@@ -1903,22 +2092,25 @@ public class MainGui extends JFrame {
                     break;
             }
         }
+
+        modelChanged = true;
+        makeTheSnapshot();
     }
 
     void mirrorAag( ModelTreeNode node , PhysModelProcessing.MirrorDirection dir ) {
         AnimatedActorGroup aag = (AnimatedActorGroup) node.getUserObject();
         AagDescription desc = aag.getDescription();
-        PhysModelProcessing.mirrorAagDescription( desc, dir);
-        aag.uploadFromDescription( desc, SkrGdxApplication.get().getAtlas() );
+        PhysModelProcessing.mirrorAagDescription(desc, dir);
+        aag.uploadFromDescription(desc, SkrGdxApplication.get().getAtlas());
     }
 
     void mirrorBodyItem( ModelTreeNode node, PhysModelProcessing.MirrorDirection dir ) {
         BodyItem bi = (BodyItem) node.getUserObject();
         BodyItemDescription desc = bi.createBodyItemDescription();
-        PhysModelProcessing.mirrorBodyItemDescription( desc, dir );
+        PhysModelProcessing.mirrorBodyItemDescription(desc, dir);
         model.removeBody( bi );
         bi = model.addBodyItem( desc );
-        node.setUserObject( bi );
+        node.setUserObject(bi);
         cleanupJointsGroup();
     }
 
@@ -1932,7 +2124,7 @@ public class MainGui extends JFrame {
         bi.removeFixtureSet( fs );
         fs = bi.addNewFixtureSet( fsDesc );
 
-        node.setUserObject( fs );
+        node.setUserObject(fs);
     }
 
     void mirrorModel( PhysModelProcessing.MirrorDirection dir ) {
@@ -2100,6 +2292,9 @@ public class MainGui extends JFrame {
 
             createTreeJointItemNode( ji );
         }
+
+        modelChanged = true;
+        makeTheSnapshot();
     }
 
 
@@ -2145,8 +2340,9 @@ public class MainGui extends JFrame {
             duplicateNodeAsArray( node, number, xOffset, yOffset, rotation );
         }
 
+        modelChanged = true;
+        makeTheSnapshot();
     }
-
 
     void duplicateNodeAsArray( ModelTreeNode node, int number, float xOffset, float yOffset, float rotation ) {
 
@@ -2186,7 +2382,115 @@ public class MainGui extends JFrame {
 
     }
 
-    //TODO: implement Undo/Redo by Descriptions Array
+    private class ModelState {
+        PhysModel.Description description;
+        TreePath [] selectionPaths;
+    }
+
+    private static boolean snapshotDone = false;
+
+    private Array< ModelState > historyArray = new Array< ModelState >();
+    private int historyTail = -1;
+
+    private void clearHistory() {
+        historyArray.clear();
+        historyTail = -1;
+    }
+
+
+    private void modelChanged() {
+        snapshotDone = false;
+        modelChanged = true;
+    }
+
+    public void makeTheSnapshot() {
+        if ( model == null )
+            return;
+
+        if ( historyTail < historyArray.size-1 )
+            historyArray.removeRange( historyTail, historyArray.size-1 );
+
+        PhysModel.Description stateDesc = model.getDescription();
+        ModelState st = new ModelState();
+        st.description = stateDesc;
+        st.selectionPaths = treePhysModel.getSelectionPaths();
+        historyArray.add( st );
+        historyTail = historyArray.size - 1;
+//        Gdx.app.log("MainGui.makeTheSnapshot", "HistoryTail: " + historyTail + " BI Num in state " +
+//        stateDesc.getBodyDescriptions().size);
+
+        snapshotDone = true;
+    }
+
+    void onSnapshotTimer() {
+        if ( model == null )
+            return;
+
+        if ( !snapshotDone )
+            makeTheSnapshot();
+    }
+
+    void undo() {
+
+        if ( historyTail < 1  ) {
+//            Gdx.app.log("MainGui.undo", "History start reached ");
+            return;
+        }
+        PhysWorld.clearPrimaryWorld();
+        historyTail--;
+
+        ModelState st = historyArray.get( historyTail );
+        PhysModel.Description desc = st.description;
+
+        model = new PhysModel( desc, PhysWorld.getPrimaryWorld(), SkrGdxApplication.get().getAtlas() );
+        model.uploadAtlas();
+        modelToGui();
+        if ( st.selectionPaths != null ) {
+            treePhysModel.setSelectionPaths(st.selectionPaths);
+            treePhysModel.scrollPathToVisible(st.selectionPaths[st.selectionPaths.length - 1]);
+            processTreeSelection(null);
+        }
+//        Gdx.app.log("MainGui.undo", "HistoryTail: " + historyTail + " BI Num in desc " +
+//                desc.getBodyDescriptions().size);
+    }
+
+    void redo() {
+        if ( historyArray.size < 2 ) {
+//            Gdx.app.log("MainGui.redo", "History is too small");
+            return;
+        }
+        if ( historyTail >= historyArray.size - 1 ) {
+//            Gdx.app.log("MainGui.undo", "History end reached ");
+            return;
+        }
+
+        PhysWorld.clearPrimaryWorld();
+        historyTail++;
+        ModelState st = historyArray.get( historyTail );
+        PhysModel.Description desc = st.description;
+        model = new PhysModel( desc, PhysWorld.getPrimaryWorld(), SkrGdxApplication.get().getAtlas() );
+        model.uploadAtlas();
+        modelToGui();
+        if ( st.selectionPaths != null ) {
+            treePhysModel.setSelectionPaths(st.selectionPaths);
+            treePhysModel.scrollPathToVisible(st.selectionPaths[st.selectionPaths.length - 1]);
+            processTreeSelection(null);
+        }
+//        Gdx.app.log("MainGui.redo", "HistoryTail: " + historyTail+ " BI Num in desc " +
+//                desc.getBodyDescriptions().size);
+    }
+
+
+    void processExitCall() {
+        dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+    }
+
+
+    void setSelectionMode( EditorScreen.SelectionMode mode ) {
+        comboSelectionMode.setSelectedItem( mode );
+        changeSelectionMode();
+    }
+
 
     //======================= main ================================
 

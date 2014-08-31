@@ -1,13 +1,12 @@
 package org.skr.PhysModelEditor.gdx.editor.controllers;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import org.skr.gdx.PhysWorld;
-import org.skr.gdx.editor.controller.Controller;
+import org.skr.gdx.editor.Controller;
 import org.skr.gdx.physmodel.BodyItem;
 import org.skr.gdx.physmodel.FixtureSet;
 import org.skr.gdx.physmodel.JointItemDescription;
@@ -394,7 +393,7 @@ public class JointCreatorController extends Controller {
             FixtureSet fs = bi.getFixtureSet( localC );
             if ( fs != null ) {
                 selection = bi;
-                Gdx.app.log("JointCreatorController.processBodyItemSelection", " FS: " + fs.getName() );
+//                Gdx.app.log("JointCreatorController.processBodyItemSelection", " FS: " + fs.getName() );
                 break;
             }
         }
@@ -402,7 +401,7 @@ public class JointCreatorController extends Controller {
         if ( selection == null )
             return false;
 
-        Gdx.app.log("JointCreatorController.processBodyItemSelection", "BI: " + selection.getName());
+//        Gdx.app.log("JointCreatorController.processBodyItemSelection", "BI: " + selection.getName());
         setSelectedBodyItem( selection );
         return true;
     }

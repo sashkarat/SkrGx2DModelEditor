@@ -1,14 +1,15 @@
-package org.skr.PhysModelEditor.gdx.editor.controllers;
+package org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeController;
 import org.skr.gdx.PhysWorld;
 import org.skr.gdx.physmodel.ShapeDescription;
 
 /**
  * Created by rat on 13.06.14.
  */
-public class CircleShapeController extends ShapeController{
+public class CircleShapeController extends ShapeController {
 
     float defaultRadius = 1;
 
@@ -50,7 +51,7 @@ public class CircleShapeController extends ShapeController{
 
     @Override
     protected void createControlPoints() {
-        for ( ShapeDescription shd : fixtureSetDescription.getShapeDescriptions() ) {
+        for ( ShapeDescription shd : getFixtureSetDescription().getShapeDescriptions() ) {
             createShapeControlPoints( shd );
         }
     }
@@ -152,11 +153,11 @@ public class CircleShapeController extends ShapeController{
 
         tmpV.set(0, 0);
 
-        for ( ShapeDescription shd : fixtureSetDescription.getShapeDescriptions() ) {
+        for ( ShapeDescription shd : getFixtureSetDescription().getShapeDescriptions() ) {
             tmpV.add( shd.getPosition() );
         }
 
-        tmpV.scl( 1.0f / fixtureSetDescription.getShapeDescriptions().size );
+        tmpV.scl( 1.0f / getFixtureSetDescription().getShapeDescriptions().size );
 
         PhysWorld.get().toView( tmpV );
 

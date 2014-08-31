@@ -1,9 +1,10 @@
-package org.skr.PhysModelEditor.gdx.editor.controllers;
+package org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Array;
+import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeController;
 import org.skr.gdx.PhysWorld;
 import org.skr.PhysModelEditor.PolygonRefinement;
 import org.skr.gdx.physmodel.ShapeDescription;
@@ -69,7 +70,7 @@ public class PolygonShapeController extends ShapeController {
 
         getControlPoints().clear();
 
-        if ( fixtureSetDescription.getShapeDescriptions().size == 0 ) {
+        if ( getFixtureSetDescription().getShapeDescriptions().size == 0 ) {
             this.shd = null;
             return;
         }
@@ -77,7 +78,7 @@ public class PolygonShapeController extends ShapeController {
 
         Array< Array<Vector2> > polygons = new Array<Array<Vector2>>();
 
-        for ( ShapeDescription shd : fixtureSetDescription.getShapeDescriptions() ) {
+        for ( ShapeDescription shd : getFixtureSetDescription().getShapeDescriptions() ) {
             polygons.add( newViewPolygon( shd.getVertices() ) );
         }
 
@@ -89,10 +90,10 @@ public class PolygonShapeController extends ShapeController {
         if ( border.size == 0 )
             return;
 
-        fixtureSetDescription.getShapeDescriptions().clear();
+        getFixtureSetDescription().getShapeDescriptions().clear();
 
         shd = new ShapeDescription();
-        fixtureSetDescription.getShapeDescriptions().add(shd);
+        getFixtureSetDescription().getShapeDescriptions().add(shd);
 
 
         PolygonControlPoint cp = new PolygonControlPoint(shd);
@@ -307,9 +308,9 @@ public class PolygonShapeController extends ShapeController {
     }
 
     public void updateFixtureSetDescription() {
-        if ( fixtureSetDescription == null )
+        if ( getFixtureSetDescription() == null )
             return;
-        fixtureSetDescription.getShapeDescriptions().clear();
+        getFixtureSetDescription().getShapeDescriptions().clear();
 
         if ( polygons == null )
             return;
@@ -318,11 +319,11 @@ public class PolygonShapeController extends ShapeController {
         for ( Array<Vector2> polygon :  polygons ) {
             ShapeDescription shdesc = new ShapeDescription();
             shdesc.setVertices( newPhysPolygon( polygon ) );
-            fixtureSetDescription.getShapeDescriptions().add( shdesc );
+            getFixtureSetDescription().getShapeDescriptions().add( shdesc );
         }
 
-        if ( fixtureSetDescription.getShapeDescriptions().size > 0 ) {
-            this.shd = fixtureSetDescription.getShapeDescriptions().get(0);
+        if ( getFixtureSetDescription().getShapeDescriptions().size > 0 ) {
+            this.shd = getFixtureSetDescription().getShapeDescriptions().get(0);
         } else {
             this.shd = null;
         }

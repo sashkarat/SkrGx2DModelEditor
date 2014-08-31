@@ -258,7 +258,6 @@ public abstract class BaseScreen implements Screen, InputProcessor {
 
         shapeRenderer.end();
 
-//        Gdx.app.log("EditorScreen.drawGrid", "Camera: " + camera.position + " " + camera.viewportWidth);
     }
 
     private void drawGridText( int delta ) {
