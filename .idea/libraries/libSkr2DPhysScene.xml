@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="libSkr2DPhysScene">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../libSkr2DPhysScene/libSkr2DPhysScene.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../libSkr2DPhysScene/src" />
+    </SOURCES>
+  </library>
+</component>

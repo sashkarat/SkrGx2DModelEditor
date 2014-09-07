@@ -12,6 +12,7 @@ import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.PropertiesTableElements.*;
 import org.skr.PhysModelEditor.gdx.editor.SkrGdxAppPhysModelEditor;
 import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers.CircleShapeController;
+import org.skr.gdx.Environment;
 import org.skr.gdx.SkrGdxApplication;
 import org.skr.gdx.PhysWorld;
 import org.skr.PhysModelEditor.gdx.editor.controllers.*;
@@ -1942,8 +1943,7 @@ public class MainGui extends JFrame {
             @Override
             public void run() {
                 boolean state = chbDebugRender.isSelected();
-                SkrGdxAppPhysModelEditor.get().getEditorScreen().setDoDebugRender(state);
-                SkrGdxAppPhysModelEditor.get().getSimulationScreen().setDoDebugRender(state);
+                Environment.debugRender = state;
             }
         });
     }
