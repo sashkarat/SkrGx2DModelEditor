@@ -3,7 +3,6 @@ package org.skr.PhysModelEditor.gdx.editor.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers.ChainShapeController;
 import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers.CircleShapeController;
@@ -14,10 +13,11 @@ import org.skr.gdx.PhysModelRenderer;
 import org.skr.gdx.PhysWorld;
 import org.skr.PhysModelEditor.gdx.editor.controllers.*;
 import org.skr.gdx.editor.Controller;
-import org.skr.gdx.physmodel.BodyItem;
-import org.skr.gdx.physmodel.FixtureSet;
 import org.skr.gdx.physmodel.PhysModel;
 import org.skr.gdx.physmodel.animatedactorgroup.AnimatedActorGroup;
+import org.skr.gdx.physmodel.bodyitem.BiScSet;
+import org.skr.gdx.physmodel.bodyitem.BodyItem;
+import org.skr.gdx.physmodel.bodyitem.fixtureset.FixtureSet;
 
 /**
  * Created by rat on 02.06.14.
@@ -31,9 +31,18 @@ public class EditorScreen extends BaseScreen {
         AAG
     }
 
+    public static  enum ModelObjectType {
+        OT_None,
+        OT_Model,
+        OT_BodyItem,
+        OT_Aag,
+        OT_FixtureSet,
+        OT_JointItems
+    }
+
     public interface ItemSelectionListener {
-        public void singleItemSelected(Object object );
-        public void itemAddedToSelection(Object object, boolean removed );
+        public void singleItemSelected(Object object, ModelObjectType mot );
+        public void itemAddedToSelection(Object object, ModelObjectType mot, boolean removed );
 
     }
 
@@ -41,7 +50,7 @@ public class EditorScreen extends BaseScreen {
     private PhysModelRenderer modelRenderer;
     private SelectionMode selectionMode = SelectionMode.DISABLED;
 
-    private ActorController actorController;
+    private AagController aagController;
     private BodyItemController bodyItemController;
     private CircleShapeController circleShapeController;
     private EdgeShapeController edgeShapeController;
@@ -58,11 +67,11 @@ public class EditorScreen extends BaseScreen {
 
         super();
 
-        modelRenderer = new PhysModelRenderer( PhysWorld.getPrimaryWorld() );
+        modelRenderer = new PhysModelRenderer();
 
         getStage().addActor(modelRenderer);
 
-        actorController = new ActorController( getStage() );
+        aagController = new AagController( getStage() );
         bodyItemController = new BodyItemController( getStage() );
         circleShapeController = new CircleShapeController( getStage() );
         edgeShapeController = new EdgeShapeController( getStage() );
@@ -80,6 +89,17 @@ public class EditorScreen extends BaseScreen {
     public void setModel(PhysModel model) {
         this.model = model;
         modelRenderer.setModel( model );
+    }
+
+    public void removeModel() {
+        if ( currentController == multiBodyItemsController )
+            multiBodyItemsController.getBodyItems().clear();
+
+        currentController = null;
+        selectedItems.clear();
+
+        modelRenderer.removeModel();
+
     }
 
     public SelectionMode getSelectionMode() {
@@ -103,60 +123,67 @@ public class EditorScreen extends BaseScreen {
     }
 
 
-    public void setModelObject( Object object ) {
+    public void setModelObject( Object object, ModelObjectType objectType ) {
 
-        if ( currentController == multiBodyItemsController )
+        if ( currentController == multiBodyItemsController ) {
             multiBodyItemsController.getBodyItems().clear();
+        } else if ( currentController == aagController ) {
+            aagController.resetAag();
+        }
 
         currentController = null;
         selectedItems.clear();
 
+        switch ( objectType ) {
 
-
-        if ( actorController.getActor() != null ) {
-            actorController.getActor().setUserObject( null );
-        }
-
-        if ( object instanceof BodyItem ) {
-            BodyItem bi = (BodyItem) object;
-            bodyItemController.setBodyItem(bi);
-            currentController = bodyItemController;
-        } else if ( object instanceof Actor ) {
-
-            Actor a = (Actor) object;
-            a.setUserObject( actorController );
-            actorController.setActor( a );
-            currentController = actorController;
-        } else if ( object instanceof FixtureSet ) {
-            FixtureSet fs = ( FixtureSet ) object;
-
-            switch ( fs.getShapeType() ) {
-
-                case Circle:
-                    circleShapeController.loadFromFixtureSet( fs );
-                    currentController = circleShapeController;
-                    break;
-                case Edge:
-                    edgeShapeController.loadFromFixtureSet( fs );
-                    currentController = edgeShapeController;
-                    break;
-                case Polygon:
-                    polygonShapeController.loadFromFixtureSet( fs );
-                    currentController = polygonShapeController;
-                    break;
-                case Chain:
-                    chainShapeController.loadFromFixtureSet( fs );
-                    currentController = chainShapeController;
-                    break;
-            }
-
-        } else if ( object == model.getJointItems() ) {
-            currentController = jointCreatorController;
-            jointCreatorController.setModel( model );
+            case OT_None:
+                return;
+            case OT_Model:
+                return;
+            case OT_BodyItem:
+                BodyItem bi = (BodyItem) object;
+                bodyItemController.setBodyItem( bi );
+                currentController = bodyItemController;
+                break;
+            case OT_Aag:
+                AnimatedActorGroup aag = (AnimatedActorGroup) object;
+                aagController.setAag( aag );
+                currentController = aagController;
+                break;
+            case OT_FixtureSet:
+                setFixtureSet( (FixtureSet) object );
+                break;
+            case OT_JointItems:
+                currentController = jointCreatorController;
+                jointCreatorController.setModel( model );
+                break;
         }
 
         selectedItems.add( object );
     }
+
+    protected void setFixtureSet( FixtureSet fs ) {
+        switch ( fs.getShapeType() ) {
+
+            case Circle:
+                circleShapeController.loadFromFixtureSet( fs );
+                currentController = circleShapeController;
+                break;
+            case Edge:
+                edgeShapeController.loadFromFixtureSet( fs );
+                currentController = edgeShapeController;
+                break;
+            case Polygon:
+                polygonShapeController.loadFromFixtureSet( fs );
+                currentController = polygonShapeController;
+                break;
+            case Chain:
+                chainShapeController.loadFromFixtureSet( fs );
+                currentController = chainShapeController;
+                break;
+        }
+    }
+
 
     public void clearSelectedItems() {
         multiBodyItemsController.getBodyItems().clear();
@@ -180,8 +207,8 @@ public class EditorScreen extends BaseScreen {
     }
 
 
-    public ActorController getActorController() {
-        return actorController;
+    public AagController getAagController() {
+        return aagController;
     }
 
     public BodyItemController getBodyItemController() {
@@ -307,7 +334,7 @@ public class EditorScreen extends BaseScreen {
         return false;
     }
 
-    private void itemSelected( Object object ) {
+    private void itemSelected( Object object, ModelObjectType mot ) {
 
         boolean remove = false;
 
@@ -315,7 +342,7 @@ public class EditorScreen extends BaseScreen {
             selectedItems.clear();
             selectedItems.add( object );
             if ( itemSelectionListener != null ) {
-                itemSelectionListener.singleItemSelected( object );
+                itemSelectionListener.singleItemSelected( object, mot );
             }
             return;
         }
@@ -330,7 +357,7 @@ public class EditorScreen extends BaseScreen {
         }
 
         if ( itemSelectionListener != null ) {
-            itemSelectionListener.itemAddedToSelection(object, remove );
+            itemSelectionListener.itemAddedToSelection(object, mot, remove );
         }
     }
 
@@ -343,7 +370,11 @@ public class EditorScreen extends BaseScreen {
 
         BodyItem selection = null;
 
-        for ( BodyItem bi : model.getBodyItems() ) {
+        BiScSet currentSet = model.getScBodyItems().getCurrentSet();
+        if ( currentSet == null )
+            return false;
+
+        for ( BodyItem bi : currentSet.getBodyItems() ) {
 
             localC.set( stageCoord );
             bi.parentToLocalCoordinates( localC );
@@ -356,13 +387,11 @@ public class EditorScreen extends BaseScreen {
                 break;
             }
 
-            if ( bi.getAagBackground() != null ) {
-                AnimatedActorGroup aag = processAagSelection(localC2, bi.getAagBackground());
-                if ( aag != null ) {
+            AnimatedActorGroup aag = processAagSelection( localC2, bi );
+            if ( aag != null ) {
 //                    Gdx.app.log("EditorScreen.processBodyItemSelection", " AAG: " + aag.getName() );
-                    selection = bi;
-                    break;
-                }
+                selection = bi;
+                break;
             }
         }
 
@@ -371,45 +400,27 @@ public class EditorScreen extends BaseScreen {
 
 //        Gdx.app.log("EditorScreen.processBodyItemSelection", "BI: " + selection.getName() + " ID: " +
 //        selection.getId() );
-        itemSelected( selection );
+        itemSelected( selection, ModelObjectType.OT_BodyItem );
         return true;
     }
 
     private boolean processAagSelection( Vector2 stageCoord ) {
         if ( model == null )
             return false;
-
         AnimatedActorGroup selectedAag;
-
-        if ( model.getBackgroundActor() != null ) {
-            selectedAag = processAagSelection( stageCoord, model.getBackgroundActor() );
-            if ( selectedAag != null ) {
-//                Gdx.app.log("EditorScreen.processAagSelection", "AAG: " + selectedAag );
-                itemSelected( selectedAag );
-                return true;
-            }
-        }
-
         Vector2 localCoord = new Vector2();
-
-        for ( BodyItem bi: model.getBodyItems() ) {
-
-            if ( bi.getAagBackground() == null )
-                continue;
+        BiScSet bset = model.getScBodyItems().getCurrentSet();
+        for ( BodyItem bi: bset.getBodyItems() ) {
             localCoord.set( stageCoord );
             bi.parentToLocalCoordinates(localCoord);
-            selectedAag = processAagSelection( localCoord, bi.getAagBackground() );
+            selectedAag = processAagSelection( localCoord, bi );
             if ( selectedAag != null ) {
-                itemSelected( selectedAag );
+                itemSelected( selectedAag, ModelObjectType.OT_Aag );
                 return true;
             }
-
         }
-
         return false;
     }
-
-
 
     private AnimatedActorGroup processAagSelection( Vector2 parentCoord, AnimatedActorGroup parentAag ) {
 
@@ -429,7 +440,12 @@ public class EditorScreen extends BaseScreen {
         if ( model == null )
             return false;
         Vector2 localCoord = new Vector2( stageCoord );
-        for ( BodyItem bi : model.getBodyItems() ) {
+
+        BiScSet currentSet = model.getScBodyItems().getCurrentSet();
+        if ( currentSet == null )
+            return false;
+
+        for ( BodyItem bi : currentSet.getBodyItems() ) {
             localCoord.set( stageCoord );
             localCoord = bi.parentToLocalCoordinates( localCoord );
             FixtureSet fs = bi.getFixtureSet( localCoord );
@@ -437,7 +453,7 @@ public class EditorScreen extends BaseScreen {
                 continue;
 //            Gdx.app.log("EditorScreen.processFixtureSetSelection",
 //                    "FS: " + fs.getName() );
-            itemSelected( fs );
+            itemSelected( fs, ModelObjectType.OT_FixtureSet );
             return  true;
         }
 

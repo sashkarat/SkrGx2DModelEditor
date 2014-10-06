@@ -1183,15 +1183,6 @@
                   </grid>
                 </children>
               </scrollpane>
-              <component id="d0039" class="javax.swing.JLabel" binding="lblTextureAtlasFile">
-                <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                  <gridbag weightx="1.0" weighty="0.0"/>
-                </constraints>
-                <properties>
-                  <text value="Texture Atlas File: "/>
-                </properties>
-              </component>
             </children>
           </grid>
           <grid id="378a3" layout-manager="GridBagLayout">
@@ -1367,6 +1358,15 @@
           </grid>
         </children>
       </grid>
+      <component id="d0039" class="javax.swing.JLabel" binding="lblTextureAtlasFile">
+        <constraints>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <gridbag weightx="1.0" weighty="0.0"/>
+        </constraints>
+        <properties>
+          <text value="Texture Atlas File: "/>
+        </properties>
+      </component>
     </children>
   </grid>
 </form>

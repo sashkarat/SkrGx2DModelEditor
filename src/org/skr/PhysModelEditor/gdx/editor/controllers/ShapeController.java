@@ -8,10 +8,10 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Array;
 import org.skr.gdx.PhysWorld;
 import org.skr.gdx.editor.Controller;
-import org.skr.gdx.physmodel.BodyItem;
-import org.skr.gdx.physmodel.FixtureSet;
-import org.skr.gdx.physmodel.FixtureSetDescription;
 import org.skr.gdx.physmodel.ShapeDescription;
+import org.skr.gdx.physmodel.bodyitem.BodyItem;
+import org.skr.gdx.physmodel.bodyitem.fixtureset.FixtureSet;
+import org.skr.gdx.physmodel.bodyitem.fixtureset.FixtureSetDescription;
 
 /**
  * Created by rat on 12.06.14.

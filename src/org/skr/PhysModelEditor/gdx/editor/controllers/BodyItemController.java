@@ -5,7 +5,7 @@ import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import org.skr.gdx.PhysWorld;
 import org.skr.gdx.editor.Controller;
-import org.skr.gdx.physmodel.BodyItem;
+import org.skr.gdx.physmodel.bodyitem.BodyItem;
 
 /**
  * Created by rat on 05.07.14.

@@ -7,10 +7,12 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import org.skr.gdx.PhysWorld;
 import org.skr.gdx.editor.Controller;
-import org.skr.gdx.physmodel.BodyItem;
-import org.skr.gdx.physmodel.FixtureSet;
-import org.skr.gdx.physmodel.JointItemDescription;
+
 import org.skr.gdx.physmodel.PhysModel;
+import org.skr.gdx.physmodel.bodyitem.BiScSet;
+import org.skr.gdx.physmodel.bodyitem.BodyItem;
+import org.skr.gdx.physmodel.bodyitem.fixtureset.FixtureSet;
+import org.skr.gdx.physmodel.jointitem.JointItemDescription;
 
 /**
  * Created by rat on 12.07.14.
@@ -387,7 +389,12 @@ public class JointCreatorController extends Controller {
 
         BodyItem selection = null;
 
-        for ( BodyItem bi : model.getBodyItems() ) {
+        BiScSet currentSet = model.getScBodyItems().getCurrentSet();
+
+        if ( currentSet == null )
+            return false;
+
+        for ( BodyItem bi : currentSet.getBodyItems() ) {
             localC.set(stageCoord);
             bi.parentToLocalCoordinates(localC);
             FixtureSet fs = bi.getFixtureSet( localC );

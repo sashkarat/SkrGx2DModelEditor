@@ -8,7 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Array;
 import org.skr.gdx.PhysWorld;
 import org.skr.gdx.editor.Controller;
-import org.skr.gdx.physmodel.BodyItem;
+import org.skr.gdx.physmodel.bodyitem.BodyItem;
 import org.skr.gdx.utils.RectangleExt;
 
 /**
@@ -38,7 +38,7 @@ public class MultiBodyItemsController extends Controller {
         getShapeRenderer().setColor(0, 1, 0, 1);
         getShapeRenderer().begin(ShapeRenderer.ShapeType.Line );
         for ( BodyItem bi : bodyItems ) {
-            RectangleExt bb = bi.getBoundingBox();
+            RectangleExt bb = bi.getBodyItemBoundingBox();
             getShapeRenderer().rect( bb.getLeft(), bb.getBottom(),
                     bb.getWidth(), bb.getHeight() );
         }
