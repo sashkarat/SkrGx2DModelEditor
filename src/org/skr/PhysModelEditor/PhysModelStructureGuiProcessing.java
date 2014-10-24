@@ -1,22 +1,30 @@
 package org.skr.PhysModelEditor;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.PropertiesTableElements.*;
 import org.skr.PhysModelEditor.gdx.editor.SkrGdxAppPhysModelEditor;
 import org.skr.PhysModelEditor.gdx.editor.screens.EditorScreen;
+import org.skr.gdx.PhysWorld;
 import org.skr.gdx.SelectableContent.ScContainer;
 import org.skr.gdx.SkrGdxApplication;
 import org.skr.gdx.physmodel.PhysModel;
+import org.skr.gdx.physmodel.PhysModelDescription;
 import org.skr.gdx.physmodel.ShapeDescription;
+import org.skr.gdx.physmodel.animatedactorgroup.AagDescription;
 import org.skr.gdx.physmodel.animatedactorgroup.AagScContainer;
 import org.skr.gdx.physmodel.animatedactorgroup.AnimatedActorGroup;
-import org.skr.gdx.physmodel.bodyitem.BiScContainer;
-import org.skr.gdx.physmodel.bodyitem.BiScSet;
-import org.skr.gdx.physmodel.bodyitem.BodyItem;
+import org.skr.gdx.physmodel.bodyitem.*;
 import org.skr.gdx.physmodel.bodyitem.fixtureset.FixtureSet;
+import org.skr.gdx.physmodel.bodyitem.fixtureset.FixtureSetDescription;
 import org.skr.gdx.physmodel.jointitem.JointItem;
+import org.skr.gdx.physmodel.jointitem.JointItemDescription;
+import org.skr.gdx.physmodel.jointitem.JointItemFactory;
+import org.skr.gdx.utils.PhysModelProcessing;
 
 import javax.swing.*;
 import javax.swing.event.CellEditorListener;
@@ -27,7 +35,6 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableModel;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
@@ -84,7 +91,8 @@ public class PhysModelStructureGuiProcessing {
         public PhysModelJTreeNode getNodeUnderCursor() {
 
             Point p = tree.getMousePosition();
-
+            if ( p == null )
+                return null;
             TreePath tp = tree.getPathForLocation( p.x, p.y );
             if ( tp == null )
                 return null;
@@ -155,8 +163,9 @@ public class PhysModelStructureGuiProcessing {
                         return true;
                     break;
                 case AAG:
-                    if ( tType == PhysModelJTreeNode.Type.AAG || tType == PhysModelJTreeNode.Type.AAG_SC_SET )
-                            return true;
+                    if ( tType == PhysModelJTreeNode.Type.AAG || tType == PhysModelJTreeNode.Type.AAG_SC
+                            || tType == PhysModelJTreeNode.Type.AAG_SC_SET )
+                        return true;
                     break;
                 case AAG_SC:
                     if ( tType == PhysModelJTreeNode.Type.AAG || tType == PhysModelJTreeNode.Type.AAG_SC
@@ -164,7 +173,7 @@ public class PhysModelStructureGuiProcessing {
                         return true;
                     break;
                 case AAG_SC_SET:
-                    if ( tType == PhysModelJTreeNode.Type.AAG_SC )
+                    if ( tType == PhysModelJTreeNode.Type.AAG_SC || tType == PhysModelJTreeNode.Type.AAG )
                         return true;
                     break;
                 case BODY_ITEM:
@@ -339,7 +348,7 @@ public class PhysModelStructureGuiProcessing {
                 return;
             }
 
-            if ( ! guiProc.moveNode( srcNode, node, dtde.getDropAction() == DnDConstants.ACTION_COPY ) ) {
+            if ( guiProc.moveNode( srcNode, node, dtde.getDropAction() == DnDConstants.ACTION_COPY ) == null ) {
                 dtde.rejectDrop();
                 return;
             }
@@ -584,52 +593,40 @@ public class PhysModelStructureGuiProcessing {
         }
     }
 
+    protected PhysModelJTreeNode getChildNode( PhysModelJTreeNode parentNode, PhysModelJTreeNode.Type childType ) {
+        for ( int i = 0; i < parentNode.getChildCount(); i++ ) {
+            PhysModelJTreeNode node = (PhysModelJTreeNode) parentNode.getChildAt( i );
+            if ( node.getType() == childType )
+                return node;
+        }
+        return null;
+    }
 
     protected PhysModelJTreeNode getFixtureSetGroupNode( PhysModelJTreeNode parentBodyItemNode ) {
         if ( parentBodyItemNode.getType() != PhysModelJTreeNode.Type.BODY_ITEM )
             return null;
 
-        PhysModelJTreeNode fsgNode = null;
-
-        for ( int i = 0; i < parentBodyItemNode.getChildCount(); i++) {
-            PhysModelJTreeNode node = (PhysModelJTreeNode) parentBodyItemNode.getChildAt( i );
-            if ( node.getType() == PhysModelJTreeNode.Type.FIXTURE_SET_GROUP ) {
-                fsgNode = node;
-                break;
-            }
-        }
-        return fsgNode;
+        return getChildNode( parentBodyItemNode, PhysModelJTreeNode.Type.FIXTURE_SET_GROUP );
     }
+
+
+    protected PhysModelJTreeNode getJointGroupNode( PhysModelJTreeNode parentBiScSetNode ) {
+        if ( parentBiScSetNode.getType() != PhysModelJTreeNode.Type.BiScSET )
+            return null;
+        return getChildNode( parentBiScSetNode, PhysModelJTreeNode.Type.JOINT_ITEM_GROUP );
+    }
+
 
     protected PhysModelJTreeNode getAagScNode( PhysModelJTreeNode parentAagNode ) {
         if ( parentAagNode.getType() != PhysModelJTreeNode.Type.AAG )
             return null;
-
-        PhysModelJTreeNode aagScNode = null;
-
-        for ( int i = 0; i < parentAagNode.getChildCount(); i++) {
-            PhysModelJTreeNode node = (PhysModelJTreeNode) parentAagNode.getChildAt( i );
-            if ( node.getType() == PhysModelJTreeNode.Type.AAG_SC ) {
-                aagScNode = node;
-                break;
-            }
-        }
-        return aagScNode;
+        return getChildNode( parentAagNode, PhysModelJTreeNode.Type.AAG_SC );
     }
 
     protected PhysModelJTreeNode getAagNode( PhysModelJTreeNode parentAagScSetNode ) {
         if ( parentAagScSetNode.getType() != PhysModelJTreeNode.Type.AAG_SC_SET )
             return null;
-        PhysModelJTreeNode aagNode = null;
-
-        for ( int i = 0; i < parentAagScSetNode.getChildCount(); i++) {
-            PhysModelJTreeNode node = (PhysModelJTreeNode) parentAagScSetNode.getChildAt( i );
-            if ( node.getType() == PhysModelJTreeNode.Type.AAG ) {
-                aagNode = node;
-                break;
-            }
-        }
-        return aagNode;
+        return getChildNode( parentAagScSetNode, PhysModelJTreeNode.Type.AAG );
     }
 
     protected void checkTreeSelection() {
@@ -649,6 +646,10 @@ public class PhysModelStructureGuiProcessing {
 
 
     protected void selectNode( PhysModelJTreeNode node ) {
+        if ( node == null )
+            return;
+        if ( node.getPath() == null )
+            return;
         TreePath path = new TreePath( node.getPath() );
         jTreeModel.setSelectionPath( path );
         jTreeModel.scrollPathToVisible( path );
@@ -757,6 +758,7 @@ public class PhysModelStructureGuiProcessing {
                 JointItem ji = (JointItem) selNode.getUserObject();
                 jointPropertiesTableModel.setJointItem( ji );
                 jTableProperties.setModel( jointPropertiesTableModel );
+                objectType = EditorScreen.ModelObjectType.OT_JointItem;
                 break;
             case JOINT_ITEM_GROUP:
                 objectType = EditorScreen.ModelObjectType.OT_JointItems;
@@ -777,6 +779,7 @@ public class PhysModelStructureGuiProcessing {
         }
     }
 
+    protected static DialogNewJointSelector dlgNewJointSelector = new DialogNewJointSelector();
 
     public void createNode() {
         TreePath [] selPaths = jTreeModel.getSelectionPaths();
@@ -815,6 +818,9 @@ public class PhysModelStructureGuiProcessing {
             case JOINT_ITEM:
                 break;
             case JOINT_ITEM_GROUP:
+                if ( ! dlgNewJointSelector.execute() )
+                    break;
+                newNode = createEmptyJointItemNode((BiScSet) parentNode.getUserObject(), dlgNewJointSelector.getSelectedJointType() );
                 break;
         }
 
@@ -839,7 +845,7 @@ public class PhysModelStructureGuiProcessing {
     }
 
     public PhysModelJTreeNode createNewBodyItem( BiScSet bset ) {
-        BodyItem bi = new BodyItem( model );
+        BodyItem bi = new BodyItem( bset );
         bi.setName( "NewBody");
         bset.addBodyItem( bi );
         PhysModelJTreeNode node = new PhysModelJTreeNode(PhysModelJTreeNode.Type.BODY_ITEM, bi );
@@ -850,7 +856,7 @@ public class PhysModelStructureGuiProcessing {
     public PhysModelJTreeNode createAagNode( AnimatedActorGroup parentAag ) {
         AnimatedActorGroup aag = new AnimatedActorGroup( SkrGdxApplication.get().getAtlas() );
         aag.setName("NewAag");
-        parentAag.addChild( aag );
+        parentAag.addChildAag(aag);
         PhysModelJTreeNode node = new PhysModelJTreeNode(PhysModelJTreeNode.Type.AAG, aag);
         loadAagNodes( node );
         return node;
@@ -878,6 +884,14 @@ public class PhysModelStructureGuiProcessing {
         FixtureSet fs = fixtureSetPropertiesTableModel.getFixtureSet();
         fs.createFixtures( shpDescriptions );
         fixtureSetPropertiesTableModel.fireTableDataChanged();
+    }
+
+    public PhysModelJTreeNode createEmptyJointItemNode( BiScSet bset, JointDef.JointType type ) {
+        JointItem ji = JointItemFactory.create( type, "new_"+type, bset );
+        if ( ji == null )
+            return null;
+        bset.addJointItem( ji );
+        return new PhysModelJTreeNode(PhysModelJTreeNode.Type.JOINT_ITEM, ji );
     }
 
     public void objectModifiedByController() {
@@ -943,6 +957,9 @@ public class PhysModelStructureGuiProcessing {
                 foundNode = findNode( object, PhysModelJTreeNode.Type.FIXTURE_SET );
                 break;
             case OT_JointItems:
+                foundNode = findNode( object, PhysModelJTreeNode.Type.JOINT_ITEM );
+                break;
+            case OT_JointItem:
                 foundNode = findNode( object, PhysModelJTreeNode.Type.JOINT_ITEM );
                 break;
         }
@@ -1235,11 +1252,31 @@ public class PhysModelStructureGuiProcessing {
         return true;
     }
 
-    public boolean moveNode( PhysModelJTreeNode sourceNode, PhysModelJTreeNode newParentNode, boolean copy ) {
+    public void duplicateNode() {
+        TreePath [] selectionPaths = jTreeModel.getSelectionPaths();
+
+        if ( selectionPaths == null )
+            return;
+
+        Object newObject = null ;
+
+        for ( TreePath selPath : selectionPaths ) {
+            PhysModelJTreeNode node = (PhysModelJTreeNode) selPath.getLastPathComponent();
+            if ( node.getParent() == null )
+                continue;
+            newObject = moveNode( node, (PhysModelJTreeNode) node.getParent(), true);
+        }
+
+        PhysModelJTreeNode node = findNode( newObject );
+        selectNode( node );
+        mainGui.makeHistorySnapshot();
+    }
+
+    public Object moveNode( PhysModelJTreeNode sourceNode, PhysModelJTreeNode newParentNode, boolean copy ) {
         if ( sourceNode == null ) {
-            return false;
+            return null;
         } else {
-            Gdx.app.log("PhysModelStructureGuiProcessing.moveNode", "SourceNode: " + sourceNode);
+            Gdx.app.log("PhysModelStructureGuiProcessing.moveNode", "Source: " + sourceNode + " Target: " + newParentNode );
         }
 
         PhysModelJTreeNode.Type srcType = sourceNode.getType();
@@ -1253,20 +1290,41 @@ public class PhysModelStructureGuiProcessing {
 
         switch ( srcType ) {
             case MODEL:
-                return false;
+                return null;
             case BiScSET:
                 removeSourceWhenMove = true;
                 if ( tgtType == PhysModelJTreeNode.Type.MODEL) {
-                    newObject = duplicateBiScSetNode( sourceNode );
+                    newObject = copyBiScSetNode(sourceNode);
                 } else if ( tgtType == PhysModelJTreeNode.Type.BiScSET ) {
                     if ( ( sourceNode == newParentNode ) && !copy )
-                        return false;
+                        return null;
                     newObject = copyBiScSetNode( sourceNode, newParentNode );
                 } else {
-                    return false;
+                    return null;
                 }
                 break;
             case AAG:
+                removeSourceWhenMove = true;
+                if ( tgtType == PhysModelJTreeNode.Type.AAG ) {
+                    AnimatedActorGroup sAag = (AnimatedActorGroup) sourceNode.getUserObject();
+                    AnimatedActorGroup tAag = (AnimatedActorGroup) newParentNode.getUserObject();
+                    if ( !isAagMovable( sAag, tAag ) && !copy )
+                        return null;
+                    newObject = copyAagNodeToAagNode( sourceNode, newParentNode );
+                } else if (tgtType == PhysModelJTreeNode.Type.AAG_SC) {
+                        AnimatedActorGroup sAag = (AnimatedActorGroup) sourceNode.getUserObject();
+                        AnimatedActorGroup tAag = (AnimatedActorGroup) newParentNode.getUserObject();
+                        if ( !isAagMovable( sAag, tAag ) && !copy )
+                            return null;
+                        newObject = copyAagNodeToAagScNode( sourceNode, newParentNode );
+                } else if ( tgtType == PhysModelJTreeNode.Type.AAG_SC_SET ) {
+                    PhysModelJTreeNode tAagNode = getAagNode( newParentNode );
+                    if ( tAagNode == null )
+                        return null;
+                    return moveNode( sourceNode, (PhysModelJTreeNode) newParentNode.getParent(), copy );
+                } else {
+                    return null;
+                }
                 break;
             case AAG_SC:
                 clearSourceWhenMove = true;
@@ -1274,20 +1332,39 @@ public class PhysModelStructureGuiProcessing {
                     AnimatedActorGroup sAag = (AnimatedActorGroup) sourceNode.getUserObject();
                     AnimatedActorGroup tAag = (AnimatedActorGroup) newParentNode.getUserObject();
                     if (!isAagMovable(sAag, tAag) && !copy)
-                        return false;
+                        return null;
                     newObject = copyAagScNodeToAagNode(sourceNode, newParentNode);
                 } else if ( tgtType == PhysModelJTreeNode.Type.AAG_SC ) {
                     return moveNode(sourceNode, (PhysModelJTreeNode) newParentNode.getParent(), copy);
                 } else if ( tgtType == PhysModelJTreeNode.Type.AAG_SC_SET ) {
                     PhysModelJTreeNode aagNode = getAagNode( newParentNode );
                     if ( aagNode == null )
-                        return false;
+                        return null;
                     return moveNode( sourceNode, aagNode, copy );
                 } else {
-                    return false;
+                    return null;
                 }
                 break;
             case AAG_SC_SET:
+                if ( tgtType == PhysModelJTreeNode.Type.AAG ) {
+                    removeSourceWhenMove = true;
+                    ScContainer.Handler handler = (ScContainer.Handler) sourceNode.getUserObject();
+                    AnimatedActorGroup srcAag = (AnimatedActorGroup) handler.get();
+                    AnimatedActorGroup tgtAag = (AnimatedActorGroup) newParentNode.getUserObject();
+                    if ( srcAag.isParentOf( tgtAag ) && !copy ) {
+                        return null;
+                    }
+                    newObject = copyAagScSetNodeToAagNode( sourceNode, newParentNode );
+                } else if ( tgtType == PhysModelJTreeNode.Type.AAG_SC ) {
+                    return moveNode( sourceNode, (PhysModelJTreeNode) newParentNode.getParent(), copy );
+                } else if ( tgtType == PhysModelJTreeNode.Type.AAG_SC_SET ) {
+                    PhysModelJTreeNode aagNode = getAagNode( newParentNode );
+                    if ( aagNode == null )
+                        return null;
+                    return moveNode( sourceNode, aagNode, copy );
+                } else {
+                    return null;
+                }
                 break;
             case BODY_ITEM:
                 if ( tgtType == PhysModelJTreeNode.Type.BiScSET ) {
@@ -1305,12 +1382,12 @@ public class PhysModelStructureGuiProcessing {
                     BodyItem bi = (BodyItem) sourceNode.getUserObject();
                     BiScSet bset = (BiScSet) newParentNode.getUserObject();
                     if ( bset.getBodyItems().contains( bi, true)  && !copy )
-                        return false;
+                        return null;
                      return moveNode(sourceNode, (PhysModelJTreeNode) newParentNode.getParent(), copy );
 
 
                 } else {
-                    return false;
+                    return null;
                 }
 
                 break;
@@ -1320,12 +1397,12 @@ public class PhysModelStructureGuiProcessing {
                     ScContainer.Handler handler = (ScContainer.Handler) newParentNode.getUserObject();
                     BiScSet bset = (BiScSet) handler.get();
                     if ((bset == sourceNode.getUserObject()) && !copy)
-                        return false;
+                        return null;
                     newObject = copyBodyItemGroupNode(sourceNode, newParentNode);
                 } else if ( tgtType == PhysModelJTreeNode.Type.BODY_ITEM_GROUP ) {
                     return moveNode( sourceNode, (PhysModelJTreeNode) newParentNode.getParent(), copy );
                 } else {
-                    return false;
+                    return null;
                 }
                 break;
             case FIXTURE_SET:
@@ -1334,14 +1411,14 @@ public class PhysModelStructureGuiProcessing {
                     BodyItem bi = (BodyItem) newParentNode.getUserObject();
                     FixtureSet fs = (FixtureSet) sourceNode.getUserObject();
                     if ( bi.getFixtureSets().contains( fs, true ) && !copy )
-                        return false;
+                        return null;
                     if ( !copy )
                         editorScreen.setModelObject( null, EditorScreen.ModelObjectType.OT_None );
                     newObject = copyFixtureSetNode( sourceNode, newParentNode );
                 } else if ( tgtType == PhysModelJTreeNode.Type.FIXTURE_SET_GROUP ) {
                     return moveNode( sourceNode, (PhysModelJTreeNode) newParentNode.getParent(), copy );
                 } else {
-                    return false;
+                    return null;
                 }
                 break;
             case FIXTURE_SET_GROUP:
@@ -1350,12 +1427,12 @@ public class PhysModelStructureGuiProcessing {
                     BodyItem sBi = (BodyItem) sourceNode.getUserObject();
                     BodyItem tBi = (BodyItem) newParentNode.getUserObject();
                     if ( ( sBi == tBi ) && !copy )
-                        return false;
+                        return null;
                     newObject = copyFixtureSetGroupNode( sourceNode, newParentNode );
                 } else if ( tgtType == PhysModelJTreeNode.Type.FIXTURE_SET_GROUP ) {
                     return moveNode( sourceNode, (PhysModelJTreeNode) newParentNode.getParent(), copy );
                 } else {
-                    return false;
+                    return null;
                 }
                 break;
             case JOINT_ITEM:
@@ -1385,21 +1462,20 @@ public class PhysModelStructureGuiProcessing {
         }
 
 
-        return true;
+        return newObject;
     }
 
-    public Object duplicateBiScSetNode( PhysModelJTreeNode sNode ) {
+    public Object copyBiScSetNode(PhysModelJTreeNode sNode) {
         if ( sNode.getType() != PhysModelJTreeNode.Type.BiScSET )
             return null;
 
         ScContainer.Handler handler = (ScContainer.Handler) sNode.getUserObject();
-        Gdx.app.log("PhysModelStructureGuiProcessing.duplicateBiScSetNode", "sNode: " + sNode);
+        Gdx.app.log("PhysModelStructureGuiProcessing.copyBiScSetNode", "sNode: " + sNode);
 
         Integer newId = handler.container.generateId();
         BiScContainer container = (BiScContainer) handler.container;
         container.copyContent( handler.id, newId );
         handler = new ScContainer.Handler( container, newId );
-
         PhysModelJTreeNode newNode = new PhysModelJTreeNode(PhysModelJTreeNode.Type.BiScSET, handler );
         loadBiScSetNodes( newNode );
         rootNode.add( newNode );
@@ -1505,4 +1581,416 @@ public class PhysModelStructureGuiProcessing {
         loadAagScNodes( aagScNode );
         return tAag;
     }
+
+    public Object copyAagScSetNodeToAagNode( PhysModelJTreeNode sNode, PhysModelJTreeNode newPNode ) {
+        if ( sNode.getType() != PhysModelJTreeNode.Type.AAG_SC_SET )
+            return null;
+        if ( newPNode.getType() != PhysModelJTreeNode.Type.AAG )
+            return null;
+        ScContainer.Handler handler = (ScContainer.Handler) sNode.getUserObject();
+        AnimatedActorGroup tAag = (AnimatedActorGroup) newPNode.getUserObject();
+        tAag.getScChildren().addContentAsCopy( handler );
+        PhysModelJTreeNode scNode = getAagScNode( newPNode );
+        if ( scNode == null )
+            return null;
+        scNode.removeAllChildren();
+        loadAagScNodes( scNode );
+        return tAag;
+    }
+
+    public Object copyAagNodeToAagScNode( PhysModelJTreeNode sNode, PhysModelJTreeNode newPNode ) {
+        if ( sNode.getType() != PhysModelJTreeNode.Type.AAG )
+            return null;
+        if ( newPNode.getType() != PhysModelJTreeNode.Type.AAG_SC )
+            return null;
+        AnimatedActorGroup sAag = (AnimatedActorGroup) sNode.getUserObject();
+        AnimatedActorGroup tAag = (AnimatedActorGroup) newPNode.getUserObject();
+        tAag.getScChildren().addContentAsCopy( tAag.getScChildren().generateId(), sAag );
+        newPNode.removeAllChildren();
+        loadAagScNodes(newPNode);
+        return tAag;
+    }
+
+    public Object copyAagNodeToAagNode( PhysModelJTreeNode sNode, PhysModelJTreeNode newPNode ) {
+        if ( sNode.getType() != PhysModelJTreeNode.Type.AAG )
+            return null;
+        if ( newPNode.getType() != PhysModelJTreeNode.Type.AAG )
+            return null;
+        AnimatedActorGroup sAag = (AnimatedActorGroup) sNode.getUserObject();
+        AnimatedActorGroup tAag = (AnimatedActorGroup) newPNode.getUserObject();
+        AnimatedActorGroup aag = AnimatedActorGroup.createFromDescription( sAag.getAagDescription(), sAag.getAtlas() );
+        tAag.addChildAag( aag );
+        newPNode.removeAllChildren();
+        loadAagNodes( newPNode );
+        return tAag;
+    }
+
+    public void duplicateNode( int number, float xOffset, float yOffset, float rotation ) {
+        TreePath [] selectionPaths = jTreeModel.getSelectionPaths();
+
+        if ( selectionPaths == null )
+            return;
+
+        Object newObject = null ;
+
+        for ( TreePath selPath : selectionPaths ) {
+            PhysModelJTreeNode node = (PhysModelJTreeNode) selPath.getLastPathComponent();
+            if ( node.getParent() == null )
+                continue;
+            duplicateNode(node, number, xOffset, yOffset, rotation);
+
+        }
+
+
+        mainGui.makeHistorySnapshot();
+
+
+    }
+
+
+    protected void duplicateNode(PhysModelJTreeNode node, int number, float xOffset, float yOffset, float rotation) {
+        if ( node.getParent() == null )
+            return;
+
+        PhysModelJTreeNode parentNode = (PhysModelJTreeNode) node.getParent();
+
+
+        switch (node.getType()) {
+            case MODEL:
+                return;
+            case BiScSET:
+                return;
+            case AAG:
+                if ( parentNode.getType() != PhysModelJTreeNode.Type.AAG )
+                    return;
+                AnimatedActorGroup parentAag = (AnimatedActorGroup) parentNode.getUserObject();
+                AnimatedActorGroup aag = (AnimatedActorGroup) node.getUserObject();
+                AagDescription aagDesc = aag.getAagDescription();
+
+                for ( int i = 0; i < number; i++ ) {
+                    AnimatedActorGroup newAag = AnimatedActorGroup.createFromDescription( aagDesc, aag.getAtlas() );
+                    parentAag.addChildAag( newAag );
+                    newAag.setPosition( xOffset * (i+1) + newAag.getX(),
+                            yOffset * (i+1) + newAag.getY() );
+                    newAag.setRotation( newAag.getRotation() + rotation * (i+1) );
+                    newAag.setName( newAag.getName() + "_c" + (i+1) );
+                }
+                parentNode.removeAllChildren();
+                loadAagNodes( parentNode );
+                break;
+            case AAG_SC:
+                return;
+            case AAG_SC_SET:
+                return;
+            case BODY_ITEM:
+                for ( int i = 0; i < number; i ++ ) {
+                    BodyItem bi = (BodyItem) node.getUserObject();
+                    BiScSet bset = (BiScSet) parentNode.getUserObject();
+                    BodyItem newBi = bset.copyBodyItem( bi );
+                    Body body = newBi.getBody();
+                    body.setTransform(PhysWorld.get().toPhys(xOffset * (i + 1) )  + body.getPosition().x,
+                            PhysWorld.get().toPhys(yOffset * (i + 1) )  + body.getPosition().y,
+                            MathUtils.degreesToRadians * rotation * (i + 1) + body.getAngle());
+                    newBi.setName( newBi.getName() + "_c" + (i+1) );
+                }
+                parentNode.removeAllChildren();
+                loadBodyItemsNodes(parentNode);
+                break;
+            case BODY_ITEM_GROUP:
+                return;
+            case FIXTURE_SET:
+                return;
+            case FIXTURE_SET_GROUP:
+                return;
+            case JOINT_ITEM:
+                return;
+            case JOINT_ITEM_GROUP:
+                return;
+        }
+
+        treeDataModel.nodeStructureChanged( parentNode );
+        mainGui.makeHistorySnapshot();
+    }
+
+
+    public void reloadJointItemNodes() {
+        PhysModelJTreeNode node = (PhysModelJTreeNode) jTreeModel.getLastSelectedPathComponent();
+        if ( node == null )
+            return;
+        reloadJointItemNodes( node );
+    }
+
+    public void reloadJointItemNodes( PhysModelJTreeNode jointGroupNode ) {
+        if ( jointGroupNode.getType() != PhysModelJTreeNode.Type.JOINT_ITEM_GROUP )
+            return;
+        jointGroupNode.removeAllChildren();
+        loadJointItemsNodes( jointGroupNode );
+        treeDataModel.nodeStructureChanged( jointGroupNode );
+    }
+
+    public void mirrorNode( PhysModelProcessing.MirrorDirection dir ) {
+        TreePath [] selectedPaths = jTreeModel.getSelectionPaths();
+
+        if ( selectedPaths == null )
+            return;
+        boolean res = false;
+        for ( TreePath tp : selectedPaths ) {
+            PhysModelJTreeNode node = (PhysModelJTreeNode) tp.getLastPathComponent();
+
+            switch ( node.getType() ) {
+                case MODEL:
+                    mirrorModel( dir );
+                    res = true;
+                    break;
+                case BiScSET:
+                    break;
+                case AAG:
+                    AnimatedActorGroup aag = (AnimatedActorGroup) node.getUserObject();
+                    if ( aag instanceof BodyItem )
+                        continue;
+                    if ( mirrorAag( node, dir ) )
+                        res = true;
+                    break;
+                case AAG_SC:
+                    break;
+                case AAG_SC_SET:
+                    break;
+                case BODY_ITEM:
+                    if ( mirrorBodyItem( node, dir ) )
+                        res = true;
+                    break;
+                case BODY_ITEM_GROUP:
+                    break;
+                case FIXTURE_SET:
+                    if ( mirrorFixtureSet( node, dir ) )
+                        res = true;
+                    break;
+                case FIXTURE_SET_GROUP:
+                    break;
+                case JOINT_ITEM:
+                    break;
+                case JOINT_ITEM_GROUP:
+                    break;
+            }
+        }
+
+        if ( res )
+            mainGui.makeHistorySnapshot();
+    }
+
+
+    protected boolean mirrorAag( PhysModelJTreeNode aagNode , PhysModelProcessing.MirrorDirection dir ) {
+        if ( aagNode.getType() != PhysModelJTreeNode.Type.AAG )
+            return false;
+        AnimatedActorGroup aag = (AnimatedActorGroup) aagNode.getUserObject();
+        AagDescription desc = aag.getAagDescription();
+        PhysModelProcessing.mirrorAagDescription(desc, dir);
+        aagNode.removeAllChildren();
+        aag.loadFromDescription(desc, SkrGdxApplication.get().getAtlas());
+        loadAagNodes( aagNode );
+        treeDataModel.nodeStructureChanged( aagNode );
+        return true;
+    }
+
+    protected boolean mirrorBodyItem( PhysModelJTreeNode node, PhysModelProcessing.MirrorDirection dir ) {
+        if ( node.getType() != PhysModelJTreeNode.Type.BODY_ITEM )
+            return false;
+        BodyItem bi = (BodyItem) node.getUserObject();
+        BodyItemDescription desc = bi.getBodyItemDescription();
+        PhysModelProcessing.mirrorBodyItemDescription(desc, dir);
+        bi.destroyPhysics();
+        bi.loadFromDescription( desc );
+        reloadJointItemNodes();
+        return true;
+    }
+
+    protected boolean mirrorFixtureSet( PhysModelJTreeNode node, PhysModelProcessing.MirrorDirection dir ) {
+        if ( node.getType() != PhysModelJTreeNode.Type.FIXTURE_SET )
+            return false;
+        FixtureSet fs = (FixtureSet) node.getUserObject();
+        FixtureSetDescription fsDesc = fs.getDescription();
+        PhysModelProcessing.mirrorFixtureSetDescription( fsDesc, dir );
+
+        BodyItem bi = fs.getBodyItem();
+        bi.removeFixtureSet( fs );
+        fs = bi.addNewFixtureSet( fsDesc );
+
+        node.setUserObject(fs);
+        return true;
+    }
+
+    void mirrorModel( PhysModelProcessing.MirrorDirection dir ) {
+        PhysModelDescription desc = model.getDescription();
+        PhysModelProcessing.mirrorModelDescription(desc, dir);
+        model.destroyPhysics();
+        model.clearModel();
+        model.loadFromDescription( desc );
+        rootNode.removeAllChildren();
+        loadTreeBiScNodes();
+    }
+
+
+
+
+
+    PhysModelDescription createDescriptionForSelection() {
+        PhysModelDescription desc = new PhysModelDescription();
+        desc.setName( "export_" + model.getName());
+
+        TreePath [] selectionPaths = jTreeModel.getSelectionPaths();
+        if ( selectionPaths == null )
+            return null;
+        boolean addJoints = true;
+        for ( TreePath tp : selectionPaths ) {
+            PhysModelJTreeNode node = (PhysModelJTreeNode) tp.getLastPathComponent();
+
+            switch ( node.getType() ) {
+                case MODEL:
+                    return model.getDescription();
+                case BiScSET:
+                    setBiScSetNodeToModelDescritpion( node, desc );
+                    addJoints = false;
+                    break;
+                case AAG:
+                    break;
+                case AAG_SC:
+                    break;
+                case AAG_SC_SET:
+                    break;
+                case BODY_ITEM:
+                    setBodyItemNodeToModelDesc(node, desc);
+                    break;
+                case BODY_ITEM_GROUP:
+                    setBodyItemGroupNodeToModelDesc(node, desc);
+                    break;
+                case FIXTURE_SET:
+                    break;
+                case FIXTURE_SET_GROUP:
+                    break;
+                case JOINT_ITEM:
+                    break;
+                case JOINT_ITEM_GROUP:
+                    break;
+            }
+        }
+        if ( addJoints )
+            setJointItemNodesToModelDesc( desc );
+        return desc;
+    }
+
+    protected void setBiScSetNodeToModelDescritpion( PhysModelJTreeNode biScSetNode, PhysModelDescription desc ) {
+        if ( biScSetNode.getType() != PhysModelJTreeNode.Type.BiScSET )
+            return;
+        ScContainer.Handler handler = (ScContainer.Handler) biScSetNode.getUserObject();
+        BiScSet bset = (BiScSet) handler.get();
+        BiScSetDescription bsetDesc = bset.getDescription();
+        BiScContainerDescription contDesc = desc.getBiScContainerDescription();
+
+        contDesc.getContentMap().put( handler.id.toString(), bsetDesc );
+        String name = handler.container.findNameById( handler.id );
+        if ( name != null && !name.isEmpty() )
+            contDesc.getNamesMap().put( name, handler.id );
+        if ( handler.container.getCurrentId().equals( handler.id ) )
+            contDesc.setCurrentId( handler.id );
+
+    }
+
+    protected void setBodyItemGroupNodeToModelDesc(PhysModelJTreeNode bigNode, PhysModelDescription desc) {
+        if ( bigNode.getType() != PhysModelJTreeNode.Type.BODY_ITEM_GROUP )
+            return;
+        PhysModelJTreeNode biScNode = (PhysModelJTreeNode) bigNode.getParent();
+        setBiScSetNodeToModelDescritpion( biScNode, desc );
+    }
+
+
+    protected void setBodyItemNodeToModelDesc(PhysModelJTreeNode biNode, PhysModelDescription desc) {
+        if ( biNode.getType() != PhysModelJTreeNode.Type.BODY_ITEM )
+            return;
+        PhysModelJTreeNode biGroupNode = (PhysModelJTreeNode) biNode.getParent();
+        PhysModelJTreeNode biScSetNode = (PhysModelJTreeNode) biGroupNode.getParent();
+
+        ScContainer.Handler handler = (ScContainer.Handler) biScSetNode.getUserObject();
+        BiScContainerDescription contDesc = desc.getBiScContainerDescription();
+        String idStr = handler.id.toString();
+        if ( !contDesc.getContentMap().containsKey( idStr ) ) {
+            contDesc.getContentMap().put( idStr, new BiScSetDescription() );
+            String name = handler.container.findNameById( handler.id );
+            if ( name != null && !name.isEmpty() )
+                contDesc.getNamesMap().put( name, handler.id );
+            if ( handler.container.getCurrentId().equals( handler.id ) )
+                contDesc.setCurrentId( handler.id );
+        }
+
+        BiScSetDescription biScSetDesc = contDesc.getContentMap().get( idStr );
+        BodyItem bi = (BodyItem) biNode.getUserObject();
+        BodyItemDescription biDesc = bi.getBodyItemDescription();
+        biScSetDesc.getBodyItemDescriptions().add( biDesc );
+    }
+
+    protected void setJointItemNodeToModelDesc( PhysModelJTreeNode jiNode, PhysModelDescription desc ) {
+        if ( jiNode.getType() != PhysModelJTreeNode.Type.JOINT_ITEM )
+            return;
+        PhysModelJTreeNode jiGroupNode = (PhysModelJTreeNode) jiNode.getParent();
+        PhysModelJTreeNode biScSetNode = (PhysModelJTreeNode) jiGroupNode.getParent();
+        ScContainer.Handler handler = (ScContainer.Handler) biScSetNode.getUserObject();
+        BiScContainerDescription contDesc = desc.getBiScContainerDescription();
+        String idStr = handler.id.toString();
+        if ( !contDesc.getContentMap().containsKey( idStr ) ) {
+            contDesc.getContentMap().put( idStr, new BiScSetDescription() );
+            String name = handler.container.findNameById( handler.id );
+            if ( name != null && !name.isEmpty() )
+                contDesc.getNamesMap().put( name, handler.id );
+            if ( handler.container.getCurrentId().equals( handler.id ) )
+                contDesc.setCurrentId( handler.id );
+        }
+
+        BiScSetDescription biScSetDesc = contDesc.getContentMap().get( idStr );
+        JointItem ji = (JointItem) jiNode.getUserObject();
+        JointItemDescription jiDesc = ji.getJointItemDescription();
+        biScSetDesc.getJointItemDescriptions().add( jiDesc );
+    }
+
+    protected BodyItemDescription findBodyItemDescription( int id, PhysModelDescription desc ) {
+        for ( String idStr : desc.getBiScContainerDescription().getContentMap().keySet() ) {
+            BiScSetDescription biScSetDesc = desc.getBiScContainerDescription().getContentMap().get( idStr );
+            for ( BodyItemDescription biDesc : biScSetDesc.getBodyItemDescriptions() ) {
+                if ( biDesc.getId() == id )
+                    return biDesc;
+            }
+        }
+        return null;
+    }
+
+    protected void setJointItemNodesToModelDesc( PhysModelDescription desc ) {
+        for ( int i = 0; i < rootNode.getChildCount(); i++ ) {
+            PhysModelJTreeNode biScSetNode = (PhysModelJTreeNode) rootNode.getChildAt( i );
+            PhysModelJTreeNode jiGroupNode = getJointGroupNode( biScSetNode );
+            if ( jiGroupNode == null )
+                continue;
+            for ( int j = 0; j < jiGroupNode.getChildCount(); j++ ) {
+                PhysModelJTreeNode jiNode = (PhysModelJTreeNode) jiGroupNode.getChildAt( j );
+                JointItem ji = (JointItem) jiNode.getUserObject();
+                int bId = ji.getBodyAId();
+                if ( bId != -1 && ( findBodyItemDescription( bId, desc ) == null) )
+                    continue;
+                bId = ji.getBodyBId();
+                if ( bId != -1 && ( findBodyItemDescription( bId, desc ) == null) )
+                    continue;
+                setJointItemNodeToModelDesc( jiNode, desc );
+            }
+        }
+    }
+
+
+    public void importModelDescription( PhysModelDescription desc ) {
+        if ( model == null )
+            return;
+        model.mergeFromDescription(desc);
+        rootNode.removeAllChildren();
+        loadTreeBiScNodes();
+        treeDataModel.nodeStructureChanged( rootNode );
+        expandToNode(rootNode);
+        mainGui.makeHistorySnapshot();
+    }
+
 }

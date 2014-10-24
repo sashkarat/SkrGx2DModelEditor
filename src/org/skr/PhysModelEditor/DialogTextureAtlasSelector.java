@@ -10,6 +10,7 @@ public class DialogTextureAtlasSelector extends JDialog {
     private JButton buttonCancel;
     private JTextField tfTextureAtlasFilePath;
     private JButton btnBrowse;
+    private String fileDirectory = "";
 
 
     private boolean result;
@@ -87,6 +88,7 @@ public class DialogTextureAtlasSelector extends JDialog {
             return;
 
         tfTextureAtlasFilePath.setText(fch.getSelectedFile().getAbsolutePath());
+        fileDirectory = fch.getSelectedFile().getParent();
     }
 
 
@@ -96,6 +98,10 @@ public class DialogTextureAtlasSelector extends JDialog {
 
     public void setTfTextureAtlasFilePath( String filePath ) {
         tfTextureAtlasFilePath.setText( filePath );
+    }
+
+    public String getFileDirectory() {
+        return fileDirectory;
     }
 
     public static void main(String[] args) {

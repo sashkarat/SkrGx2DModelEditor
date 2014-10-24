@@ -208,7 +208,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
 
     @Override
     public PropertyType getPropertyType(int rowIndex) {
-        if ( jointItem == null)
+        if ( jointItem == null || jointItem.getJoint() == null )
             return null;
         Property_ prop = getProperty(jointItem.getJoint().getType(), rowIndex);
         if ( prop == null )
@@ -218,7 +218,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
 
     @Override
     public DataRole getDataRole(int rowIndex) {
-        if ( jointItem == null)
+        if ( jointItem == null || jointItem.getJoint() == null )
             return DataRole.DEFAULT;
         Property_ prop = getProperty(jointItem.getJoint().getType(), rowIndex);
         if ( prop == null )
@@ -228,7 +228,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
 
     @Override
     public int getPropertiesCount() {
-        if ( jointItem == null )
+        if ( jointItem == null || jointItem.getJoint() == null  )
             return 0;
         return getPropertiesCount(jointItem.getJoint().getType());
     }
@@ -323,7 +323,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
 
     @Override
     public Object getPropertyName(int rowIndex) {
-        if ( jointItem == null)
+        if ( jointItem == null || jointItem.getJoint() == null )
             return null;
         Property_ prop = getProperty(jointItem.getJoint().getType(), rowIndex);
         if ( prop == null )
@@ -332,14 +332,14 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
     }
 
     String getBodyName( int id ) {
-        BodyItem bi = jointItem.getModel().findBodyItem( id );
+        BodyItem bi = jointItem.getBiScSet().findBodyItem( id );
         if ( bi == null )
             return "not found";
         return bi.getName();
     }
 
     String getJointName(int id)  {
-        JointItem ji = jointItem.getModel().findJointItem( id );
+        JointItem ji = jointItem.getBiScSet().findJointItem( id );
         if ( ji == null )
             return "not found";
         return ji.getName();

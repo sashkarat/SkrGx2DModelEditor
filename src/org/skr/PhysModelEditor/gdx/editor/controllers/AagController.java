@@ -85,7 +85,7 @@ public class AagController extends Controller implements AnimatedActorGroup.Rend
     }
 
     @Override
-    protected void draw() {
+    protected void drawLocal() {
         /*
 
         This class does not render it's content by Controller class way.

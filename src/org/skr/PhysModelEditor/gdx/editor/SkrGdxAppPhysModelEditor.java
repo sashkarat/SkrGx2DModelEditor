@@ -1,5 +1,7 @@
 package org.skr.PhysModelEditor.gdx.editor;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.LifecycleListener;
 import org.skr.PhysModelEditor.gdx.editor.screens.EditorScreen;
 import org.skr.PhysModelEditor.gdx.editor.screens.SimulationScreen;
 import org.skr.gdx.SkrGdxApplication;
@@ -12,10 +14,30 @@ public class SkrGdxAppPhysModelEditor extends SkrGdxApplication {
     SimulationScreen simulationScreen;
 
     public SkrGdxAppPhysModelEditor() {
+
     }
 
     @Override
     protected void onCreate() {
+
+//        Gdx.app.postRunnable();
+
+        Gdx.app.addLifecycleListener( new LifecycleListener() {
+            @Override
+            public void pause() {
+                Gdx.app.log("SkrGdxAppPhysModelEditor.LifecycleListener.pause", "...");
+            }
+
+            @Override
+            public void resume() {
+                Gdx.app.log("SkrGdxAppPhysModelEditor.LifecycleListener.resume", "...");
+            }
+
+            @Override
+            public void dispose() {
+                Gdx.app.log("SkrGdxAppPhysModelEditor.LifecycleListener.dispose", "...");
+            }
+        });
         editorScreen = new EditorScreen();
         simulationScreen = new SimulationScreen();
         toggleCurrentScreen(editorScreen);
@@ -23,6 +45,7 @@ public class SkrGdxAppPhysModelEditor extends SkrGdxApplication {
 
     @Override
     protected void onDispose() {
+        Gdx.app.log("SkrGdxAppPhysModelEditor.onDispose", "...");
         editorScreen.dispose();
         simulationScreen.dispose();
     }

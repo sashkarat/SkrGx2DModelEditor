@@ -116,7 +116,7 @@ public abstract class ShapeController extends Controller {
     protected abstract  void drawShapeDescription( ShapeDescription shd );
 
     @Override
-    protected void draw() {
+    protected void drawLocal() {
         if ( fixtureSetDescription == null )
             return;
         getShapeRenderer().setColor( 1, 0, 0, 1f);

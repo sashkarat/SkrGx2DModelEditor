@@ -34,7 +34,7 @@ public class MultiBodyItemsController extends Controller {
     }
 
     @Override
-    protected void draw() {
+    protected void drawLocal() {
         getShapeRenderer().setColor(0, 1, 0, 1);
         getShapeRenderer().begin(ShapeRenderer.ShapeType.Line );
         for ( BodyItem bi : bodyItems ) {

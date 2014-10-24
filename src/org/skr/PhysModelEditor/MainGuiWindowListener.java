@@ -34,9 +34,10 @@ public class MainGuiWindowListener implements WindowListener {
 
     @Override
     public void windowClosed(WindowEvent e) {
-
+        Gdx.app.exit();
         gui.getSnapshotTimer().stop();
         ApplicationSettings.save();
+        System.exit(0);
     }
 
     @Override
@@ -56,7 +57,6 @@ public class MainGuiWindowListener implements WindowListener {
 
     @Override
     public void windowDeactivated(WindowEvent e) {
-
     }
 
 }

@@ -170,7 +170,7 @@ public class JointCreatorController extends Controller {
     private static final Color cB = new Color( 0, 1,0,1);
 
     @Override
-    protected void draw() {
+    protected void drawLocal() {
         drawControlPoints();
 
         if ( selectedBodyItemA != null ) {

@@ -1,11 +1,13 @@
 package org.skr.PhysModelEditor.gdx.editor.controllers;
 
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import org.skr.gdx.PhysWorld;
 import org.skr.gdx.editor.Controller;
 import org.skr.gdx.physmodel.bodyitem.BodyItem;
+import org.skr.gdx.utils.RectangleExt;
 
 /**
  * Created by rat on 05.07.14.
@@ -52,7 +54,19 @@ public class BodyItemController extends Controller {
     }
 
     @Override
-    protected void draw() {
+    protected void drawStage() {
+        getShapeRenderer().begin(ShapeRenderer.ShapeType.Line );
+        getShapeRenderer().setColor(1, 1, 0, 1);
+        RectangleExt bb = bodyItem.getBodyItemBoundingBox();
+
+        getShapeRenderer().rect( bb.getLeft(), bb.getBottom(),
+                bb.getWidth(), bb.getHeight() );
+
+        getShapeRenderer().end();
+    }
+
+    @Override
+    protected void drawLocal() {
         getShapeRenderer().setColor(0, 1, 0, 1);
         drawControlPoints();
     }

@@ -6,6 +6,7 @@ import org.skr.gdx.PhysWorld;
 import org.skr.gdx.physmodel.PhysModel;
 import org.skr.gdx.physmodel.PhysModelDescription;
 import org.skr.gdx.scene.PhysModelDescriptionHandler;
+import org.skr.gdx.scene.PhysModelItemDescription;
 import org.skr.gdx.scene.PhysScene;
 
 /**
@@ -66,9 +67,7 @@ public class SimulationScreen extends BaseScreen {
         resetModel();
         PhysModelDescriptionHandler mdh = new PhysModelDescriptionHandler();
         mdh.setModelDesc( this.description );
-        //TODO: recode this
-//        testScene.addModelItem( mdh );
-
+        testScene.addModelItem( mdh );
     }
 
     public void setPause(boolean state) {

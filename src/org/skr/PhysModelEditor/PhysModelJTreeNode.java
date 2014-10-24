@@ -44,6 +44,16 @@ public class PhysModelJTreeNode extends DefaultMutableTreeNode {
         this.type = type;
     }
 
+    public static String getHandlerString( ScContainer.Handler handler ) {
+        StringBuilder sb = new StringBuilder("Id: " + handler.id );
+        String name = handler.container.findNameById(handler.id);
+        if (name != null && !name.isEmpty())
+            sb.append(" <" + name + "> ");
+        if (handler.container.isContentSelected( handler.id ) )
+            sb.append(" *");
+        return sb.toString();
+    }
+
     @Override
     public String toString() {
 
@@ -56,13 +66,13 @@ public class PhysModelJTreeNode extends DefaultMutableTreeNode {
             case MODEL:
                 return "Model: " + ((PhysModel) object).getName();
             case BiScSET:
-                return "Id: " + ((ScContainer.Handler) object).id;
+                return getHandlerString( (ScContainer.Handler) object);
             case AAG:
                 return "Aag: " + ((AnimatedActorGroup) object).getName();
             case AAG_SC:
                 return ": AAG Selectable Content";
             case AAG_SC_SET:
-                return "Id: " + ((ScContainer.Handler) object).id;
+                return getHandlerString( (ScContainer.Handler) object);
             case BODY_ITEM:
                 return "Body: " + (( BodyItem ) object).getName();
             case BODY_ITEM_GROUP:

@@ -37,7 +37,8 @@ public class EditorScreen extends BaseScreen {
         OT_BodyItem,
         OT_Aag,
         OT_FixtureSet,
-        OT_JointItems
+        OT_JointItems,
+        OT_JointItem
     }
 
     public interface ItemSelectionListener {
@@ -56,7 +57,7 @@ public class EditorScreen extends BaseScreen {
     private EdgeShapeController edgeShapeController;
     private ChainShapeController chainShapeController;
     private PolygonShapeController polygonShapeController;
-    private JointCreatorController jointCreatorController;
+    private JointEditorController jointEditorController;
     private MultiBodyItemsController multiBodyItemsController;
     private Controller currentController = null;
     private ItemSelectionListener itemSelectionListener;
@@ -77,7 +78,7 @@ public class EditorScreen extends BaseScreen {
         edgeShapeController = new EdgeShapeController( getStage() );
         chainShapeController = new ChainShapeController( getStage() );
         polygonShapeController = new PolygonShapeController( getStage() );
-        jointCreatorController = new JointCreatorController( getStage() );
+        jointEditorController = new JointEditorController( getStage() );
         multiBodyItemsController = new MultiBodyItemsController( getStage() );
 
     }
@@ -154,8 +155,10 @@ public class EditorScreen extends BaseScreen {
                 setFixtureSet( (FixtureSet) object );
                 break;
             case OT_JointItems:
-                currentController = jointCreatorController;
-                jointCreatorController.setModel( model );
+                break;
+            case OT_JointItem:
+                currentController = jointEditorController;
+                jointEditorController.setJointItem( (org.skr.gdx.physmodel.jointitem.JointItem) object);
                 break;
         }
 
@@ -215,8 +218,8 @@ public class EditorScreen extends BaseScreen {
         return bodyItemController;
     }
 
-    public JointCreatorController getJointCreatorController() {
-        return jointCreatorController;
+    public JointEditorController getJointEditorController() {
+        return jointEditorController;
     }
 
     public MultiBodyItemsController getMultiBodyItemsController() {
@@ -412,7 +415,7 @@ public class EditorScreen extends BaseScreen {
         BiScSet bset = model.getScBodyItems().getCurrentSet();
         for ( BodyItem bi: bset.getBodyItems() ) {
             localCoord.set( stageCoord );
-            bi.parentToLocalCoordinates(localCoord);
+//            bi.parentToLocalCoordinates(localCoord);
             selectedAag = processAagSelection( localCoord, bi );
             if ( selectedAag != null ) {
                 itemSelected( selectedAag, ModelObjectType.OT_Aag );
@@ -429,9 +432,9 @@ public class EditorScreen extends BaseScreen {
         localCoord = parentAag.parentToLocalCoordinates( localCoord );
 
         AnimatedActorGroup resAag = parentAag.getAag( localCoord );
-        if ( resAag != null ) {
+//        if ( resAag != null ) {
 //            Gdx.app.log("EditorScreen.processAagSelection", " AAG: " + resAag );
-        }
+//        }
         return resAag;
     }
 
