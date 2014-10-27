@@ -1,6 +1,5 @@
 package org.skr.PhysModelEditor.gdx.editor.controllers;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -30,7 +29,7 @@ public class JointEditorController extends Controller {
             typeGrndB
         }
 
-        AcpType type;
+        public AcpType type;
 
         public AnchorControlPoint(Object object, AcpType type ) {
             super(object);
@@ -93,8 +92,6 @@ public class JointEditorController extends Controller {
             else
                 jiDesc.setBodyBId( -1 );
         }
-
-
     }
 
     void createControlPoints() {
@@ -128,6 +125,27 @@ public class JointEditorController extends Controller {
 
     public PhysModel getModel() {
         return model;
+    }
+
+
+    public AnchorControlPoint getCpAnchorA() {
+        return cpAnchorA;
+    }
+
+    public AnchorControlPoint getCpAnchorB() {
+        return cpAnchorB;
+    }
+
+    public AnchorControlPoint getCpGAnchorA() {
+        return cpGAnchorA;
+    }
+
+    public AnchorControlPoint getCpGAnchorB() {
+        return cpGAnchorB;
+    }
+
+    public AnchorControlPoint getCpAxis() {
+        return cpAxis;
     }
 
     public void setJointItem( JointItem jointItem) {
@@ -169,6 +187,7 @@ public class JointEditorController extends Controller {
                 cpAnchorA.setVisible( false );
                 break;
             case WheelJoint:
+                cpAxis.setVisible( true );
                 break;
             case WeldJoint:
                 break;
@@ -185,7 +204,41 @@ public class JointEditorController extends Controller {
         biB = model.findBodyItem( jiDesc.getBodyBId() );
         jiA = model.findJointItem( jiDesc.getJointAId() );
         jiB = model.findJointItem( jiDesc.getJointBId() );
+
+        updateControlPointFromObject( cpAnchorA );
+        updateControlPointFromObject( cpAnchorB );
+        updateControlPointFromObject( cpAxis );
+        updateControlPointFromObject( cpGAnchorA );
+        updateControlPointFromObject( cpGAnchorB );
     }
+
+    public void setAnchorControlPoint( AnchorControlPoint.AcpType type, Vector2 c ) {
+        AnchorControlPoint acp = null;
+        switch ( type ) {
+            case typeA:
+                cpAnchorA.setPos( c.x, c.y );
+                acp = cpAnchorA;
+                break;
+            case typeB:
+                cpAnchorB.setPos( c.x, c.y );
+                acp = cpAnchorB;
+                break;
+            case typeAxis:
+                cpAxis.setPos( c.x, c.y );
+                acp = cpAxis;
+                break;
+            case typeGrndA:
+                cpGAnchorA.setPos( c.x, c.y );
+                acp = cpGAnchorA;
+                break;
+            case typeGrndB:
+                cpGAnchorB.setPos( c.x, c.y );
+                acp = cpGAnchorB;
+                break;
+        }
+        updateDescriptionFromControlPoint( acp );
+    }
+
 
     @Override
     protected boolean onMouseClicked(Vector2 localCoord, Vector2 stageCoord, int button) {
@@ -285,6 +338,52 @@ public class JointEditorController extends Controller {
                 cpAnchorB.getX(), cpAnchorB.getY() );
     }
 
+
+    protected void drawAxis() {
+
+        getShapeRenderer().setColor( 1, 1, 1, 1 );
+
+        if ( biA == null ) {
+            getShapeRenderer().line(0, 0, cpAxis.getX(), cpAxis.getY() );
+            return;
+        }
+
+        Vector2 c = biA.getBody().getWorldCenter();
+        PhysWorld.get().toView( c );
+        getShapeRenderer().line( c.x, c.y, cpAxis.getX(), cpAxis.getY() );
+    }
+
+    protected void drawAnchAGrndALine() {
+        getShapeRenderer().setColor( 0.8f, 0.8f, 0, 1 );
+        getShapeRenderer().line( cpAnchorA.getX(), cpAnchorA.getY(),
+                cpGAnchorA.getX(), cpGAnchorA.getY() );
+    }
+
+    protected void drawAnchBGrndBLine() {
+        getShapeRenderer().setColor( 0.8f, 0.8f, 0, 1 );
+        getShapeRenderer().line( cpAnchorB.getX(), cpAnchorB.getY(),
+                cpGAnchorB.getX(), cpGAnchorB.getY() );
+    }
+
+    protected void drawGrndABLine() {
+        getShapeRenderer().setColor( 0.8f, 0.8f, 0, 1 );
+        getShapeRenderer().line( cpGAnchorA.getX(), cpGAnchorA.getY(),
+                cpGAnchorB.getX(), cpGAnchorB.getY() );
+    }
+
+    protected void drawBiABLine() {
+        if ( biA == null )
+            return;
+        if ( biB == null )
+            return;
+        getShapeRenderer().setColor( 0.8f, 0.8f, 0.4f, 1);
+        Vector2 c1 = biA.getBody().getWorldCenter();
+        Vector2 c2 = biB.getBody().getWorldCenter();
+        PhysWorld.get().toView( c1 );
+        PhysWorld.get().toView( c2 );
+        getShapeRenderer().line( c1.x, c1.y, c2.x, c2.y );
+    }
+
     protected void drawRevoluteJoint() {
         drawBiAToAnchALine();
         drawBiBToAnchALine();
@@ -294,6 +393,46 @@ public class JointEditorController extends Controller {
         drawBiAToAnchALine();
         drawBiBToAnchBLine();
         drawAnchABLine();
+    }
+
+    protected void drawPrismaticJoint() {
+        drawAxis();
+        drawBiAToAnchALine();
+        drawBiBToAnchALine();
+    }
+
+    protected void drawPulleyJoint() {
+        drawBiAToAnchALine();
+        drawBiBToAnchBLine();
+        drawAnchAGrndALine();
+        drawAnchBGrndBLine();
+        drawGrndABLine();
+    }
+
+    protected void drawWheelJoint() {
+        drawBiAToAnchALine();
+        drawBiBToAnchALine();
+        drawAxis();
+    }
+
+    protected void drawWeldJoint() {
+        drawBiAToAnchALine();
+        drawBiBToAnchALine();
+    }
+
+    protected void drawRopeJoint() {
+        drawBiAToAnchALine();
+        drawBiBToAnchBLine();
+        drawAnchABLine();
+    }
+
+    protected void drawFrictionJoint() {
+        drawBiAToAnchALine();
+        drawBiBToAnchALine();
+    }
+
+    protected void drawMotorJoint() {
+        drawBiABLine();
     }
 
     @Override
@@ -309,25 +448,33 @@ public class JointEditorController extends Controller {
                drawRevoluteJoint();
                break;
            case PrismaticJoint:
+               drawPrismaticJoint();
                break;
            case DistanceJoint:
                drawDistanceJoint();
                break;
            case PulleyJoint:
+               drawPulleyJoint();
                break;
            case MouseJoint:
                break;
            case GearJoint:
+
                break;
            case WheelJoint:
+               drawWheelJoint();
                break;
            case WeldJoint:
+               drawWeldJoint();
                break;
            case FrictionJoint:
+               drawFrictionJoint();
                break;
            case RopeJoint:
+               drawRopeJoint();
                break;
            case MotorJoint:
+               drawMotorJoint();
                break;
         }
 
@@ -397,6 +544,24 @@ public class JointEditorController extends Controller {
     @Override
     protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
         cp.offsetPos( offsetStage.x, offsetStage.y );
+
+        AnchorControlPoint acp = (AnchorControlPoint) cp;
+        if ( acp.type == AnchorControlPoint.AcpType.typeA && biA != null ) {
+            Vector2 c = biA.getBody().getWorldCenter();
+            PhysWorld.get().toView( c );
+            float d = c.dst( acp.getX(), acp.getY() );
+            if ( d < 1 ) {
+                acp.setPos( c.x, c.y );
+            }
+        } else if ( acp.type == AnchorControlPoint.AcpType.typeB && biB != null ) {
+            Vector2 c = biB.getBody().getWorldCenter();
+            PhysWorld.get().toView( c );
+            float d = c.dst( acp.getX(), acp.getY() );
+            if ( d < 1 ) {
+                acp.setPos( c.x, c.y );
+            }
+        }
+
         updateDescriptionFromControlPoint((AnchorControlPoint) cp);
     }
 

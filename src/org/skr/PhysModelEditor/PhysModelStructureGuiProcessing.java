@@ -1036,7 +1036,7 @@ public class PhysModelStructureGuiProcessing {
             case FIXTURE_SET_GROUP:
                 break;
             case JOINT_ITEM:
-                removeJointItemNode( node );
+                return removeJointItemNode( node );
             case JOINT_ITEM_GROUP:
                 break;
         }

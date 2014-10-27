@@ -4,7 +4,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl.LwjglAWTCanvas;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Joint;
 import com.badlogic.gdx.physics.box2d.JointDef;
+import com.badlogic.gdx.physics.box2d.joints.GearJoint;
+import com.badlogic.gdx.physics.box2d.joints.PrismaticJoint;
+import com.badlogic.gdx.physics.box2d.joints.RevoluteJoint;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.gdx.editor.SkrGdxAppPhysModelEditor;
@@ -826,6 +830,8 @@ public class MainGui extends JFrame {
 
     public void setupEditors(Object object, EditorScreen.ModelObjectType mot ) {
         tabbedPaneEditors.removeAll();
+        editorScreen.setModelObject( object, mot );
+
         switch ( mot ) {
             case OT_None:
                 break;
@@ -858,7 +864,7 @@ public class MainGui extends JFrame {
 
         setGuiElementEnable( tabbedPaneEditors, true );
 
-        editorScreen.setModelObject( object, mot );
+
     }
 
     private void setGuiElementEnable(Container c, boolean state) {
@@ -999,194 +1005,55 @@ public class MainGui extends JFrame {
     }
 
 
-//    void updateJointCreatorGui() {
-//
-//        BodyItem selA = (BodyItem) comboBodyASelector.getSelectedItem();
-//        BodyItem selB = (BodyItem) comboBodyBSelector.getSelectedItem();
-//
-//        comboBodyASelector.removeAllItems();
-//        comboBodyBSelector.removeAllItems();
-//
-//        BiScSet bset = model.getScBodyItems().getCurrentSet();
-//        if ( bset == null )
-//            return;
-//
-//        for ( BodyItem bi : bset.getBodyItems() ) {
-//            comboBodyASelector.addItem( bi );
-//            comboBodyBSelector.addItem( bi );
-//        }
-//
-//        if ( selA != null && bset.getBodyItems().contains( selA, true))
-//            comboBodyASelector.setSelectedItem( selA );
-//
-//        if ( selB != null && bset.getBodyItems().contains( selB, true))
-//            comboBodyBSelector.setSelectedItem( selB );
-//
-//        tfAnchorA_X.setText("");
-//        tfAnchorA_Y.setText("");
-//        tfAnchorB_X.setText("");
-//        tfAnchorB_Y.setText("");
-//        tfAxis_X.setText("");
-//        tfAxis_Y.setText("");
-//        tfGroundAnchorA_X.setText("");
-//        tfGroundAnchorA_Y.setText("");
-//        tfGroundAnchorB_X.setText("");
-//        tfGroundAnchorB_Y.setText("");
-//        tfRatio.setText("1.0");
-//        loadAnchorPointsPosition();
-//    }
-
-//    void loadAnchorPointsPosition() {
-//        tfAnchorA_X.setText("" + jiDesc.getAnchorA().x );
-//        tfAnchorA_Y.setText("" + jiDesc.getAnchorA().y );
-//        tfAnchorB_X.setText("" + jiDesc.getAnchorB().x );
-//        tfAnchorB_Y.setText("" + jiDesc.getAnchorB().y );
-//        tfAxis_X.setText("" + jiDesc.getAxis().x);
-//        tfAxis_Y.setText("" + jiDesc.getAxis().y);
-//        tfGroundAnchorA_X.setText("" + jiDesc.getGroundAnchorA().x);
-//        tfGroundAnchorA_Y.setText("" + jiDesc.getGroundAnchorA().y);
-//        tfGroundAnchorB_X.setText("" + jiDesc.getGroundAnchorB().x);
-//        tfGroundAnchorB_Y.setText("" + jiDesc.getGroundAnchorB().y);
-//        tfRatio.setText("" + jiDesc.getRatio() );
-//    }
-//
-//
-//    void setAnchorPointFromGui( JointCreatorController.AnchorControlPoint.AcpType type ) {
-//        Vector2 av = null;
-//        JTextField tf_x = null;
-//        JTextField tf_y = null;
-//
-//
-//        switch ( type ) {
-//            case typeA:
-//                av = jiDesc.getAnchorA();
-//                tf_x = tfAnchorA_X;
-//                tf_y = tfAnchorA_Y;
-//                break;
-//            case typeB:
-//                av = jiDesc.getAnchorB();
-//                tf_x = tfAnchorB_X;
-//                tf_y = tfAnchorB_Y;
-//                break;
-//            case typeAxis:
-//                av = jiDesc.getAxis();
-//                tf_x = tfAxis_X;
-//                tf_y = tfAxis_Y;
-//                break;
-//
-//            case typeC:
-//                av = jiDesc.getGroundAnchorA();
-//                tf_x = tfGroundAnchorA_X;
-//                tf_y = tfGroundAnchorA_Y;
-//                break;
-//            case typeD:
-//                av = jiDesc.getGroundAnchorB();
-//                tf_x = tfGroundAnchorB_X;
-//                tf_y = tfGroundAnchorB_Y;
-//                break;
-//        }
-//
-//        if ( av == null )
-//            return;
-//
-//        float x = Float.valueOf(tf_x.getText());
-//        float y = Float.valueOf( tf_y.getText() );
-//
-//        av.set( x, y );
-//    }
-
+    Array< JointItem > findMatchingGearJoints( JointItem jointItem ) {
+        Array< JointItem > jointsList = new Array<JointItem>();
+        if ( jointItem.getJoint() == null )
+            return jointsList;
+        if ( jointItem.getJoint().getType() != JointDef.JointType.RevoluteJoint &&
+                jointItem.getJoint().getType() != JointDef.JointType.PrismaticJoint )
+            return jointsList;
+        BiScSet bset = jointItem.getBiScSet();
+        for( JointItem ji : bset.getJointItems() ) {
+            if ( ji.getJoint() == null )
+                continue;
+            if ( ji.getJoint().getType() != JointDef.JointType.GearJoint )
+                continue;
+            GearJoint gj = (GearJoint) ji.getJoint();
+            if ( gj.getJoint1() == jointItem.getJoint() ) {
+                jointsList.add(ji);
+                continue;
+            }
+            if ( gj.getJoint2() == jointItem.getJoint() ) {
+                jointsList.add(ji);
+                continue;
+            }
+        }
+        return jointsList;
+    }
 
 
     void updateJointItem() {
-        JointItem ji = formJointEditor.getJointItem();
-        JointItemFactory.loadFromDescription( ji, formJointEditor.getJointItemDescription() );
-        if ( ji.getJoint() == null )
-            Gdx.app.log("MainGui.updateJointItem", "EMPTY JOINT");
-    }
 
-//    void createJoint() {
-//
-//        jiDesc.setType((JointDef.JointType) comboJointType.getSelectedItem() );
-//
-//        BodyItem biA = (BodyItem) comboBodyASelector.getSelectedItem();
-//        BodyItem biB = (BodyItem) comboBodyBSelector.getSelectedItem();
-//
-//        if ( biA == null )
-//            return;
-//        if ( biB == null )
-//            return;
-//        if ( biA == biB )
-//            return;
-//
-//        jiDesc.setBodyAId( biA.getId() );
-//        jiDesc.setBodyBId( biB.getId() );
-//        jiDesc.setCollideConnected(chbCollideConnected.isSelected());
-//
-//        setAnchorPointFromGui(JointCreatorController.AnchorControlPoint.AcpType.typeA);
-//        setAnchorPointFromGui(JointCreatorController.AnchorControlPoint.AcpType.typeB);
-//        if ( jiDesc.getType() == JointDef.JointType.PulleyJoint ) {
-//            setAnchorPointFromGui(JointCreatorController.AnchorControlPoint.AcpType.typeC);
-//            setAnchorPointFromGui(JointCreatorController.AnchorControlPoint.AcpType.typeD);
-//        } else if ( jiDesc.getType() == JointDef.JointType.PrismaticJoint ) {
-//            setAnchorPointFromGui(JointCreatorController.AnchorControlPoint.AcpType.typeAxis);
-//        }
-//
-//        try {
-//            jiDesc.setRatio(Float.valueOf(tfRatio.getText()));
-//        } catch (NumberFormatException e) {
-//            Gdx.app.error("MainGui.createJoint", "Ratio: " + e.getMessage() );
-//            jiDesc.setRatio(1);
-//        }
-//
-//
-//        jiDesc.setName("_" + jiDesc.getType());
-//        if ( jiDesc.getType() == JointDef.JointType.GearJoint ) {
-//            JointItem jiA = (JointItem) comboJoint1.getSelectedItem();
-//            JointItem jiB = (JointItem) comboJoint2.getSelectedItem();
-//            if ( jiA == null )
-//                return;
-//            if ( jiB == null )
-//                return;
-//            jiDesc.setJointAId( jiA.getId() );
-//            jiDesc.setJointBId( jiB.getId() );
-//        }
-//
-//        BiScSet biSet = model.getScBodyItems().getCurrentSet();
-//
-//        JointItem ji = biSet.addJointItem( jiDesc );
-//        if ( ji == null)
-//            return;
-//
-//        modelStructureGuiProcessing.reloadJointItemNodes();
-//
-//        makeHistorySnapshot();
-//
-//    }
-//
-//    void updateJointCombos() {
-//        comboJoint1.removeAllItems();
-//        comboJoint2.removeAllItems();
-//
-//        if ( model == null )
-//            return;
-//
-//        BiScSet bset = model.getScBodyItems().getCurrentSet();
-//        if ( bset == null )
-//            return;
-//
-//
-//        for (JointItem ji : bset.getJointItems() ) {
-//            if ( ji.getJoint().getType() == JointDef.JointType.RevoluteJoint ) {
-//                comboJoint1.addItem( ji );
-//                comboJoint2.addItem( ji );
-//                continue;
-//            }
-//
-//            if ( ji.getJoint().getType() == JointDef.JointType.PrismaticJoint ) {
-//                comboJoint2.addItem( ji );
-//            }
-//        }
-//    }
+        JointItem ji = formJointEditor.getJointItem();
+
+        Array<JointItem> gearJoints = findMatchingGearJoints( ji );
+        Array<JointItemDescription> gearJiDescList = new Array<JointItemDescription>();
+        for ( JointItem gji : gearJoints )
+            gearJiDescList.add( gji.getJointItemDescription() );
+
+        JointItemFactory.loadFromDescription( ji, formJointEditor.getJointItemDescription() );
+        if ( ji.getJoint() == null ) {
+            Gdx.app.log("MainGui.updateJointItem", "WARNING! EMPTY JOINT");
+            return;
+        }
+
+        for ( int i = 0; i < gearJoints.size; i++) {
+            JointItem gji = gearJoints.get( i );
+            JointItemDescription jiDesc = gearJiDescList.get( i );
+            JointItemFactory.loadFromDescription( gji, jiDesc );
+        }
+
+    }
 
     void toggleScreen() {
         boolean simMode = chbSimulation.isSelected();
@@ -1204,7 +1071,9 @@ public class MainGui extends JFrame {
             public void run() {
                 boolean simMode = chbSimulation.isSelected();
                 if ( simMode ) {
+
                     PhysModelDescription description = model.getDescription();
+
                     if ( description == null)
                         return;
 

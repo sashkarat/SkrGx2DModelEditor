@@ -16,7 +16,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
 
     private static HashMap<JointDef.JointType, Array<Property_> > propMap = new HashMap<JointDef.JointType, Array<Property_>>();
 
-    private enum Property_ {
+    public enum Property_ {
 
         Name(PropertyType.STRING),
         Type(PropertyType.STRING ),
@@ -487,7 +487,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 jointItem.setMaxMotorTorque((Float) aValue);
                 break;
             case MaxTorque:
-                jointItem.setMaxMotorTorque((Float) aValue);
+                jointItem.setMaxTorque((Float) aValue);
                 break;
             case AngularOffset:
                 jointItem.setAngularOffset((Float) aValue * MathUtils.degreesToRadians );
