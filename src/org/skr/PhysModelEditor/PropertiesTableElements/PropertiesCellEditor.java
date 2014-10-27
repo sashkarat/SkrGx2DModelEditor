@@ -1,7 +1,6 @@
 package org.skr.PhysModelEditor.PropertiesTableElements;
 
 import com.badlogic.gdx.utils.Array;
-import com.sun.javafx.binding.StringFormatter;
 
 import javax.swing.*;
 import javax.swing.table.TableCellEditor;

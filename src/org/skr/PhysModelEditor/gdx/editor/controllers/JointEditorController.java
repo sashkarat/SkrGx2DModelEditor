@@ -549,17 +549,19 @@ public class JointEditorController extends Controller {
         if ( acp.type == AnchorControlPoint.AcpType.typeA && biA != null ) {
             Vector2 c = biA.getBody().getWorldCenter();
             PhysWorld.get().toView( c );
-            float d = c.dst( acp.getX(), acp.getY() );
-            if ( d < 1 ) {
-                acp.setPos( c.x, c.y );
-            }
+//            float d = c.dst( acp.getX(), acp.getY() );
+//            if ( d < 1 ) {
+//                acp.setPos( c.x, c.y );
+//            }
+            Controller.snapTo( acp, c, 1 );
         } else if ( acp.type == AnchorControlPoint.AcpType.typeB && biB != null ) {
             Vector2 c = biB.getBody().getWorldCenter();
             PhysWorld.get().toView( c );
-            float d = c.dst( acp.getX(), acp.getY() );
-            if ( d < 1 ) {
-                acp.setPos( c.x, c.y );
-            }
+//            float d = c.dst( acp.getX(), acp.getY() );
+//            if ( d < 1 ) {
+//                acp.setPos( c.x, c.y );
+//            }
+            Controller.snapTo( acp, c, 1);
         }
 
         updateDescriptionFromControlPoint((AnchorControlPoint) cp);

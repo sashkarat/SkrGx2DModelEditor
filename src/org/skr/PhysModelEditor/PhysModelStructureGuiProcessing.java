@@ -1981,7 +1981,6 @@ public class PhysModelStructureGuiProcessing {
         }
     }
 
-
     public void importModelDescription( PhysModelDescription desc ) {
         if ( model == null )
             return;
