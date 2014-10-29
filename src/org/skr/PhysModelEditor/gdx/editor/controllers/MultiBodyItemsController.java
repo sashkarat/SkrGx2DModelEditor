@@ -61,12 +61,15 @@ public class MultiBodyItemsController extends Controller {
     }
 
     @Override
-    protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+    protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage ) {
 
     }
 
     @Override
-    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage ) {
+
+
+
         Vector2 offset = PhysWorld.get().viewToPhys( offsetStage );
 
         for ( BodyItem bi : bodyItems ) {

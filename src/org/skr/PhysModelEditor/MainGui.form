@@ -640,7 +640,7 @@
                                       </hspacer>
                                       <component id="951fb" class="javax.swing.JButton" binding="btnRemNode">
                                         <constraints>
-                                          <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                          <grid row="0" column="7" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                                           <gridbag weightx="0.0" weighty="0.0"/>
                                         </constraints>
                                         <properties>
@@ -649,31 +649,49 @@
                                       </component>
                                       <component id="9a619" class="javax.swing.JButton" binding="btnDuplicate">
                                         <constraints>
-                                          <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                                           <gridbag weightx="0.0" weighty="0.0"/>
                                         </constraints>
                                         <properties>
                                           <text value="+D"/>
                                         </properties>
                                       </component>
-                                      <hspacer id="1da2c">
-                                        <constraints>
-                                          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                                          <gridbag weightx="0.0" weighty="0.0"/>
-                                        </constraints>
-                                      </hspacer>
                                       <hspacer id="e08e6">
                                         <constraints>
-                                          <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                          <grid row="0" column="6" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                                           <gridbag weightx="1.0" weighty="0.0"/>
                                         </constraints>
                                       </hspacer>
                                       <hspacer id="a75cb">
                                         <constraints>
-                                          <grid row="0" column="6" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                          <grid row="0" column="8" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                                           <gridbag weightx="0.0" weighty="0.0"/>
                                         </constraints>
                                       </hspacer>
+                                      <component id="19720" class="javax.swing.JButton" binding="btnCpyProperties">
+                                        <constraints>
+                                          <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                          <gridbag weightx="0.0" weighty="0.0"/>
+                                        </constraints>
+                                        <properties>
+                                          <text value="C_P"/>
+                                        </properties>
+                                      </component>
+                                      <hspacer id="32004">
+                                        <constraints>
+                                          <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                          <gridbag weightx="0.0" weighty="0.0"/>
+                                        </constraints>
+                                      </hspacer>
+                                      <component id="51160" class="javax.swing.JButton" binding="btnNodeProperties">
+                                        <constraints>
+                                          <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                          <gridbag weightx="0.0" weighty="0.0"/>
+                                        </constraints>
+                                        <properties>
+                                          <text value="P_P"/>
+                                        </properties>
+                                      </component>
                                     </children>
                                   </grid>
                                   <splitpane id="3c4c7">

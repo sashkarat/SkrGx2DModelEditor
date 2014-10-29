@@ -199,14 +199,14 @@ public class PolygonShapeController extends ShapeController {
     }
 
     @Override
-    protected void offsetAllPoints(Vector2 offsetLocal, Vector2 offsetStage) {
+    protected void offsetAllPoints(Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage ) {
         boolean backAutoTessellate = autoTessellate;
 
         autoTessellate = false;
 
 
         for ( int i = 0; i < getControlPoints().size; i++ ) {
-            moveControlPoint(getControlPoints().get( i ), offsetLocal, offsetStage);
+            moveControlPoint(getControlPoints().get( i ), offsetLocal, offsetStage, posLocal, posStage );
         }
 
         autoTessellate = backAutoTessellate;
@@ -237,7 +237,7 @@ public class PolygonShapeController extends ShapeController {
     }
 
     @Override
-    protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+    protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage ) {
         ShapeDescription shapeDescription = getShapeDescription(cp);
         cp.offsetPos( offsetLocal.x, offsetLocal.y );
         updateShapeFromControlPoint( cp );

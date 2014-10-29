@@ -103,7 +103,7 @@ public class ChainShapeController extends ShapeController {
     }
 
     @Override
-    protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+    protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage ) {
         ShapeDescription shapeDescription = getShapeDescription( cp );
 
         cp.offsetPos( offsetLocal.x, offsetLocal.y );
@@ -139,9 +139,9 @@ public class ChainShapeController extends ShapeController {
     }
 
     @Override
-    protected void offsetAllPoints(Vector2 offsetLocal, Vector2 offsetStage) {
+    protected void offsetAllPoints(Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage ) {
         for ( ControlPoint cp : getControlPoints() )
-            moveControlPoint( cp, offsetLocal, offsetStage );
+            moveControlPoint( cp, offsetLocal, offsetStage, posLocal, posStage );
     }
 
     @Override

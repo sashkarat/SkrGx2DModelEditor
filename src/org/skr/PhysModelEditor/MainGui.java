@@ -4,11 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl.LwjglAWTCanvas;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Joint;
 import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.physics.box2d.joints.GearJoint;
-import com.badlogic.gdx.physics.box2d.joints.PrismaticJoint;
-import com.badlogic.gdx.physics.box2d.joints.RevoluteJoint;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.gdx.editor.SkrGdxAppPhysModelEditor;
@@ -105,6 +102,8 @@ public class MainGui extends JFrame {
     private JCheckBox chbBiBBox;
     private JointEditorFrom formJointEditor;
     private JButton btnUpdateJointItem;
+    private JButton btnCpyProperties;
+    private JButton btnNodeProperties;
 
     private SkrGdxAppPhysModelEditor gApp;
     private String currentModelFileName = "";
@@ -365,6 +364,18 @@ public class MainGui extends JFrame {
                 updateJointItem();
             }
 
+        });
+        btnCpyProperties.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                modelStructureGuiProcessing.copyNodeProperties();
+            }
+        });
+        btnNodeProperties.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                modelStructureGuiProcessing.pasteNodeProperties();
+            }
         });
     }
 
@@ -881,7 +892,7 @@ public class MainGui extends JFrame {
         c.setEnabled( state );
     }
     private void bodyItemChangedByController( BodyItem bodyItem ) {
-        modelStructureGuiProcessing.objectModifiedByController();
+        modelStructureGuiProcessing.updatePropertiesTable();
         Vector2 center = bodyItem.getBody().getWorldCenter();
         tfMassCenterWorldX.setText("" + center.x );
         tfMassCenterWorldY.setText("" + center.y );
@@ -893,7 +904,7 @@ public class MainGui extends JFrame {
     }
 
     private void actorChangedByController(Actor actor) {
-        modelStructureGuiProcessing.objectModifiedByController();
+        modelStructureGuiProcessing.updatePropertiesTable();
         modelChanged();
     }
 
@@ -1246,8 +1257,6 @@ public class MainGui extends JFrame {
         }
         modelStructureGuiProcessing.duplicateNode( number, xOffset, yOffset, rotation );
     }
-
-
 
     private class ModelState {
         PhysModelDescription description;

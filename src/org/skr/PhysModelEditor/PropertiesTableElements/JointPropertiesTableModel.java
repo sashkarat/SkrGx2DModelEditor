@@ -181,7 +181,7 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
         propList.addAll(Property_.Name, Property_.Type,
                 Property_.BodyA, Property_.BodyB, Property_.CollideConnected,
                 Property_.AnchorA_X, Property_.AnchorA_Y,
-                Property_.ReferenceAngle);
+                Property_.ReferenceAngle, Property_.DampingRatio, Property_.FrequencyHz );
         propMap.put(JointDef.JointType.WeldJoint, propList );
     }
 

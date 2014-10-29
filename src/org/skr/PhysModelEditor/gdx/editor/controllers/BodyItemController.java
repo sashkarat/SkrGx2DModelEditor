@@ -94,7 +94,7 @@ public class BodyItemController extends Controller {
     }
 
     @Override
-    protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+    protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage ) {
         if ( !enableMassCorrection )
             return;
 
@@ -122,13 +122,20 @@ public class BodyItemController extends Controller {
         bodyItem.setOverrideMassData( true );
     }
 
+
+    private static final Vector2 tmpPos = new Vector2();
+
     @Override
-    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage,
+                                       final Vector2 posLocal, final Vector2 posStage ) {
         if ( bodyItem == null )
             return;
-        Vector2 pos = bodyItem.getBody().getPosition();
-        pos.add(PhysWorld.get().viewToPhys(offsetStage));
-        bodyItem.getBody().setTransform( pos, bodyItem.getBody().getAngle() );
+        cp.setPos( posStage.x, posStage.y );
+        snapToGrid( cp, 5, 5, 2 );
+        snapTo(cp, 0, 0, 10 );
+        tmpPos.set( cp.getX(), cp.getY() );
+        PhysWorld.get().toPhys( tmpPos );
+        bodyItem.getBody().setTransform( tmpPos, bodyItem.getBody().getAngle() );
     }
 
     @Override

@@ -2,8 +2,12 @@ package org.skr.PhysModelEditor;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.Joint;
 import com.badlogic.gdx.physics.box2d.JointDef;
+import com.badlogic.gdx.physics.box2d.joints.*;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.PropertiesTableElements.*;
@@ -382,6 +386,9 @@ public class PhysModelStructureGuiProcessing {
     private TreeDragSource dragSource;
     private TreeDropTarget dropTarget;
     TreeNodesComplianceControl nodesComplianceControl;
+
+    private PhysModelJTreeNode.Type propCpyNodeType = null;
+    private Object propCpyDescRef = null;
 
     public PhysModelStructureGuiProcessing( final MainGui mainGui ) {
         this.mainGui = mainGui;
@@ -894,7 +901,7 @@ public class PhysModelStructureGuiProcessing {
         return new PhysModelJTreeNode(PhysModelJTreeNode.Type.JOINT_ITEM, ji );
     }
 
-    public void objectModifiedByController() {
+    public void updatePropertiesTable() {
         TableModel tm = jTableProperties.getModel();
         if ( tm == null )
             return;
@@ -1055,6 +1062,26 @@ public class PhysModelStructureGuiProcessing {
         PhysModelJTreeNode parentNode = (PhysModelJTreeNode) node.getParent();
         BiScSet bset = (BiScSet) parentNode.getUserObject();
         BodyItem bi = (BodyItem) node.getUserObject();
+
+        PhysModelJTreeNode jgNode = getJointGroupNode((PhysModelJTreeNode) parentNode.getParent());
+        Array< PhysModelJTreeNode > jiNodesToRemove = new Array<PhysModelJTreeNode>();
+
+        for ( int i = 0; i < jgNode.getChildCount(); i++) {
+            PhysModelJTreeNode jiNode = (PhysModelJTreeNode) jgNode.getChildAt( i );
+            JointItem ji = (JointItem) jiNode.getUserObject();
+            if ( ji.getBodyAId() == bi.getId() ) {
+                jiNodesToRemove.add( jiNode );
+                continue;
+            }
+            if ( ji.getBodyBId() == bi.getId() ) {
+                jiNodesToRemove.add( jiNode );
+                continue;
+            }
+        }
+        for ( PhysModelJTreeNode jiNode : jiNodesToRemove ) {
+            removeJointItemNode( jiNode );
+        }
+        treeDataModel.nodeStructureChanged( jgNode );
         bset.removeBodyItem(bi);
         node.removeFromParent();
         cleanupJointItemNodes((PhysModelJTreeNode) parentNode.getParent());
@@ -1633,8 +1660,15 @@ public class PhysModelStructureGuiProcessing {
 
         Object newObject = null ;
 
+        Array<Object> objectArray = new Array<Object>();
+
         for ( TreePath selPath : selectionPaths ) {
             PhysModelJTreeNode node = (PhysModelJTreeNode) selPath.getLastPathComponent();
+            objectArray.add( node.getUserObject() );
+        }
+
+        for ( Object obj:  objectArray ) {
+            PhysModelJTreeNode node = findNode( obj );
             if ( node.getParent() == null )
                 continue;
             duplicateNode(node, number, xOffset, yOffset, rotation);
@@ -1990,6 +2024,222 @@ public class PhysModelStructureGuiProcessing {
         treeDataModel.nodeStructureChanged( rootNode );
         expandToNode(rootNode);
         mainGui.makeHistorySnapshot();
+    }
+
+    public void copyNodeProperties() {
+
+        propCpyNodeType = null;
+        propCpyDescRef = null;
+
+        TreePath [] selectionPaths = jTreeModel.getSelectionPaths();
+        if ( selectionPaths == null )
+            return;
+        if ( selectionPaths.length != 1)
+            return;
+        PhysModelJTreeNode node = (PhysModelJTreeNode) jTreeModel.getLastSelectedPathComponent();
+
+        switch ( node.getType() ) {
+            case AAG:
+                AnimatedActorGroup aag = (AnimatedActorGroup) node.getUserObject();
+                propCpyDescRef = aag.getAagDescription();
+                break;
+            case BODY_ITEM:
+                BodyItem bi = (BodyItem) node.getUserObject();
+                propCpyDescRef = bi.getBodyItemDescription();
+                break;
+            case FIXTURE_SET:
+                FixtureSet fs = (FixtureSet) node.getUserObject();
+                propCpyDescRef = fs.getDescription();
+                break;
+            case JOINT_ITEM:
+                JointItem ji = (JointItem) node.getUserObject();
+                propCpyDescRef = ji.getJointItemDescription();
+                break;
+            default:
+                return;
+        }
+        propCpyNodeType = node.type;
+    }
+
+    public void pasteNodeProperties() {
+
+        if ( propCpyNodeType == null || propCpyDescRef == null )
+            return;
+
+        TreePath [] selectionPaths = jTreeModel.getSelectionPaths();
+        if ( selectionPaths == null ) {
+            return;
+        }
+
+        for ( TreePath tp : selectionPaths ) {
+            PhysModelJTreeNode node = (PhysModelJTreeNode) tp.getLastPathComponent();
+            if ( node.type != propCpyNodeType )
+                continue;
+            switch ( node.type ) {
+                case AAG:
+                    pasteAagNodeProperties( node );
+                    break;
+                case BODY_ITEM:
+                    pasteBodyItemNodeProperties( node );
+                    break;
+                case FIXTURE_SET:
+                    pasteFixtureSetNodeProperties( node );
+                    break;
+                case JOINT_ITEM:
+                    pasteJointItemNodeProperties( node );
+                    break;
+                default:
+                    break;
+            }
+        }
+        updatePropertiesTable();
+        mainGui.makeHistorySnapshot();
+    }
+
+
+    protected void pasteAagNodeProperties( PhysModelJTreeNode node ) {
+        final AagDescription desc = (AagDescription) propCpyDescRef;
+        final AnimatedActorGroup aag = (AnimatedActorGroup) node.getUserObject();
+        Gdx.app.postRunnable(new Runnable() {
+            @Override
+            public void run() {
+                aag.setTextureName(desc.getTextureName());
+                aag.setFrameDuration(desc.getFrameDuration());
+                aag.setPlayMode(desc.getPlayMode());
+                aag.updateTextures(aag.getAtlas());
+                aag.setWidth( desc.getWidth() );
+                aag.setHeight( desc.getHeight() );
+                aag.setKeepAspectRatio( desc.isKeepAspectRatio() );
+                aag.setRotation( desc.getRotation() );
+                aag.setDrawable( desc.isDrawable() );
+            }
+        });
+    }
+
+    protected void pasteBodyItemNodeProperties( PhysModelJTreeNode node ) {
+        final BodyItemDescription desc = (BodyItemDescription) propCpyDescRef;
+        final BodyItem bi = (BodyItem) node.getUserObject();
+
+        final Body body = bi.getBody();
+        if ( body == null ) {
+            return;
+        }
+        Gdx.app.postRunnable( new Runnable() {
+            @Override
+            public void run() {
+                BodyDef bd = desc.getBodyDef();
+
+                body.setType( bd.type );
+                Vector2 pos = body.getPosition();
+                body.setTransform( pos.x, pos.y, bd.angle );
+                body.setLinearVelocity( bd.linearVelocity );
+                body.setAngularVelocity( bd.angularVelocity );
+                body.setLinearDamping( bd.linearDamping );
+                body.setAngularDamping( bd.angularDamping );
+                body.setSleepingAllowed( bd.allowSleep );
+                body.setAwake( bd.awake );
+                body.setFixedRotation( bd.fixedRotation );
+                body.setBullet( bd.bullet );
+                body.setActive( bd.active );
+                body.setGravityScale( bd.gravityScale );
+                if ( desc.isOverrideMassData() ) {
+                    body.setMassData( desc.getMassData() );
+                }
+            }
+        });
+
+    }
+
+    protected void pasteFixtureSetNodeProperties( PhysModelJTreeNode node ) {
+        final FixtureSetDescription desc = (FixtureSetDescription) propCpyDescRef;
+        final FixtureSet fs = (FixtureSet) node.getUserObject();
+        Gdx.app.postRunnable( new Runnable() {
+            @Override
+            public void run() {
+                fs.setDensity( desc.getDensity() );
+                fs.setRestitution( desc.getRestitution() );
+                fs.setFriction( desc.getFriction() );
+            }
+        });
+    }
+
+    protected void pasteJointItemNodeProperties( PhysModelJTreeNode node ) {
+        final JointItemDescription desc = (JointItemDescription) propCpyDescRef;
+        final JointItem ji = (JointItem) node.getUserObject();
+        if ( ji.getJoint() == null )
+            return;
+
+        Gdx.app.postRunnable( new Runnable() {
+            @Override
+            public void run() {
+                Joint joint = ji.getJoint();
+
+                switch ( joint.getType() ) {
+                    case Unknown:
+                        break;
+                    case RevoluteJoint:
+                        RevoluteJoint revoluteJoint = (RevoluteJoint) joint;
+                        revoluteJoint.enableLimit( desc.isEnableLimit() );
+                        revoluteJoint.setLimits( desc.getLowerAngle(), desc.getUpperAngle() );
+                        revoluteJoint.enableMotor( desc.isEnableMotor() );
+                        revoluteJoint.setMotorSpeed( desc.getMotorSpeed() );
+                        revoluteJoint.setMaxMotorTorque( desc.getMaxMotorTorque() );
+                        break;
+                    case PrismaticJoint:
+                        PrismaticJoint prismaticJoint = (PrismaticJoint) joint;
+                        prismaticJoint.enableLimit( desc.isEnableLimit() );
+                        prismaticJoint.setLimits( desc.getLowerTranslation(), desc.getUpperTranslation() );
+                        prismaticJoint.enableMotor( desc.isEnableMotor() );
+                        prismaticJoint.setMotorSpeed( desc.getMotorSpeed() );
+                        prismaticJoint.setMaxMotorForce( desc.getMaxMotorForce() );
+                        break;
+                    case DistanceJoint:
+                        DistanceJoint distanceJoint = (DistanceJoint) joint;
+                        distanceJoint.setDampingRatio( desc.getDampingRatio() );
+                        distanceJoint.setFrequency( desc.getFrequencyHz() );
+                        distanceJoint.setLength( desc.getLength() );
+                        break;
+                    case PulleyJoint:
+                        break;
+                    case MouseJoint:
+                        break;
+                    case GearJoint:
+                        GearJoint gearJoint = (GearJoint) joint;
+                        gearJoint.setRatio( desc.getRatio() );
+                        break;
+                    case WheelJoint:
+                        WheelJoint wheelJoint = (WheelJoint) joint;
+                        wheelJoint.setSpringDampingRatio( desc.getDampingRatio() );
+                        wheelJoint.setSpringFrequencyHz( desc.getFrequencyHz() );
+                        wheelJoint.enableMotor( desc.isEnableMotor() );
+                        wheelJoint.setMaxMotorTorque( desc.getMaxMotorTorque() );
+                        wheelJoint.setMotorSpeed( wheelJoint.getMotorSpeed() );
+                        break;
+                    case WeldJoint:
+                        WeldJoint weldJoint = (WeldJoint) joint;
+                        weldJoint.setDampingRatio( desc.getDampingRatio() );
+                        weldJoint.setFrequency( desc.getFrequencyHz() );
+                        break;
+                    case FrictionJoint:
+                        FrictionJoint frictionJoint = (FrictionJoint) joint;
+                        frictionJoint.setMaxForce( desc.getMaxForce() );
+                        frictionJoint.setMaxTorque( desc.getMaxTorque() );
+                        break;
+                    case RopeJoint:
+                        RopeJoint ropeJoint = (RopeJoint) joint;
+                        ropeJoint.setMaxLength( desc.getMaxLength() );
+                        break;
+                    case MotorJoint:
+                        MotorJoint motorJoint = (MotorJoint) joint;
+                        motorJoint.setLinearOffset( desc.getLinearOffset() );
+                        motorJoint.setAngularOffset( desc.getAngularOffset() );
+                        motorJoint.setMaxForce( desc.getMaxForce() );
+                        motorJoint.setMaxTorque( desc.getMaxTorque() );
+                        motorJoint.setCorrectionFactor( desc.getCorrectionFactor() );
+                        break;
+                }
+            }
+        });
     }
 
 }

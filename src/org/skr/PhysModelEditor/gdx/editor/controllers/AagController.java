@@ -130,7 +130,7 @@ public class AagController extends Controller implements AnimatedActorGroup.Rend
     }
 
     @Override
-    protected void moveControlPoint( ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage ) {
+    protected void moveControlPoint( ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage  ) {
 
         if ( aag == null )
             return;
@@ -164,7 +164,7 @@ public class AagController extends Controller implements AnimatedActorGroup.Rend
     }
 
     @Override
-    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage ) {
         if ( aag == null )
             return;
         AnimatedActorGroup.rotateStageToLocal(aag,  offsetStage );

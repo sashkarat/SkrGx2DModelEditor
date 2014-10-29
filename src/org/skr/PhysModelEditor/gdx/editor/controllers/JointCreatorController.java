@@ -256,14 +256,14 @@ public class JointCreatorController extends Controller {
     }
 
     @Override
-    protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+    protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage ) {
         cp.setX( cp.getX() + offsetStage.x );
         cp.setY(cp.getY() + offsetStage.y);
         updateDescFromCp((AnchorControlPoint) cp);
     }
 
     @Override
-    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage ) {
 
     }
 

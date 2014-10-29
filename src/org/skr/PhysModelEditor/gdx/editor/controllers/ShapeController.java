@@ -252,11 +252,11 @@ public abstract class ShapeController extends Controller {
     }
 
     protected abstract void getShapeViewCenter( ControlPoint cp );
-    protected abstract void offsetAllPoints( Vector2 offsetLocal, Vector2 offsetStage);
+    protected abstract void offsetAllPoints( Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage );
 
     @Override
-    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
-        offsetAllPoints( offsetLocal, offsetStage );
+    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage ) {
+        offsetAllPoints( offsetLocal, offsetStage, posLocal, posStage );
     }
 
     @Override

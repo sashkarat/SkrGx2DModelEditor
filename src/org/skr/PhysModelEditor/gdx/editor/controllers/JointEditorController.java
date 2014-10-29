@@ -542,33 +542,29 @@ public class JointEditorController extends Controller {
     }
 
     @Override
-    protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
-        cp.offsetPos( offsetStage.x, offsetStage.y );
+    protected void moveControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage ) {
+//        cp.offsetPos( offsetStage.x, offsetStage.y );
+
+        cp.setPos( posStage.x, posStage.y );
+
+        snapToGrid( cp, 5, 5, 2 );
 
         AnchorControlPoint acp = (AnchorControlPoint) cp;
         if ( acp.type == AnchorControlPoint.AcpType.typeA && biA != null ) {
             Vector2 c = biA.getBody().getWorldCenter();
             PhysWorld.get().toView( c );
-//            float d = c.dst( acp.getX(), acp.getY() );
-//            if ( d < 1 ) {
-//                acp.setPos( c.x, c.y );
-//            }
-            Controller.snapTo( acp, c, 1 );
+            Controller.snapTo( acp, c, 10 );
         } else if ( acp.type == AnchorControlPoint.AcpType.typeB && biB != null ) {
             Vector2 c = biB.getBody().getWorldCenter();
             PhysWorld.get().toView( c );
-//            float d = c.dst( acp.getX(), acp.getY() );
-//            if ( d < 1 ) {
-//                acp.setPos( c.x, c.y );
-//            }
-            Controller.snapTo( acp, c, 1);
+            Controller.snapTo( acp, c, 10 );
         }
 
         updateDescriptionFromControlPoint((AnchorControlPoint) cp);
     }
 
     @Override
-    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage) {
+    protected void movePosControlPoint(ControlPoint cp, Vector2 offsetLocal, Vector2 offsetStage, final Vector2 posLocal, final Vector2 posStage ) {
 
     }
 
