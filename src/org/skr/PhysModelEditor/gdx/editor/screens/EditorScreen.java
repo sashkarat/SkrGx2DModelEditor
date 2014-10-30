@@ -2,6 +2,7 @@ package org.skr.PhysModelEditor.gdx.editor.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers.ChainShapeController;
@@ -18,6 +19,7 @@ import org.skr.gdx.physmodel.animatedactorgroup.AnimatedActorGroup;
 import org.skr.gdx.physmodel.bodyitem.BiScSet;
 import org.skr.gdx.physmodel.bodyitem.BodyItem;
 import org.skr.gdx.physmodel.bodyitem.fixtureset.FixtureSet;
+import org.skr.gdx.utils.RectangleExt;
 
 /**
  * Created by rat on 02.06.14.
@@ -44,7 +46,7 @@ public class EditorScreen extends BaseScreen {
     public interface ItemSelectionListener {
         public void singleItemSelected(Object object, ModelObjectType mot );
         public void itemAddedToSelection(Object object, ModelObjectType mot, boolean removed );
-
+        public void itemsSelected( Array<? extends Object> objects, ModelObjectType mot );
     }
 
     private PhysModel model;
@@ -239,27 +241,48 @@ public class EditorScreen extends BaseScreen {
         PhysWorld.get().debugRender( getStage() );
     }
 
+    private static Vector2 coordV = new Vector2();
+    private Vector2 rectPointA = new Vector2();
+    private Vector2 rectPointB = new Vector2();
+    private boolean rectStarted = false;
+
     @Override
     protected void draw() {
         if ( currentController  != null ) {
             currentController.setCameraZoom(getCamera().zoom);
             currentController.render();
         }
+
+        if ( rectStarted ) {
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            shapeRenderer.setColor(0.8f, 0.8f, 0.8f, 1f);
+            shapeRenderer.rect( rectPointA.x, rectPointA.y, rectPointB.x - rectPointA.x, rectPointB.y - rectPointA.y );
+            shapeRenderer.end();
+        }
     }
 
-    private static Vector2 coordV = new Vector2();
+
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         boolean res = super.touchDown( screenX, screenY, pointer, button);
         if ( res )
             return res;
-        if ( button == Input.Buttons.LEFT && currentController != null ) {
+        if ( button == Input.Buttons.LEFT ) {
             coordV.set( screenX, screenY );
-            res =  currentController.touchDown(getStage().screenToStageCoordinates(coordV));
+            getStage().screenToStageCoordinates(coordV);
+            if ( currentController != null )
+                res = currentController.touchDown(coordV);
+            if ( !res ) {
+                rectPointA.set(coordV);
+                rectPointB.set(coordV);
+                rectStarted = true;
+            }
         }
         if ( res )
             return res;
+
+
 
 //        Gdx.app.log("EditorScreen.touchDown", "Event unprocessed");
 
@@ -275,10 +298,18 @@ public class EditorScreen extends BaseScreen {
         if ( res )
             return res;
 
-        if ( button == Input.Buttons.LEFT && currentController != null ) {
+        if ( button == Input.Buttons.LEFT  ) {
             coordV.set( screenX, screenY );
-            res = currentController.touchUp( getStage().screenToStageCoordinates(coordV), button );
+            getStage().screenToStageCoordinates(coordV);
+            if ( currentController != null )
+                res = currentController.touchUp( coordV, button );
+            if ( !res && rectStarted ) {
+                rectPointB.set(coordV);
+                res = processRectSelection(rectPointA, rectPointB);
+            }
         }
+
+        rectStarted = false;
 
         if ( res )
             return res;
@@ -322,6 +353,50 @@ public class EditorScreen extends BaseScreen {
         return false;
     }
 
+
+
+    protected boolean processRectSelection( Vector2 pA, Vector2 pB ) {
+
+        RectangleExt rect = new RectangleExt( pA, pB );
+
+        if ( currentController != null ) {
+            if ( currentController.selectRectangle( rect ) )
+                return true;
+        }
+
+        boolean res = false;
+
+        switch ( selectionMode ) {
+            case DISABLED:
+                break;
+            case BODY_ITEM:
+                res = processBodyItemRectSelection( rect );
+                break;
+            case FIXTURE_SET:
+                break;
+            case AAG:
+                break;
+        }
+
+        return res;
+    };
+
+    private boolean processBodyItemRectSelection( RectangleExt rect ) {
+        BiScSet currentSet = model.getScBodyItems().getCurrentSet();
+        if ( currentSet == null )
+            return false;
+        Array< BodyItem > biArray = new Array<BodyItem>();
+        for ( BodyItem bi : currentSet.getBodyItems() ) {
+            Vector2 c = bi.getBodyItemWorldCenter();
+            if ( rect.contains( c ) )
+                biArray.add( bi );
+        }
+        if ( biArray.size == 0 )
+            return false;
+        itemsSelectedByRect(biArray, ModelObjectType.OT_BodyItem);
+        return true;
+    }
+
     private boolean processSelection(Vector2 stageCoord) {
 
         switch ( selectionMode ) {
@@ -337,7 +412,35 @@ public class EditorScreen extends BaseScreen {
         return false;
     }
 
-    private void itemSelected( Object object, ModelObjectType mot ) {
+
+    protected void itemsSelectedByRect( Array<? extends Object> objects, ModelObjectType mot ) {
+        if ( !Gdx.input.isKeyPressed( Input.Keys.CONTROL_LEFT ) ) {
+            selectedItems.clear();
+            selectedItems.add( objects );
+            if ( itemSelectionListener != null ) {
+                itemSelectionListener.itemsSelected( objects, mot );
+            }
+            return;
+        }
+
+        boolean remove;
+
+        for ( Object object : objects ) {
+            remove = false;
+            if ( selectedItems.contains( object, true) ) {
+                if (currentController == multiBodyItemsController) {
+                    multiBodyItemsController.getBodyItems().removeValue((BodyItem) object, true);
+                }
+                remove = true;
+            }
+            if ( itemSelectionListener != null ) {
+                itemSelectionListener.itemAddedToSelection(object, mot, remove );
+            }
+        }
+    }
+
+
+    protected void itemSelected( Object object, ModelObjectType mot ) {
 
         boolean remove = false;
 
@@ -472,9 +575,14 @@ public class EditorScreen extends BaseScreen {
         if ( res )
             return res;
 
-        if ( Gdx.input.isButtonPressed( Input.Buttons.LEFT ) && currentController != null ) {
+        if ( Gdx.input.isButtonPressed( Input.Buttons.LEFT )) {
             coordV.set( screenX, screenY );
-            res = currentController.touchDragged( getStage().screenToStageCoordinates(coordV) );
+            getStage().screenToStageCoordinates(coordV);
+            if ( currentController != null )
+                res = currentController.touchDragged( coordV );
+            if ( !res && rectStarted ) {
+                rectPointB.set( coordV );
+            }
         }
         if ( res )
             return res;

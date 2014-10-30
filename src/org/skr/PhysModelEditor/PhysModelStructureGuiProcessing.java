@@ -429,6 +429,11 @@ public class PhysModelStructureGuiProcessing {
                     public void itemAddedToSelection(Object object, EditorScreen.ModelObjectType mot, boolean removed) {
                         changeObjectSelection( object, mot, !removed );
                     }
+
+                    @Override
+                    public void itemsSelected(Array<? extends Object> objects, EditorScreen.ModelObjectType mot) {
+                        selectObjects( objects, mot );
+                    }
                 });
             }
         });
@@ -664,6 +669,8 @@ public class PhysModelStructureGuiProcessing {
     }
 
     protected void expandToNode( PhysModelJTreeNode node ) {
+        if ( node == null )
+            return;
         if ( node.getChildCount() > 0 ) {
             node = (PhysModelJTreeNode) node.getChildAt(0);
         }
@@ -911,6 +918,37 @@ public class PhysModelStructureGuiProcessing {
         }
     }
 
+
+    public PhysModelJTreeNode findParentNode( PhysModelJTreeNode node, PhysModelJTreeNode.Type type ) {
+        if ( node.getParent() == null )
+            return null;
+        PhysModelJTreeNode parentNode = (PhysModelJTreeNode) node.getParent();
+        if ( parentNode.type == type )
+            return parentNode;
+        return findParentNode( parentNode, type );
+    }
+
+    public Array<PhysModelJTreeNode> findAllChildNodes( PhysModelJTreeNode parentNode, PhysModelJTreeNode.Type type, int level ) {
+        Array<PhysModelJTreeNode> childNodes = new Array<PhysModelJTreeNode>();
+
+        for ( int i = 0; i < parentNode.getChildCount(); i++ ) {
+            PhysModelJTreeNode chNode = (PhysModelJTreeNode) parentNode.getChildAt( i );
+            if ( chNode.type == type )
+                childNodes.add( chNode );
+        }
+
+        if ( level > 0 ) {
+            for (int i = 0; i < parentNode.getChildCount(); i++) {
+                PhysModelJTreeNode chNode = (PhysModelJTreeNode) parentNode.getChildAt(i);
+                childNodes.addAll( findAllChildNodes(chNode, type, level - 1) );
+            }
+        }
+
+        return childNodes;
+    }
+
+
+
     public PhysModelJTreeNode findNode( Object object ) {
         return findNode( rootNode, object );
     }
@@ -978,6 +1016,17 @@ public class PhysModelStructureGuiProcessing {
         if ( node == null )
             return;
         selectNode( node );
+    }
+
+
+    protected void selectObjects( Array<? extends Object> objects, EditorScreen.ModelObjectType mot ) {
+        jTreeModel.clearSelection();
+        for ( Object object: objects ) {
+            PhysModelJTreeNode node = findNode( object, mot );
+            if ( node == null )
+                continue;
+            changeNodesSelection( node, true );
+        }
     }
 
     protected void changeObjectSelection( Object object, EditorScreen.ModelObjectType mot, boolean add ) {
@@ -2240,6 +2289,124 @@ public class PhysModelStructureGuiProcessing {
                 }
             }
         });
+    }
+
+    public void clearSelection() {
+        jTreeModel.clearSelection();
+        editorScreen.setModelObject(null, EditorScreen.ModelObjectType.OT_None );
+    }
+
+
+    protected void convertSelection( PhysModelJTreeNode.Type type ) {
+        TreePath [] selectionsPaths = jTreeModel.getSelectionPaths();
+        if ( selectionsPaths == null )
+            return;
+        if ( selectionsPaths.length == 0 )
+            return;
+        PhysModelJTreeNode node = (PhysModelJTreeNode) selectionsPaths[0].getLastPathComponent();
+        if ( node.type == type )
+            return;
+
+        Array<TreePath> newSelections = new Array<TreePath>();
+
+        for ( TreePath tp : selectionsPaths ) {
+            node = (PhysModelJTreeNode) tp.getLastPathComponent();
+            PhysModelJTreeNode biNode = findParentNode( node, type );
+            if ( biNode != null ) {
+                newSelections.add( new TreePath( biNode.getPath() ) );
+            } else {
+                Array<PhysModelJTreeNode> nodes = findAllChildNodes( node, type, 20000 );
+                for ( PhysModelJTreeNode sNode : nodes ) {
+                    newSelections.add( new TreePath( sNode.getPath() ) );
+                }
+            }
+        }
+
+        if ( newSelections.size == 0 )
+            return;
+
+        clearSelection();
+        for ( TreePath tp : newSelections )
+            jTreeModel.addSelectionPath( tp );
+
+        processTreeSelection();
+    }
+
+
+    public void convertSelectionToBodyItemSelection() {
+        convertSelection(PhysModelJTreeNode.Type.BODY_ITEM );
+    }
+
+    public void convertSelectionToFixtureSetSelection() {
+        convertSelection(PhysModelJTreeNode.Type.FIXTURE_SET);
+    }
+
+    public void convertSelectionToAagSelection() {
+        convertSelection(PhysModelJTreeNode.Type.AAG);
+    }
+
+    public void convertSelectionToJointItemSelection() {
+
+        TreePath [] selectionPaths = jTreeModel.getSelectionPaths();
+        if ( selectionPaths == null )
+            return;
+        if ( selectionPaths.length == 0 )
+            return;
+        PhysModelJTreeNode node = (PhysModelJTreeNode) selectionPaths[0].getLastPathComponent();
+        if ( node.type == PhysModelJTreeNode.Type.JOINT_ITEM )
+            return;
+
+        Array<JointItem> jiArray = new Array<JointItem>();
+        Array< BodyItem > bodyItems = new Array<BodyItem>();
+
+
+        // find all bodyItems
+        for ( TreePath tp : selectionPaths ) {
+            node = (PhysModelJTreeNode) tp.getLastPathComponent();
+
+            if ( node.type == PhysModelJTreeNode.Type.BODY_ITEM ) {
+                bodyItems.add( (BodyItem) node.getUserObject() );
+                continue;
+            }
+
+            PhysModelJTreeNode biNode = findParentNode( node, PhysModelJTreeNode.Type.BODY_ITEM );
+            if ( biNode != null ) {
+                bodyItems.add( (BodyItem) biNode.getUserObject() );
+            } else {
+                Array<PhysModelJTreeNode> biNodes = findAllChildNodes( node, PhysModelJTreeNode.Type.BODY_ITEM, 10 );
+                for ( PhysModelJTreeNode fBiNode : biNodes ) {
+                    BodyItem bi = (BodyItem) fBiNode.getUserObject();
+                    if ( bodyItems.contains( bi, true ) )
+                        continue;
+                    bodyItems.add(bi);
+                }
+            }
+        }
+
+        // find all JointItems
+        for ( BodyItem bi : bodyItems ) {
+            BiScSet bset = bi.getBiScSet();
+            Array< JointItem > fJiArray = bset.findJointItems( bi );
+            for ( JointItem ji : fJiArray ) {
+                if ( jiArray.contains( ji, true ) ) {
+                    continue;
+                }
+                jiArray.add( ji );
+            }
+        }
+
+        clearSelection();
+
+        for ( JointItem ji : jiArray ) {
+            PhysModelJTreeNode jiNode = findNode( ji, PhysModelJTreeNode.Type.JOINT_ITEM );
+            if ( jiNode == null ) {
+                continue;
+            }
+            jTreeModel.addSelectionPath(new TreePath(jiNode.getPath()));
+        }
+
+        processTreeSelection();
+        expandToNode((PhysModelJTreeNode) jTreeModel.getLastSelectedPathComponent());
     }
 
 }

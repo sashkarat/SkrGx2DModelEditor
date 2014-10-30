@@ -481,6 +481,7 @@ public class MainGui extends JFrame {
             }
         });
         menu.add(mnuItem);
+
         menu.addSeparator();
 
         mnuItem = new JMenuItem("Import Body Items");
@@ -500,6 +501,7 @@ public class MainGui extends JFrame {
             }
         });
         menu.add(mnuItem);
+
         menu.addSeparator();
 
         mnuItem = new JMenuItem("Set Texture Atlas File");
@@ -520,7 +522,6 @@ public class MainGui extends JFrame {
             }
         });
         menu.add(mnuItem);
-
 
         menuBar.add( menu );
 
@@ -545,6 +546,7 @@ public class MainGui extends JFrame {
             }
         });
         menu.add( mnuItem );
+
         menu.addSeparator();
 
         mnuItem = new JMenuItem("Add Item ");
@@ -576,7 +578,83 @@ public class MainGui extends JFrame {
         });
         menu.add( mnuItem );
 
+        menu.addSeparator();
 
+        mnuItem = new JMenuItem("Copy Item Properties ");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK));
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                modelStructureGuiProcessing.copyNodeProperties();
+            }
+        });
+        menu.add( mnuItem );
+
+        mnuItem = new JMenuItem("Paste Item Properties ");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK));
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                modelStructureGuiProcessing.pasteNodeProperties();
+            }
+        });
+        menu.add( mnuItem );
+        menuBar.add( menu );
+
+        menu = new JMenu("Selection");
+        mnuItem = new JMenuItem("Clear Selection");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, InputEvent.CTRL_MASK));
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                modelStructureGuiProcessing.clearSelection();
+            }
+        });
+        menu.add( mnuItem );
+
+        JMenu subMnu = new JMenu("Convert Selection");
+
+        mnuItem = new JMenuItem("to BodyItem Selection");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, InputEvent.ALT_MASK));
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                modelStructureGuiProcessing.convertSelectionToBodyItemSelection();
+            }
+        });
+        subMnu.add( mnuItem );
+
+        mnuItem = new JMenuItem("to FixtureSet Selection");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_2, InputEvent.ALT_MASK));
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                modelStructureGuiProcessing.convertSelectionToFixtureSetSelection();
+            }
+        });
+        subMnu.add( mnuItem );
+
+        mnuItem = new JMenuItem("to Aag Selection");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_3, InputEvent.ALT_MASK));
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                modelStructureGuiProcessing.convertSelectionToAagSelection();
+            }
+        });
+        subMnu.add( mnuItem );
+
+        mnuItem = new JMenuItem("to JointItem Selection");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_4, InputEvent.ALT_MASK));
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                modelStructureGuiProcessing.convertSelectionToJointItemSelection();
+            }
+        });
+        subMnu.add( mnuItem );
+
+        menu.add( subMnu );
         menuBar.add( menu );
         setJMenuBar(menuBar);
     }
