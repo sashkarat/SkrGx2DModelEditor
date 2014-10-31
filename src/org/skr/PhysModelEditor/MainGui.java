@@ -404,7 +404,7 @@ public class MainGui extends JFrame {
                         }
                 );
 
-                editorScreen.getMultiBodyItemsController().setControlPointListener(
+                editorScreen.getMultiItemsController().setControlPointListener(
                         new Controller.controlPointListener() {
                             @Override
                             public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
@@ -912,7 +912,7 @@ public class MainGui extends JFrame {
 
 
     int showCloseModelYesNoDialog() {
-        return JOptionPane.showOptionDialog(this, "Do you really want to close the current model?", "Close Model",
+        return JOptionPane.showOptionDialog(this, "Do you really want to close current model?", "Close Model",
                 JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, null, null );
     }
 
@@ -942,8 +942,6 @@ public class MainGui extends JFrame {
                 updateShapeEditorFeatures( fs );
                 tabbedPaneEditors.add( "Tools", panelTools );
                 setGuiElementEnable( panelTools, true);
-                break;
-            case OT_JointItems:
                 break;
             case OT_JointItem:
                 tabbedPaneEditors.add("Joint editor", panelJointCreator );

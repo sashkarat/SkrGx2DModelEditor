@@ -642,11 +642,13 @@ public class PhysModelStructureGuiProcessing {
     }
 
     protected void checkTreeSelection() {
+
         TreePath [] selectionPaths = jTreeModel.getSelectionPaths();
         if ( selectionPaths == null )
             return;
         if ( selectionPaths.length < 2 )
             return;
+
         PhysModelJTreeNode firstNode = (PhysModelJTreeNode) selectionPaths[0].getLastPathComponent();
 
         for ( int i = 1; i < selectionPaths.length; i++ ) {
@@ -682,7 +684,7 @@ public class PhysModelStructureGuiProcessing {
         PhysModelJTreeNode node = findNode( object );
         if ( node == null )
             return;
-        expandToNode( node );
+        expandToNode(node);
     }
 
     protected void changeNodesSelection( PhysModelJTreeNode node, boolean add ) {
@@ -692,8 +694,8 @@ public class PhysModelStructureGuiProcessing {
             jTreeModel.scrollPathToVisible( path );
         } else {
             jTreeModel.removeSelectionPath( path );
+            processTreeSelection();
         }
-        processTreeSelection();
     }
 
     protected void processTreeSelection() {
@@ -718,6 +720,35 @@ public class PhysModelStructureGuiProcessing {
         }
     }
 
+
+    public static EditorScreen.ModelObjectType getModelObjectType( PhysModelJTreeNode.Type type ) {
+        switch ( type ) {
+            case MODEL:
+                return EditorScreen.ModelObjectType.OT_Model;
+            case BiScSET:
+                break;
+            case AAG:
+                return EditorScreen.ModelObjectType.OT_Aag;
+            case AAG_SC:
+                break;
+            case AAG_SC_SET:
+                break;
+            case BODY_ITEM:
+                return EditorScreen.ModelObjectType.OT_BodyItem;
+            case BODY_ITEM_GROUP:
+                break;
+            case FIXTURE_SET:
+                return EditorScreen.ModelObjectType.OT_FixtureSet;
+            case FIXTURE_SET_GROUP:
+                break;
+            case JOINT_ITEM:
+                return EditorScreen.ModelObjectType.OT_JointItem;
+            case JOINT_ITEM_GROUP:
+                break;
+        }
+        return EditorScreen.ModelObjectType.OT_None;
+    }
+
     protected void processTreeSingleSelection() {
 
         PhysModelJTreeNode selNode = (PhysModelJTreeNode) jTreeModel.getLastSelectedPathComponent();
@@ -727,7 +758,7 @@ public class PhysModelStructureGuiProcessing {
         if ( selNode.getUserObject() == null )
             return;
 
-        EditorScreen.ModelObjectType objectType = EditorScreen.ModelObjectType.OT_None;
+        EditorScreen.ModelObjectType objectType = getModelObjectType( selNode.type );
 
         jTableProperties.setModel( emptyTableModel );
 
@@ -735,7 +766,6 @@ public class PhysModelStructureGuiProcessing {
             case MODEL:
                 physModelPropertiesTableModel.setModel( model );
                 jTableProperties.setModel(physModelPropertiesTableModel);
-                objectType = EditorScreen.ModelObjectType.OT_Model;
                 break;
             case BiScSET:
                 scItemTableModel.setHandler((ScContainer.Handler) selNode.getUserObject() );
@@ -744,7 +774,6 @@ public class PhysModelStructureGuiProcessing {
             case AAG:
                 aagPropertiesTableModel.setAag((AnimatedActorGroup) selNode.getUserObject());
                 jTableProperties.setModel(aagPropertiesTableModel);
-                objectType = EditorScreen.ModelObjectType.OT_Aag;
                 break;
             case AAG_SC:
                 break;
@@ -754,28 +783,22 @@ public class PhysModelStructureGuiProcessing {
                 break;
             case BODY_ITEM:
                 BodyItem bi = ( BodyItem ) selNode.getUserObject();
-                bodyPropertiesTableModel.setBodyItem( bi );
+                bodyPropertiesTableModel.setBodyItem(bi);
                 jTableProperties.setModel(bodyPropertiesTableModel);
-                objectType = EditorScreen.ModelObjectType.OT_BodyItem;
                 break;
             case BODY_ITEM_GROUP:
                 break;
             case FIXTURE_SET:
                 FixtureSet fs = ( FixtureSet ) selNode.getUserObject();
-                fixtureSetPropertiesTableModel.setFixtureSet( fs );
+                fixtureSetPropertiesTableModel.setFixtureSet(fs);
                 jTableProperties.setModel( fixtureSetPropertiesTableModel );
-                objectType = EditorScreen.ModelObjectType.OT_FixtureSet;
                 break;
             case FIXTURE_SET_GROUP:
                 break;
             case JOINT_ITEM:
                 JointItem ji = (JointItem) selNode.getUserObject();
-                jointPropertiesTableModel.setJointItem( ji );
+                jointPropertiesTableModel.setJointItem(ji);
                 jTableProperties.setModel( jointPropertiesTableModel );
-                objectType = EditorScreen.ModelObjectType.OT_JointItem;
-                break;
-            case JOINT_ITEM_GROUP:
-                objectType = EditorScreen.ModelObjectType.OT_JointItems;
                 break;
         }
 
@@ -789,7 +812,7 @@ public class PhysModelStructureGuiProcessing {
             return;
         for ( TreePath tp : selectionPaths ) {
             PhysModelJTreeNode node = (PhysModelJTreeNode) tp.getLastPathComponent();
-            editorScreen.addModelObject( node.getUserObject() );
+            editorScreen.addModelObject( node.getUserObject(), getModelObjectType( node.type ) );
         }
     }
 
@@ -1001,9 +1024,6 @@ public class PhysModelStructureGuiProcessing {
             case OT_FixtureSet:
                 foundNode = findNode( object, PhysModelJTreeNode.Type.FIXTURE_SET );
                 break;
-            case OT_JointItems:
-                foundNode = findNode( object, PhysModelJTreeNode.Type.JOINT_ITEM );
-                break;
             case OT_JointItem:
                 foundNode = findNode( object, PhysModelJTreeNode.Type.JOINT_ITEM );
                 break;
@@ -1020,13 +1040,24 @@ public class PhysModelStructureGuiProcessing {
 
 
     protected void selectObjects( Array<? extends Object> objects, EditorScreen.ModelObjectType mot ) {
+
         jTreeModel.clearSelection();
+
+        Array< TreePath > newSelection = new Array<TreePath>();
+
         for ( Object object: objects ) {
             PhysModelJTreeNode node = findNode( object, mot );
             if ( node == null )
                 continue;
-            changeNodesSelection( node, true );
+            newSelection.add( new TreePath( node.getPath() ) );
         }
+
+        TreePath [] selPaths = new TreePath[ newSelection.size ];
+        for ( int i = 0; i < selPaths.length; i++)
+            selPaths[ i ] = newSelection.get( i );
+
+        jTreeModel.setSelectionPaths( selPaths );
+
     }
 
     protected void changeObjectSelection( Object object, EditorScreen.ModelObjectType mot, boolean add ) {
@@ -2326,10 +2357,11 @@ public class PhysModelStructureGuiProcessing {
             return;
 
         clearSelection();
-        for ( TreePath tp : newSelections )
-            jTreeModel.addSelectionPath( tp );
-
-        processTreeSelection();
+        selectionsPaths = new TreePath[ newSelections.size ];
+        for( int i = 0; i < selectionsPaths.length; i++) {
+            selectionsPaths[i] = newSelections.get( i );
+        }
+        jTreeModel.setSelectionPaths( selectionsPaths );
     }
 
 
@@ -2405,7 +2437,7 @@ public class PhysModelStructureGuiProcessing {
             jTreeModel.addSelectionPath(new TreePath(jiNode.getPath()));
         }
 
-        processTreeSelection();
+
         expandToNode((PhysModelJTreeNode) jTreeModel.getLastSelectedPathComponent());
     }
 

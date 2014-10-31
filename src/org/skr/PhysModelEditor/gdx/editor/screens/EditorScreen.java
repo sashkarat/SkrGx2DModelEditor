@@ -39,7 +39,6 @@ public class EditorScreen extends BaseScreen {
         OT_BodyItem,
         OT_Aag,
         OT_FixtureSet,
-        OT_JointItems,
         OT_JointItem
     }
 
@@ -60,7 +59,7 @@ public class EditorScreen extends BaseScreen {
     private ChainShapeController chainShapeController;
     private PolygonShapeController polygonShapeController;
     private JointEditorController jointEditorController;
-    private MultiBodyItemsController multiBodyItemsController;
+    private MultiItemsController multiItemsController;
     private Controller currentController = null;
     private ItemSelectionListener itemSelectionListener;
 
@@ -81,7 +80,7 @@ public class EditorScreen extends BaseScreen {
         chainShapeController = new ChainShapeController( getStage() );
         polygonShapeController = new PolygonShapeController( getStage() );
         jointEditorController = new JointEditorController( getStage() );
-        multiBodyItemsController = new MultiBodyItemsController( getStage() );
+        multiItemsController = new MultiItemsController( getStage() );
 
     }
 
@@ -95,8 +94,8 @@ public class EditorScreen extends BaseScreen {
     }
 
     public void removeModel() {
-        if ( currentController == multiBodyItemsController )
-            multiBodyItemsController.getBodyItems().clear();
+        if ( currentController == multiItemsController)
+            multiItemsController.clear();
 
         currentController = null;
         selectedItems.clear();
@@ -126,15 +125,20 @@ public class EditorScreen extends BaseScreen {
     }
 
 
-    public void setModelObject( Object object, ModelObjectType objectType ) {
+    protected void resetController() {
 
-        if ( currentController == multiBodyItemsController ) {
-            multiBodyItemsController.getBodyItems().clear();
+        if ( currentController == multiItemsController) {
+            multiItemsController.clear();
         } else if ( currentController == aagController ) {
             aagController.resetAag();
         }
-
         currentController = null;
+    }
+
+    public void setModelObject( Object object, ModelObjectType objectType ) {
+
+        resetController();
+
         selectedItems.clear();
 
         switch ( objectType ) {
@@ -155,8 +159,6 @@ public class EditorScreen extends BaseScreen {
                 break;
             case OT_FixtureSet:
                 setFixtureSet( (FixtureSet) object );
-                break;
-            case OT_JointItems:
                 break;
             case OT_JointItem:
                 currentController = jointEditorController;
@@ -191,24 +193,27 @@ public class EditorScreen extends BaseScreen {
 
 
     public void clearSelectedItems() {
-        multiBodyItemsController.getBodyItems().clear();
+        multiItemsController.clear();
         selectedItems.clear();
     }
 
-    public void addModelObject( Object object) {
+    public void addModelObject( Object object, ModelObjectType mot) {
+        if ( currentController != multiItemsController ) {
+            resetController();
+            currentController = multiItemsController;
+        }
+        if ( multiItemsController.getModelObjectType() == ModelObjectType.OT_None )
+            multiItemsController.setModelObjectType( mot );
 
-        currentController = null;
+        if ( multiItemsController.getModelObjectType() != mot )
+            return;
 
         if ( selectedItems.contains( object, true ) ) {
             return;
         }
         selectedItems.add( object );
+        multiItemsController.addItem( object );
 
-        if ( object instanceof BodyItem ) {
-            BodyItem bi = (BodyItem) object;
-            multiBodyItemsController.getBodyItems().add( bi );
-            currentController = multiBodyItemsController;
-        }
     }
 
 
@@ -224,8 +229,8 @@ public class EditorScreen extends BaseScreen {
         return jointEditorController;
     }
 
-    public MultiBodyItemsController getMultiBodyItemsController() {
-        return multiBodyItemsController;
+    public MultiItemsController getMultiItemsController() {
+        return multiItemsController;
     }
 
     public ShapeController getCurrentShapeController() {
@@ -414,9 +419,10 @@ public class EditorScreen extends BaseScreen {
 
 
     protected void itemsSelectedByRect( Array<? extends Object> objects, ModelObjectType mot ) {
+
         if ( !Gdx.input.isKeyPressed( Input.Keys.CONTROL_LEFT ) ) {
+            resetController();
             selectedItems.clear();
-            selectedItems.add( objects );
             if ( itemSelectionListener != null ) {
                 itemSelectionListener.itemsSelected( objects, mot );
             }
@@ -428,9 +434,6 @@ public class EditorScreen extends BaseScreen {
         for ( Object object : objects ) {
             remove = false;
             if ( selectedItems.contains( object, true) ) {
-                if (currentController == multiBodyItemsController) {
-                    multiBodyItemsController.getBodyItems().removeValue((BodyItem) object, true);
-                }
                 remove = true;
             }
             if ( itemSelectionListener != null ) {
@@ -456,8 +459,8 @@ public class EditorScreen extends BaseScreen {
 
         if ( selectedItems.contains( object, true ) ) {
             selectedItems.removeValue(object, true);
-            if ( currentController == multiBodyItemsController ) {
-                multiBodyItemsController.getBodyItems().removeValue((BodyItem) object, true );
+            if ( currentController == multiItemsController) {
+                multiItemsController.removeItem( object );
             }
             remove = true;
         }
