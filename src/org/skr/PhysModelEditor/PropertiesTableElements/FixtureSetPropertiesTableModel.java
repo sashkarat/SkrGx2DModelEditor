@@ -16,7 +16,6 @@ public class FixtureSetPropertiesTableModel extends PropertiesBaseTableModel {
     }
 
     private enum Properties_  {
-
         Name(PropertyType.STRING),
         Type(PropertyType.SELECTOR),
         Friction(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),

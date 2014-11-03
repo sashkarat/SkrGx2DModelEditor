@@ -134,6 +134,8 @@ public class AagPropertiesTableModel extends PropertiesBaseTableModel {
         }
     }
 
+    private Array <String> regions = new Array<String>();
+
     @Override
     public Array<String> getSelectorArray(int rowIndex) {
 
@@ -142,7 +144,9 @@ public class AagPropertiesTableModel extends PropertiesBaseTableModel {
 
         switch ( rowIndex ) {
             case PROP_REGION:
-                Array<String> regions = SkrGdxApplication.get().getRegions();
+                regions.clear();
+                regions.add( null );
+                regions.addAll(SkrGdxApplication.get().getRegions());
                 return regions;
             case PROP_PLAYMODE:
                 return playModes;
@@ -185,11 +189,17 @@ public class AagPropertiesTableModel extends PropertiesBaseTableModel {
             case PROP_REGION:
                 {
                     int regIndex = (Integer) aValue;
-                    if (regIndex < 0) {
+                    if ( regIndex < 0 ) {
                         aag.setTextureName("");
                     } else {
-                        aag.setTextureName(SkrGdxApplication.get().getRegions().get(regIndex));
+                        String str = regions.get(regIndex);
+                        aag.setTextureName(str);
                     }
+//                    if (regIndex < 0) {
+//                        aag.setTextureName("");
+//                    } else {
+//                        aag.setTextureName(SkrGdxApplication.get().getRegions().get(regIndex));
+//                    }
                     aag.updateTextures( SkrGdxApplication.get().getAtlas() );
                 }
                 break;

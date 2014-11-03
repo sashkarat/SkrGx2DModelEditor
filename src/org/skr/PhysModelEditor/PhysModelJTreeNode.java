@@ -74,11 +74,11 @@ public class PhysModelJTreeNode extends DefaultMutableTreeNode {
             case AAG_SC_SET:
                 return getHandlerString( (ScContainer.Handler) object);
             case BODY_ITEM:
-                return "Body: " + object.toString();
+                return "BI: " + object.toString();
             case BODY_ITEM_GROUP:
                 return ": Bodies ";
             case FIXTURE_SET:
-                return "FixtureSet: " + (( FixtureSet ) object).getName();
+                return "FS: " + ( FixtureSet ) object;
             case FIXTURE_SET_GROUP:
                 return ": Fixtures";
             case JOINT_ITEM:

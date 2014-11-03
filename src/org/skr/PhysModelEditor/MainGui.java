@@ -123,6 +123,8 @@ public class MainGui extends JFrame {
 
     private boolean modelChanged = false;
 
+    private static DialogPhysPolicyEditor dlgPolicy = new DialogPhysPolicyEditor();
+
     MainGui() {
 
         chbDebugRender.setSelected( Environment.debugRender );
@@ -653,9 +655,33 @@ public class MainGui extends JFrame {
             }
         });
         subMnu.add( mnuItem );
-
         menu.add( subMnu );
         menuBar.add( menu );
+
+        menu = new JMenu("Phys Policy");
+
+        mnuItem = new JMenuItem("Model Policies");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, InputEvent.CTRL_MASK ) );
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                showModelPoliciesDialog();
+            }
+        });
+        menu.add( mnuItem );
+
+        mnuItem = new JMenuItem("BodyItem Policies");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.CTRL_MASK ) );
+        mnuItem.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                showBodyItemDialog();
+            }
+        });
+        menu.add( mnuItem );
+
+        menuBar.add( menu );
+
         setJMenuBar(menuBar);
     }
 
@@ -1442,6 +1468,19 @@ public class MainGui extends JFrame {
         changeSelectionMode();
     }
 
+
+    void showModelPoliciesDialog() {
+        dlgPolicy.display( model );
+    }
+
+    void showBodyItemDialog() {
+        PhysModelJTreeNode node = (PhysModelJTreeNode) treePhysModel.getLastSelectedPathComponent();
+        if ( node == null )
+            return;
+        if ( node.type != PhysModelJTreeNode.Type.BODY_ITEM )
+            return;
+        dlgPolicy.display((BodyItem) node.getUserObject());
+    }
 
     //======================= main ================================
 

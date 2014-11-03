@@ -1383,7 +1383,7 @@ public class PhysModelStructureGuiProcessing {
         if ( sourceNode == null ) {
             return null;
         } else {
-            Gdx.app.log("PhysModelStructureGuiProcessing.moveNode", "Source: " + sourceNode + " Target: " + newParentNode );
+//            Gdx.app.log("PhysModelStructureGuiProcessing.moveNode", "Source: " + sourceNode + " Target: " + newParentNode );
         }
 
         PhysModelJTreeNode.Type srcType = sourceNode.getType();

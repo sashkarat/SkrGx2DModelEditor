@@ -6,6 +6,7 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.utils.Array;
 import org.skr.gdx.physmodel.bodyitem.BodyItem;
+import org.skr.gdx.policy.CollisionSolver;
 
 import javax.swing.*;
 
@@ -15,7 +16,7 @@ import javax.swing.*;
 public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
 
 
-    private enum Properties_ {
+    private enum Property_ {
 
         Name(PropertyType.STRING),
         Type(PropertyType.SELECTOR),
@@ -33,27 +34,51 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
         Bullet(PropertyType.BOOLEAN),
         Active(PropertyType.BOOLEAN),
         GravityScale(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
-        Mass(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
-        MassCenterX(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
-        MassCenterY(PropertyType.NUMBER, DataRole.PHYS_COORDINATES);
+        Mass(PropertyType.NUMBER, DataRole.PHYS_COORDINATES, false),
+        MassCenterX(PropertyType.NUMBER, DataRole.PHYS_COORDINATES, false),
+        MassCenterY(PropertyType.NUMBER, DataRole.PHYS_COORDINATES, false),
+        ImpulseFunction(PropertyType.SELECTOR ),
+        N(PropertyType.NUMBER),
+        X(PropertyType.NUMBER, DataRole.PHYS_COORDINATES ),
+        C(PropertyType.NUMBER, DataRole.PHYS_COORDINATES ),
+        A1(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        A2(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        A3(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        A4(PropertyType.NUMBER, DataRole.PHYS_COORDINATES);
+
 
         private PropertyType propertyType;
         private DataRole dataRole = DataRole.DEFAULT;
+        private boolean editable = true;
 
-        Properties_(PropertyType propertyType) {
+        Property_(PropertyType propertyType) {
             this.propertyType = propertyType;
         }
 
-        Properties_(PropertyType propertyType, DataRole dataRole) {
+        Property_(PropertyType propertyType, DataRole dataRole) {
             this.propertyType = propertyType;
             this.dataRole = dataRole;
         }
 
-        static Properties_[] values = Properties_.values();
+        Property_(PropertyType propertyType, DataRole dataRole, boolean editable) {
+            this.propertyType = propertyType;
+            this.dataRole = dataRole;
+            this.editable = editable;
+        }
+
+        Property_(PropertyType propertyType, boolean editable) {
+            this.propertyType = propertyType;
+            this.editable = editable;
+        }
+
+        static Property_[] values = Property_.values();
         static Array<String> typeNames = new Array<String>();
+        static Array<String> ifuncNames = new Array<String>();
         static {
             for ( int i = 0; i < BodyDef.BodyType.values().length; i++)
-                typeNames.add( BodyDef.BodyType.values()[i].toString() );
+                typeNames.add( BodyDef.BodyType.values()[i].name() );
+            for ( int i = 0; i < CollisionSolver.ImpulseFunction.values().length; i++)
+                ifuncNames.add(CollisionSolver.ImpulseFunction.values()[i].name() );
         }
     }
 
@@ -63,8 +88,6 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
     public BodyPropertiesTableModel(JTree modelJTree) {
         super(modelJTree);
     }
-
-
 
     public BodyItem getBodyItem() {
         return bodyItem;
@@ -83,93 +106,58 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
 
     //==========================================================
 
+    protected static  Property_ getProperty( int rowIndex ) {
+        return Property_.values[rowIndex];
+    }
+
     @Override
     public int getCurrentSelectorIndex(int rowIndex) {
         if ( bodyItem == null )
             return -1;
-        return bodyItem.getBody().getType().ordinal();
+        Property_ property = getProperty( rowIndex );
+        if ( property == Property_.Type )
+            return bodyItem.getBody().getType().ordinal();
+        else if ( property == Property_.ImpulseFunction )
+            return bodyItem.getCollisionProperties().getImpulseFunction().ordinal();
+        return -1;
     }
 
     @Override
     public Array<String> getSelectorArray(int rowIndex) {
-        Properties_ property = Properties_.values[rowIndex];
+        Property_ property = Property_.values[rowIndex];
 
-        if ( property == Properties_.Type ) {
-            return Properties_.typeNames;
-        }
+        if ( property == Property_.Type )
+            return Property_.typeNames;
+        else if ( property == Property_.ImpulseFunction )
+            return Property_.ifuncNames;
 
         return null;
     }
 
     @Override
     public PropertyType getPropertyType(int rowIndex) {
-        Properties_ property = Properties_.values[rowIndex];
-        return property.propertyType;
+        return getProperty( rowIndex ).propertyType;
     }
 
     @Override
     public DataRole getDataRole(int rowIndex) {
-        Properties_ property = Properties_.values[rowIndex];
-        return property.dataRole;
+        return getProperty( rowIndex ).dataRole;
     }
 
 
     @Override
     public int getPropertiesCount() {
-        return Properties_.values.length;
+        return Property_.values.length;
     }
 
     @Override
     public boolean isPropertyEditable(int rowIndex) {
-        Properties_ property = Properties_.values[rowIndex];
-        switch ( property ) {
-            case Name:
-                break;
-            case Type:
-                break;
-            case PositionX:
-                break;
-            case PositionY:
-                break;
-            case Angle:
-                break;
-            case LinearVelX:
-                break;
-            case LinearVelY:
-                break;
-            case AngularVel:
-                break;
-            case LinearDumping:
-                break;
-            case AngularDumping:
-                break;
-            case AllowSleep:
-                break;
-            case Awake:
-                break;
-            case FixedRot:
-                break;
-            case Bullet:
-                break;
-            case Active:
-                break;
-            case GravityScale:
-                break;
-            case Mass:
-                return false;
-            case MassCenterX:
-                return false;
-            case MassCenterY:
-                return false;
-        }
-        return true;
+        return getProperty( rowIndex ).editable;
     }
 
     @Override
     public Object getPropertyName(int rowIndex) {
-        if ( rowIndex >= getPropertiesCount() )
-            return null;
-        return Properties_.values[rowIndex].toString();
+        return getProperty( rowIndex ).name();
     }
 
     @Override
@@ -177,12 +165,12 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
         if ( bodyItem == null)
             return null;
         Body body = bodyItem.getBody();
-        Properties_ property = Properties_.values[rowIndex];
+        Property_ property = getProperty( rowIndex );
         switch (property) {
             case Name:
                 return bodyItem.getName();
             case Type:
-                return body.getType().toString();
+                return body.getType().name();
             case PositionX:
                 return body.getPosition().x;
             case PositionY:
@@ -217,6 +205,22 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
                 return body.getLocalCenter().x;
             case MassCenterY:
                 return body.getLocalCenter().y;
+            case ImpulseFunction:
+                return bodyItem.getCollisionProperties().getImpulseFunction().name();
+            case N:
+                return bodyItem.getCollisionProperties().getN();
+            case X:
+                return bodyItem.getCollisionProperties().getX();
+            case C:
+                return bodyItem.getCollisionProperties().getC();
+            case A1:
+                return bodyItem.getCollisionProperties().getA()[0];
+            case A2:
+                return bodyItem.getCollisionProperties().getA()[1];
+            case A3:
+                return bodyItem.getCollisionProperties().getA()[2];
+            case A4:
+                return bodyItem.getCollisionProperties().getA()[3];
         }
 
         return null;
@@ -232,7 +236,7 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
         if ( bodyItem == null )
             return;
         Body body = bodyItem.getBody();
-        Properties_ property = Properties_.values[rowIndex];
+        Property_ property = Property_.values[rowIndex];
         switch ( property ) {
             case Name:
                 bodyItem.setName( (String) aValue );
@@ -290,6 +294,37 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
                 break;
             case GravityScale:
                 body.setGravityScale( (Float) aValue );
+                break;
+            case Mass:
+                break;
+            case MassCenterX:
+                break;
+            case MassCenterY:
+                break;
+            case ImpulseFunction:
+                bodyItem.getCollisionProperties().setImpulseFunction(
+                        CollisionSolver.ImpulseFunction.values()[ (Integer) aValue ]);
+                break;
+            case N:
+                bodyItem.getCollisionProperties().setN(MathUtils.round((Float) aValue));
+                break;
+            case X:
+                bodyItem.getCollisionProperties().setX((Float) aValue);
+                break;
+            case C:
+                bodyItem.getCollisionProperties().setC((Float) aValue);
+                break;
+            case A1:
+                bodyItem.getCollisionProperties().getA()[0] = (Float) aValue;
+                break;
+            case A2:
+                bodyItem.getCollisionProperties().getA()[1] = (Float) aValue;
+                break;
+            case A3:
+                bodyItem.getCollisionProperties().getA()[2] = (Float) aValue;
+                break;
+            case A4:
+                bodyItem.getCollisionProperties().getA()[3] = (Float) aValue;
                 break;
         }
         fireTableDataChanged();
