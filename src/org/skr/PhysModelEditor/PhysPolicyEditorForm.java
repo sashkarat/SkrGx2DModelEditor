@@ -2,6 +2,7 @@ package org.skr.PhysModelEditor;
 
 import org.skr.gdx.physmodel.PhysModel;
 import org.skr.gdx.physmodel.bodyitem.BodyItem;
+import org.skr.gdx.policy.PhysPolicyBuilder;
 import org.skr.gdx.policy.PhysPolicySource;
 
 import javax.swing.*;
@@ -32,16 +33,23 @@ public class PhysPolicyEditorForm {
     private JButton btnEditOnCollisionPolicyPre;
     private JButton btnEditOnCollisionPolicyPost;
     private JList listBodyItems;
-    private JLabel lblBodyItemPolicy;
     private JEditorPane epSource;
     private JLabel lblPolicySource;
     private JButton btnSavePolicyCode;
+    private JLabel lblBodyItemPolicy;
+    private JCheckBox chbSaveModel;
 
     PhysModel model;
     BodyItem currentBodyItem;
     PhysPolicySource currentSource = null;
 
     DefaultListModel<PhysPolicySource> modelPoliciesListModel = new DefaultListModel<PhysPolicySource>();
+
+    public interface SaveModelRequestListener {
+        public void saveModel();
+    }
+
+    SaveModelRequestListener saveModelRequestListener;
 
     public PhysPolicyEditorForm() {
 
@@ -114,6 +122,14 @@ public class PhysPolicyEditorForm {
                 saveCurrentSourceText();
             }
         });
+    }
+
+    public SaveModelRequestListener getSaveModelRequestListener() {
+        return saveModelRequestListener;
+    }
+
+    public void setSaveModelRequestListener(SaveModelRequestListener saveModelRequestListener) {
+        this.saveModelRequestListener = saveModelRequestListener;
     }
 
     public PhysModel getModel() {
@@ -236,6 +252,11 @@ public class PhysPolicyEditorForm {
     private void saveCurrentSourceText() {
         if ( currentSource != null ) {
             currentSource.setSourceText( epSource.getText() );
+//            PhysPolicyBuilder.build( null, currentSource );
         }
+
+        if ( saveModelRequestListener != null && chbSaveModel.isSelected() )
+            saveModelRequestListener.saveModel();
     }
+
 }

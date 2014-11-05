@@ -123,9 +123,11 @@ public class MainGui extends JFrame {
 
     private boolean modelChanged = false;
 
-    private static DialogPhysPolicyEditor dlgPolicy = new DialogPhysPolicyEditor();
+    private static DialogPhysPolicyEditor dlgPolicy;
 
     MainGui() {
+
+        dlgPolicy = new DialogPhysPolicyEditor( this );
 
         chbDebugRender.setSelected( Environment.debugRender );
         chbBiBBox.setSelected( Environment.drawBodyItemBBox );
@@ -881,8 +883,13 @@ public class MainGui extends JFrame {
         return true;
     }
 
+    public void saveModel() {
+        saveModel( false );
+    }
+
 
     protected void saveModel(boolean saveAs) {
+
         if ( model == null )
             return;
 
