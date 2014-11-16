@@ -6,7 +6,7 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.utils.Array;
 import org.skr.gdx.physmodel.bodyitem.BodyItem;
-import org.skr.gdx.policy.CollisionSolver;
+import org.skr.gdx.scene.CollisionSolver;
 
 import javax.swing.*;
 
