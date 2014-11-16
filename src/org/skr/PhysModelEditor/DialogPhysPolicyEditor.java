@@ -9,7 +9,7 @@ import java.awt.event.*;
 public class DialogPhysPolicyEditor extends JDialog {
     private JPanel contentPane;
     private JButton btnClose;
-    private PhysPolicyEditorForm physPolicyEditorForm;
+    private ModelPoliciesEditorForm modelPoliciesEditorForm;
     private MainGui mainGui;
 
     public DialogPhysPolicyEditor( final MainGui mainGui ) {
@@ -31,7 +31,7 @@ public class DialogPhysPolicyEditor extends JDialog {
             }
         });
 
-        physPolicyEditorForm.setSaveModelRequestListener( new PhysPolicyEditorForm.SaveModelRequestListener() {
+        modelPoliciesEditorForm.setSaveModelRequestListener( new ModelPoliciesEditorForm.SaveModelRequestListener() {
             @Override
             public void saveModel() {
                 mainGui.saveModel();
@@ -45,20 +45,21 @@ public class DialogPhysPolicyEditor extends JDialog {
     }
 
     public void display( PhysModel model ) {
-        physPolicyEditorForm.setCurrentBodyItem( null );
-        physPolicyEditorForm.setModel( model );
+        modelPoliciesEditorForm.setCurrentBodyItem( null );
+        modelPoliciesEditorForm.setModel( model );
         display();
     }
 
     public void display( BodyItem bodyItem ) {
-        physPolicyEditorForm.setCurrentBodyItem( bodyItem );
+        modelPoliciesEditorForm.setCurrentBodyItem( bodyItem );
         display();
     }
 
     protected void display() {
-        physPolicyEditorForm.loadGui();
-        setTitle( "Model: " + physPolicyEditorForm.getModel().getName() + " policies ");
+        modelPoliciesEditorForm.loadGui();
+        setTitle( "Model: " + modelPoliciesEditorForm.getModel().getName() + " policies ");
         pack();
+        setSize( 1200, getHeight() );
         setVisible( true );
     }
 

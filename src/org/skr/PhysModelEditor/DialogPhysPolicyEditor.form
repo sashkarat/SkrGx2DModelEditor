@@ -41,7 +41,7 @@
           </grid>
         </children>
       </grid>
-      <nested-form id="8df2" form-file="org/skr/PhysModelEditor/PhysPolicyEditorForm.form" binding="physPolicyEditorForm">
+      <nested-form id="8df2" form-file="org/skr/PhysModelEditor/ModelPoliciesEditorForm.form" binding="modelPoliciesEditorForm">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>

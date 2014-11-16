@@ -18,9 +18,8 @@ import java.awt.event.ActionListener;
 /**
  * Created by rat on 02.11.14.
  */
-public class PhysPolicyEditorForm {
+public class ModelPoliciesEditorForm {
     private JPanel physPolicyEditorPanel;
-    private JTabbedPane tpEditors;
     private JPanel panelPolicies;
     private JList listPolicies;
     private JButton btnNewPolicy;
@@ -31,21 +30,20 @@ public class PhysPolicyEditorForm {
     private JTextField tfPolicyName;
     private JButton btnSetPolicyName;
     private JButton btnEditPolicy;
-    private JPanel panelPolicyEditor;
-    private JButton btnExport;
-    private JButton btnImport;
     private JList listBodyItems;
-    private JEditorPane epSource;
-    private JLabel lblPolicySource;
-    private JButton btnSavePolicyCode;
     private JLabel lblBodyItemOnCollisionPolicy;
-    private JCheckBox chbSaveModel;
-    private JCheckBox chbDisplayHelp;
+
+
+    protected static String defaultPolicyString =
+            "//Only #DEFINE instructions enabled here\n\n" +
+            "#INIT_SECTION\n" +
+            "//TODO: Place initialization code here\n\n" +
+            "#MAIN_SECTION\n" +
+            "//TODO: Place main code here\n";
 
     PhysModel model;
     PhysPolicyProvider provider;
     BodyItem currentBodyItem;
-    PhysPolicySource currentSource = null;
 
     DefaultListModel<PhysPolicySource> modelPoliciesListModel = new DefaultListModel<PhysPolicySource>();
     DefaultListModel<BodyItem> modelBodyItemListModel = new DefaultListModel<BodyItem>();
@@ -56,7 +54,9 @@ public class PhysPolicyEditorForm {
 
     SaveModelRequestListener saveModelRequestListener;
 
-    public PhysPolicyEditorForm() {
+    protected static final DialogPhysPolicySourceEditor dlgSourceEditor = new DialogPhysPolicySourceEditor();
+
+    public ModelPoliciesEditorForm() {
 
         listPolicies.setModel( modelPoliciesListModel );
         listBodyItems.setModel( modelBodyItemListModel );
@@ -76,7 +76,7 @@ public class PhysPolicyEditorForm {
         btnRemPolicy.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                removeModelBodyItemPolicy();
+                removeModelPolicy();
             }
         });
         btnSetBodyItemPolicy.addActionListener(new ActionListener() {
@@ -115,19 +115,7 @@ public class PhysPolicyEditorForm {
         btnEditPolicy.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                editBodyItemPolicy();
-            }
-        });
-        btnSavePolicyCode.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                saveCurrentSourceText();
-            }
-        });
-        chbDisplayHelp.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                displayHelpText();
+                editPolicySource();
             }
         });
     }
@@ -166,17 +154,13 @@ public class PhysPolicyEditorForm {
     }
 
     public void loadGui() {
-        tpEditors.setSelectedComponent( panelPolicies );
-        currentSource = null;
-        epSource.setText( "" );
-        lblPolicySource.setText( "NONE" );
         loadModelPolicyList();
         loadBodyItemsList();
     }
 
     protected void newModelPolicySource() {
         PhysPolicySource src = new PhysPolicySource("new Policy");
-        //TODO: fill ip default policy text
+        src.setSourceText( defaultPolicyString );
         if ( !provider.addSource( src ) )
             return;
         modelPoliciesListModel.addElement( src );
@@ -187,7 +171,7 @@ public class PhysPolicyEditorForm {
 
     }
 
-    protected void removeModelBodyItemPolicy() {
+    protected void removeModelPolicy() {
         //TODO: add Yes/No dialog
         PhysPolicySource src = (PhysPolicySource) listPolicies.getSelectedValue();
         PhysPolicy policy = provider.findPolicy( src );
@@ -195,20 +179,30 @@ public class PhysPolicyEditorForm {
             modelPoliciesListModel.removeElement( src );
             listPolicies.updateUI();
         }
-        //TODO: check boyItems for removed policy
+        removePolicyFromBodyItem( policy );
     }
 
     protected void setPolicyToBodyItem() {
         BodyItem bodyItem = (BodyItem) listBodyItems.getSelectedValue();
         if ( bodyItem == null )
             return;
-        PhysPolicySource ps = (PhysPolicySource) listPolicies.getSelectedValue();
-        if ( ps == null )
+        PhysPolicySource src = (PhysPolicySource) listPolicies.getSelectedValue();
+        if ( src == null )
             return;
+        PhysPolicy policy = provider.findPolicy( src );
+        if ( policy == null )
+            return;
+        bodyItem.setOnCollisionPolicy( policy );
+        processBodyItemListSelection();
     }
 
     protected void removePolicyFromBodyItem() {
-
+        //TODO: add yes/no dialog
+        BodyItem bi = (BodyItem) listBodyItems.getSelectedValue();
+        if ( bi.getOnCollisionPolicySlot() == null )
+            return;
+        bi.setOnCollisionPolicy( null );
+        processBodyItemListSelection();
     }
 
     protected void loadModelPolicyList( ) {
@@ -228,6 +222,20 @@ public class PhysPolicyEditorForm {
         }
     }
 
+    protected void removePolicyFromBodyItem( PhysPolicy policy ) {
+        BiScContainer scCont = model.getScBodyItems();
+        for ( Integer id : scCont.getIdsSet() ) {
+            BiScSet bset = (BiScSet) scCont.getContent( id );
+            for ( BodyItem bi : bset.getBodyItems() ) {
+                if ( bi.getOnCollisionPolicySlot() == null )
+                    continue;
+                if ( bi.getOnCollisionPolicySlot().getPolicy() == policy )
+                    bi.setOnCollisionPolicy( null );
+            }
+        }
+        processBodyItemListSelection();
+    }
+
     protected void processPoliciesListSelection() {
         PhysPolicySource p = (PhysPolicySource) listPolicies.getSelectedValue();
         if ( p == null )
@@ -237,14 +245,17 @@ public class PhysPolicyEditorForm {
 
     protected void processBodyItemListSelection() {
         BodyItem bodyItem = (BodyItem) listBodyItems.getSelectedValue();
+        if ( bodyItem == null ) {
+            lblBodyItemOnCollisionPolicy.setText("none");
+            return;
+        }
         PhysPolicySlot slot = bodyItem.getOnCollisionPolicySlot();
         if ( slot == null || slot.getPolicy() == null ) {
             lblBodyItemOnCollisionPolicy.setText("none");
             return;
         }
-
         lblBodyItemOnCollisionPolicy.setText( slot.getPolicy().toString() );
-
+        listPolicies.setSelectedValue(slot.getPolicy().getSource(), true );
     }
 
     protected void setPolicyName() {
@@ -255,33 +266,9 @@ public class PhysPolicyEditorForm {
         listPolicies.updateUI();
     }
 
-    protected void editBodyItemPolicy() {
-        currentSource = (PhysPolicySource) listPolicies.getSelectedValue();
-        switchToEditPolicy();
-    }
-
-    protected void switchToEditPolicy() {
-        loadCurrentPolicyToEditor();
-        tpEditors.setSelectedComponent( panelPolicyEditor );
-    }
-
-    protected void loadCurrentPolicyToEditor() {
-        if ( currentSource != null ) {
-            lblPolicySource.setText(currentSource.toString());
-            epSource.setText( currentSource.getSourceText() );
-        } else {
-            lblPolicySource.setText( "NONE" );
-        }
-    }
-
-    private void saveCurrentSourceText() {
-        if ( currentSource != null ) {
-            currentSource.setSourceText( epSource.getText() );
-//            PhysPolicyBuilder.build( null, currentSource );
-        }
-
-        if ( saveModelRequestListener != null && chbSaveModel.isSelected() )
-            saveModelRequestListener.saveModel();
+    protected void editPolicySource() {
+        PhysPolicySource src = (PhysPolicySource) listPolicies.getSelectedValue();
+        dlgSourceEditor.execute( src, provider );
     }
 
 }
