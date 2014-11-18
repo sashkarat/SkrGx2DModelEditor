@@ -123,11 +123,11 @@ public class MainGui extends JFrame {
 
     private boolean modelChanged = false;
 
-    private static DialogPhysPolicyEditor dlgPolicy;
+    private static DialogModelPolicies dlgPolicy;
 
     MainGui() {
 
-        dlgPolicy = new DialogPhysPolicyEditor( this );
+        dlgPolicy = new DialogModelPolicies( );
 
         chbDebugRender.setSelected( Environment.debugRender );
         chbBiBBox.setSelected( Environment.drawBodyItemBBox );
@@ -1477,7 +1477,7 @@ public class MainGui extends JFrame {
 
 
     void showModelPoliciesDialog() {
-        dlgPolicy.display( model );
+        dlgPolicy.execute(model);
     }
 
     void showBodyItemDialog() {
@@ -1486,7 +1486,8 @@ public class MainGui extends JFrame {
             return;
         if ( node.type != PhysModelJTreeNode.Type.BODY_ITEM )
             return;
-        dlgPolicy.display((BodyItem) node.getUserObject());
+//        dlgPolicy.display((BodyItem) node.getUserObject());
+        //TODO: implement this
     }
 
     //======================= main ================================

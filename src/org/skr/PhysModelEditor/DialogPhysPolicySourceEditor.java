@@ -88,6 +88,7 @@ public class DialogPhysPolicySourceEditor extends JDialog {
         this.provider = provider;
         epSourceText.setText( source.getSourceText() );
         pack();
+        setSize( 400, 400);
         setVisible( true );
         if ( accept )
             updatePolicy();

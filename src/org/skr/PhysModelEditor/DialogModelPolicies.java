@@ -12,13 +12,12 @@ import org.skr.gdx.policy.PhysPolicySource;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 
 /**
  * Created by rat on 02.11.14.
  */
-public class ModelPoliciesEditorForm {
+public class DialogModelPolicies extends JDialog {
     private JPanel physPolicyEditorPanel;
     private JPanel panelPolicies;
     private JList listPolicies;
@@ -60,7 +59,22 @@ public class ModelPoliciesEditorForm {
 
     protected static final DialogPhysPolicySourceEditor dlgSourceEditor = new DialogPhysPolicySourceEditor();
 
-    public ModelPoliciesEditorForm() {
+    public DialogModelPolicies() {
+        setContentPane(physPolicyEditorPanel);
+        setModal(true);
+
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                closeDialog();
+            }
+        });
+
+        physPolicyEditorPanel.registerKeyboardAction(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                closeDialog();
+            }
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
         listPolicies.setModel( modelPoliciesListModel );
         listBodyItems.setModel( modelBodyItemListModel );
@@ -122,10 +136,24 @@ public class ModelPoliciesEditorForm {
                 editPolicySource();
             }
         });
+        tfPolicyName.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                setPolicyName();
+            }
+
+        });
     }
 
-    protected void displayHelpText() {
-        //TODO: implement something like a help
+    private void closeDialog() {
+        dispose();
+    }
+
+    public void execute( PhysModel model ) {
+        setModel( model );
+        loadGui();
+        pack();
+        setVisible( true );
     }
 
     public SaveModelRequestListener getSaveModelRequestListener() {
@@ -157,7 +185,8 @@ public class ModelPoliciesEditorForm {
         }
     }
 
-    public void loadGui() {
+
+    protected void loadGui() {
         loadModelPolicyList();
         loadBodyItemsList();
     }
