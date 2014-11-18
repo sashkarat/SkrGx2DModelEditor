@@ -35,11 +35,15 @@ public class ModelPoliciesEditorForm {
 
 
     protected static String defaultPolicyString =
-            "//Only #DEFINE instructions enabled here\n\n" +
-            "#INIT_SECTION\n" +
-            "//TODO: Place initialization code here\n\n" +
-            "#MAIN_SECTION\n" +
-            "//TODO: Place main code here\n";
+                    "//Only #DEFINE instructions enabled here\n" +
+                    "\n" +
+                    "#INIT_SECTION\n" +
+                    "//Allocate 2 registers in policy slot:\n" +
+                    "AllocReg 2;\n" +
+                    "//TODO: Place other initialization code here.\n" +
+                    "\n" +
+                    "#MAIN_SECTION\n" +
+                    "//TODO: Place main code here.\n";
 
     PhysModel model;
     PhysPolicyProvider provider;
