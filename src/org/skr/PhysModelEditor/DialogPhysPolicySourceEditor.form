@@ -2,7 +2,7 @@
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="org.skr.PhysModelEditor.DialogPhysPolicySourceEditor">
   <grid id="cbd77" binding="contentPane" layout-manager="GridBagLayout">
     <constraints>
-      <xy x="48" y="54" width="500" height="263"/>
+      <xy x="48" y="54" width="500" height="453"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -68,15 +68,20 @@
         <properties/>
         <border type="etched"/>
         <children>
-          <component id="f744e" class="javax.swing.JEditorPane" binding="epSourceText">
+          <scrollpane id="31b1e" class="org.fife.ui.rtextarea.RTextScrollPane" binding="tsp">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
-                <preferred-size width="150" height="50"/>
-              </grid>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
               <gridbag weightx="1.0" weighty="1.0"/>
             </constraints>
             <properties/>
-          </component>
+            <border type="none"/>
+            <children>
+              <component id="4c1d1" class="org.fife.ui.rsyntaxtextarea.RSyntaxTextArea" binding="taSourceText">
+                <constraints/>
+                <properties/>
+              </component>
+            </children>
+          </scrollpane>
         </children>
       </grid>
     </children>

@@ -31,7 +31,6 @@ public class SimulationScreen extends BaseScreen {
         testScene.getCameraController().setHoldCameraInsideBorders(false);
         testScene.setActivePhysics( true );
         getStage().addActor(testScene);
-
     }
 
 

@@ -1,6 +1,13 @@
 package org.skr.PhysModelEditor;
 
-import com.badlogic.gdx.Gdx;
+import org.fife.ui.autocomplete.AutoCompletion;
+import org.fife.ui.autocomplete.BasicCompletion;
+import org.fife.ui.autocomplete.CompletionProvider;
+import org.fife.ui.autocomplete.DefaultCompletionProvider;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rsyntaxtextarea.SyntaxScheme;
+import org.fife.ui.rtextarea.RTextScrollPane;
+import org.skr.gdx.policy.PhysPolicyBuilder;
 import org.skr.gdx.policy.PhysPolicyProvider;
 import org.skr.gdx.policy.PhysPolicySource;
 
@@ -8,21 +15,35 @@ import javax.swing.*;
 import java.awt.event.*;
 
 public class DialogPhysPolicySourceEditor extends JDialog {
+
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JEditorPane epSourceText;
+    private org.fife.ui.rsyntaxtextarea.RSyntaxTextArea taSourceText;
     private JButton btnUpdate;
+    private RTextScrollPane tsp;
     protected boolean accept = false;
     protected PhysPolicySource source;
+
     protected PhysPolicyProvider provider;
 
-
     public DialogPhysPolicySourceEditor() {
+
+        taSourceText.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
+        taSourceText.setAntiAliasingEnabled( true );
+
+        DefaultCompletionProvider completionProvider = new DefaultCompletionProvider();
+        for ( String keyStr : PhysPolicyBuilder.getKeywordsMap().keySet() )
+            completionProvider.addCompletion( new BasicCompletion( completionProvider, keyStr) );
+
+        AutoCompletion ac = new AutoCompletion( completionProvider );
+        ac.install( taSourceText );
+
+        SyntaxScheme ss = taSourceText.getSyntaxScheme();
+
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
-
 
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -77,7 +98,7 @@ public class DialogPhysPolicySourceEditor extends JDialog {
     }
 
     protected void updatePolicy() {
-        source.setSourceText( epSourceText.getText() );
+        source.setSourceText( taSourceText.getText() );
         provider.updatePolicy( source );
     }
 
@@ -86,9 +107,9 @@ public class DialogPhysPolicySourceEditor extends JDialog {
     public boolean execute(PhysPolicySource source, PhysPolicyProvider provider ) {
         this.source = source;
         this.provider = provider;
-        epSourceText.setText( source.getSourceText() );
+        taSourceText.setText(source.getSourceText());
         pack();
-        setSize( 400, 400);
+        setSize(400, 400);
         setVisible( true );
         if ( accept )
             updatePolicy();
