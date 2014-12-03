@@ -1,5 +1,6 @@
 package org.skr.PhysModelEditor;
 
+import org.skr.PhysModelEditor.PolisySourceEditor.DialogPhysPolicySourceEditor;
 import org.skr.gdx.physmodel.PhysModel;
 import org.skr.gdx.physmodel.bodyitem.BiScContainer;
 import org.skr.gdx.physmodel.bodyitem.BiScSet;

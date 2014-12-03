@@ -1,17 +1,17 @@
-package org.skr.PhysModelEditor;
+package org.skr.PhysModelEditor.PolisySourceEditor;
 
 import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.CompletionProvider;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
-import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
-import org.fife.ui.rsyntaxtextarea.SyntaxScheme;
+import org.fife.ui.rsyntaxtextarea.*;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.skr.gdx.policy.PhysPolicyBuilder;
 import org.skr.gdx.policy.PhysPolicyProvider;
 import org.skr.gdx.policy.PhysPolicySource;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.*;
 
 public class DialogPhysPolicySourceEditor extends JDialog {
@@ -39,7 +39,24 @@ public class DialogPhysPolicySourceEditor extends JDialog {
         AutoCompletion ac = new AutoCompletion( completionProvider );
         ac.install( taSourceText );
 
+        AbstractTokenMakerFactory atmf = (AbstractTokenMakerFactory) TokenMakerFactory.getDefaultInstance();
+        atmf.putMapping("text/policyScript", PolicySourceTokenMaker.class.getName());
+        taSourceText.setSyntaxEditingStyle("text/policyScript");
+
         SyntaxScheme ss = taSourceText.getSyntaxScheme();
+        ss.getStyle(Token.RESERVED_WORD).foreground = new Color(0, 11, 104);
+
+        ss.getStyle(Token.MARKUP_COMMENT).foreground = Color.gray;
+        ss.getStyle(Token.PREPROCESSOR).foreground = new Color(80, 160, 80);
+
+        ss.getStyle(Token.ANNOTATION).font = new Font("Arial", Font.ITALIC, 12 );
+        ss.getStyle(Token.ANNOTATION).foreground = Color.magenta;
+
+        ss.getStyle(Token.LITERAL_STRING_DOUBLE_QUOTE).font = new Font("Arial",
+                Font.ITALIC | Font.BOLD, 12 );
+        ss.getStyle(Token.LITERAL_STRING_DOUBLE_QUOTE).foreground = new Color(3, 95, 4);
+        taSourceText.revalidate();
+
 
         setContentPane(contentPane);
         setModal(true);
