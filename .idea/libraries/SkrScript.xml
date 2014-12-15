@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="SkrScript">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../SkrScript/SkrScript.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../SkrScript/src" />
+    </SOURCES>
+  </library>
+</component>

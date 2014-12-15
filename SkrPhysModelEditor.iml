@@ -11,5 +11,6 @@
     <orderEntry type="library" name="libgdx-1" level="project" />
     <orderEntry type="library" name="gdx-box2d" level="project" />
     <orderEntry type="library" name="RSyntaxTextArea" level="project" />
+    <orderEntry type="library" name="SkrScript" level="project" />
   </component>
 </module>

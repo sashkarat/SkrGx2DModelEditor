@@ -35,15 +35,10 @@ public class DialogModelPolicies extends JDialog {
 
 
     protected static String defaultPolicyString =
-                    "//Only #DEFINE instructions enabled here\n" +
+                    "#New Policy source code\n" +
                     "\n" +
-                    "#INIT_SECTION\n" +
-                    "//Allocate 2 registers in policy slot:\n" +
-                    "AllocReg 2;\n" +
-                    "//TODO: Place other initialization code here.\n" +
-                    "\n" +
-                    "#MAIN_SECTION\n" +
-                    "//TODO: Place main code here.\n";
+                    "function init() {}\n" +
+                    "function run() {}";
 
     PhysModel model;
     PhysPolicyProvider provider;
@@ -51,12 +46,6 @@ public class DialogModelPolicies extends JDialog {
 
     DefaultListModel<PhysPolicySource> modelPoliciesListModel = new DefaultListModel<PhysPolicySource>();
     DefaultListModel<BodyItem> modelBodyItemListModel = new DefaultListModel<BodyItem>();
-
-    public interface SaveModelRequestListener {
-        public void saveModel();
-    }
-
-    SaveModelRequestListener saveModelRequestListener;
 
     protected static final DialogPhysPolicySourceEditor dlgSourceEditor = new DialogPhysPolicySourceEditor();
 
@@ -146,6 +135,10 @@ public class DialogModelPolicies extends JDialog {
         });
     }
 
+    public static DialogPhysPolicySourceEditor getDlgSourceEditor() {
+        return dlgSourceEditor;
+    }
+
     private void closeDialog() {
         dispose();
     }
@@ -155,14 +148,6 @@ public class DialogModelPolicies extends JDialog {
         loadGui();
         pack();
         setVisible( true );
-    }
-
-    public SaveModelRequestListener getSaveModelRequestListener() {
-        return saveModelRequestListener;
-    }
-
-    public void setSaveModelRequestListener(SaveModelRequestListener saveModelRequestListener) {
-        this.saveModelRequestListener = saveModelRequestListener;
     }
 
     public PhysModel getModel() {

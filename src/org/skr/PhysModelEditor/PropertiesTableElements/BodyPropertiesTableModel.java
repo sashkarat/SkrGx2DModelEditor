@@ -26,8 +26,8 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
         LinearVelX(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         LinearVelY(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         AngularVel(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
-        LinearDumping(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
-        AngularDumping(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        LinearDamping(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
+        AngularDamping(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         AllowSleep(PropertyType.BOOLEAN),
         Awake(PropertyType.BOOLEAN),
         FixedRot(PropertyType.BOOLEAN),
@@ -183,9 +183,9 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
                 return body.getLinearVelocity().y;
             case AngularVel:
                 return MathUtils.radiansToDegrees * body.getAngularVelocity();
-            case LinearDumping:
+            case LinearDamping:
                 return body.getLinearDamping();
-            case AngularDumping:
+            case AngularDamping:
                 return MathUtils.radiansToDegrees * body.getAngularDamping();
             case AllowSleep:
                 return body.isSleepingAllowed();
@@ -271,10 +271,10 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
             case AngularVel:
                 body.setAngularVelocity( MathUtils.degreesToRadians * (Float) aValue );
                 break;
-            case LinearDumping:
+            case LinearDamping:
                 body.setLinearDamping( (Float) aValue );
                 break;
-            case AngularDumping:
+            case AngularDamping:
                 body.setAngularDamping( MathUtils.degreesToRadians *  (Float) aValue );
                 break;
             case AllowSleep:

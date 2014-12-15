@@ -8,6 +8,7 @@ import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.physics.box2d.joints.GearJoint;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
+import org.skr.PhysModelEditor.PolisySourceEditor.DialogPhysPolicySourceEditor;
 import org.skr.PhysModelEditor.gdx.editor.SkrGdxAppPhysModelEditor;
 import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers.CircleShapeController;
 import org.skr.gdx.Environment;
@@ -25,6 +26,7 @@ import org.skr.gdx.physmodel.bodyitem.fixtureset.FixtureSet;
 import org.skr.gdx.physmodel.jointitem.JointItem;
 import org.skr.gdx.physmodel.jointitem.JointItemDescription;
 import org.skr.gdx.physmodel.jointitem.JointItemFactory;
+import org.skr.gdx.policy.PhysScriptBE;
 import org.skr.gdx.utils.PhysModelProcessing;
 
 import javax.swing.*;
@@ -127,7 +129,15 @@ public class MainGui extends JFrame {
 
     MainGui() {
 
+        PhysScriptBE.install();
+
         dlgPolicy = new DialogModelPolicies( );
+        DialogModelPolicies.getDlgSourceEditor().setSaveAllRequestListener(new DialogPhysPolicySourceEditor.SaveAllRequestListener() {
+            @Override
+            public void save() {
+                saveModel();
+            }
+        });
 
         chbDebugRender.setSelected( Environment.debugRender );
         chbBiBBox.setSelected( Environment.drawBodyItemBBox );

@@ -3,8 +3,8 @@ package org.skr.PhysModelEditor.PolisySourceEditor;
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMaker;
 import org.fife.ui.rsyntaxtextarea.Token;
 import org.fife.ui.rsyntaxtextarea.TokenMap;
+import org.skr.SkrScript.Builder;
 import org.skr.gdx.policy.PhysPolicy;
-import org.skr.gdx.policy.PhysPolicyBuilder;
 
 import javax.swing.text.Segment;
 import java.util.StringTokenizer;
@@ -16,20 +16,10 @@ public class PolicySourceTokenMaker extends AbstractTokenMaker {
     @Override
     public TokenMap getWordsToHighlight() {
         TokenMap tm = new TokenMap();
-        for ( String keyStr : PhysPolicyBuilder.getKeywordsMap().keySet() ) {
-            byte bc = PhysPolicyBuilder.getKeywordsMap().get( keyStr );
+        for ( String keyStr : Builder.getKeywords() ) {
             int tokenType = Token.RESERVED_WORD;
-            if ( PhysPolicy.isDts( bc ) ) {
-                tokenType = Token.DATA_TYPE;
-            } else if ( PhysPolicy.isProperty( bc ) ) {
-                tokenType = Token.VARIABLE;
-            } else if ( PhysPolicy.isRetCode( bc ) ) {
-                tokenType = Token.REGEX;
-            }
             tm.put(keyStr, tokenType );
         }
-        tm.put("_TRUE", Token.REGEX);
-        tm.put("_FALSE", Token.REGEX);
         return tm;
     }
 
@@ -76,79 +66,56 @@ public class PolicySourceTokenMaker extends AbstractTokenMaker {
             System.exit( -1 );
         }
 
-        StringTokenizer tokenizer = new StringTokenizer( str, " \t\r\n;\"\\@$#", true);
+        StringTokenizer tokenizer = new StringTokenizer( str, Builder.getDelimitersStr(), true);
         int tokS = 0;
         int tokLen = 0;
         int defaultTokenType = Token.IDENTIFIER;
+
         while ( tokenizer.hasMoreTokens() ) {
             tokS += tokLen;
             String tok = tokenizer.nextToken();
             tokLen = tok.length();
             int currentTokenStart = offset + tokS;
+            int tokenType = defaultTokenType;
 
-            if ( tok.indexOf("//") == 0 ) {
+            if ( tok.indexOf("#") == 0 ) {
                 while ( tokenizer.hasMoreTokens() ) {
                     tok = tokenizer.nextToken();
                     tokLen += tok.length();
                 }
-                addToken(text, currentTokenStart, currentTokenStart + tokLen - 1, Token.MARKUP_COMMENT, newStartOffset + currentTokenStart );
-                continue;
-            }
-            if ( tok.length() == 1 ) {
-                if ( tok.equals("\n") ) {
+                tokenType = Token.MARKUP_COMMENT;
+            } else if ( tok.equals("\n") ) {
 //                    System.out.println("!!!!EOL");
-                    addNullToken();
-                    return firstToken;
-                }
+                addNullToken();
+                return firstToken;
+            } else  if ( tok.equals("\"") ) {
+                boolean slash = false;
+                while ( tokenizer.hasMoreTokens() ) {
+                    tok = tokenizer.nextToken();
+                    tokLen += tok.length();
 
-                if ( tok.equals("\"") ) {
-                    boolean slash = false;
-                    while ( tokenizer.hasMoreTokens() ) {
-                        tok = tokenizer.nextToken();
-                        tokLen += tok.length();
-
-                        if ( tok.equals("\"") ) {
-                            if ( !slash )
-                                break;
-                        }
-                        if ( tok.equals("\\") ) {
-                            slash = true;
-                        } else {
-                            slash = false;
-                        }
+                    if ( tok.equals("\"") ) {
+                        if ( !slash )
+                            break;
                     }
-                    addToken(text, currentTokenStart, currentTokenStart + tokLen - 1, Token.LITERAL_STRING_DOUBLE_QUOTE,  newStartOffset + currentTokenStart );
-                    continue;
+                    slash = tok.equals("\\");
                 }
-
-                if ( isSpace( tok ) ) {
-                    addToken(text, currentTokenStart, currentTokenStart + tokLen - 1, Token.WHITESPACE,  newStartOffset + currentTokenStart );
-                    continue;
-                }
-
-                if ( tok.equals("#") ) {
-                    defaultTokenType = Token.PREPROCESSOR;
-                }
-
-                if ( tok.equals("@") ) {
-                    if ( tokenizer.hasMoreTokens() ) {
-                        tokLen += tokenizer.nextToken().length();
-                    }
-                    addToken(text, currentTokenStart, currentTokenStart + tokLen - 1, Token.ANNOTATION,  newStartOffset + currentTokenStart );
-                    continue;
-                }
-
-                if ( tok.equals("$") ) {
-                    if ( tokenizer.hasMoreTokens() ) {
-                        tokLen += tokenizer.nextToken().length();
-                    }
-                    addToken(text, currentTokenStart, currentTokenStart + tokLen - 1, Token.MARKUP_TAG_NAME,  newStartOffset + currentTokenStart );
-                    continue;
-                }
-
+                tokenType = Token.LITERAL_STRING_DOUBLE_QUOTE;
+            } else  if ( isSpace( tok ) ) {
+                tokenType = Token.WHITESPACE;
+            } else  if ( Builder.getOperators().containsKey( tok ) ) {
+                tokenType = Token.OPERATOR;
+            } else  if ( Builder.fmapContainsName( Builder.getBfuncMap(), tok )
+                    || tok.equals("init")
+                    || tok.equals("run") ) {
+                tokenType = Token.FUNCTION;
+            } else if ( Builder.getProperties().containsKey( tok ) ) {
+                tokenType = Token.MARKUP_ENTITY_REFERENCE;
+            } else if ( Builder.getDataTypeSpec().containsKey( tok ) ) {
+                tokenType = Token.DATA_TYPE;
             }
 //            System.out.println("addToken. \"" + tok + "\"  start: " + (offset + tokS) + " startOffset: " + (newStartOffset + currentTokenStart) );
-            addToken(text, currentTokenStart, currentTokenStart + tokLen - 1, defaultTokenType , newStartOffset + currentTokenStart );
+            addToken(text, currentTokenStart, currentTokenStart + tokLen - 1, tokenType , newStartOffset + currentTokenStart );
         }
         addNullToken();
         // Return the first token in our linked list.
