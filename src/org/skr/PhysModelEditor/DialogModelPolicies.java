@@ -2,8 +2,8 @@ package org.skr.PhysModelEditor;
 
 import org.skr.PhysModelEditor.PolisySourceEditor.DialogPhysPolicySourceEditor;
 import org.skr.gdx.physmodel.PhysModel;
-import org.skr.gdx.physmodel.bodyitem.BiScContainer;
-import org.skr.gdx.physmodel.bodyitem.BiScSet;
+import org.skr.gdx.physmodel.bisc.BiScContainer;
+import org.skr.gdx.physmodel.bisc.BiScSet;
 import org.skr.gdx.physmodel.bodyitem.BodyItem;
 import org.skr.gdx.policy.PhysPolicy;
 import org.skr.gdx.policy.PhysPolicyProvider;

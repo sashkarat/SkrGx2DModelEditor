@@ -10,7 +10,7 @@ import org.skr.PhysModelEditor.gdx.editor.controllers.JointEditorController;
 import org.skr.gdx.PhysWorld;
 import org.skr.gdx.editor.Controller;
 import org.skr.gdx.physmodel.PhysModel;
-import org.skr.gdx.physmodel.bodyitem.BiScSet;
+import org.skr.gdx.physmodel.bisc.BiScSet;
 import org.skr.gdx.physmodel.bodyitem.BodyItem;
 import org.skr.gdx.physmodel.jointitem.JointItem;
 import org.skr.gdx.physmodel.jointitem.JointItemDescription;

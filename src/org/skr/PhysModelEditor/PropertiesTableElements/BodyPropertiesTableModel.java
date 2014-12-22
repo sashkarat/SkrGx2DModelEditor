@@ -36,16 +36,7 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
         GravityScale(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         Mass(PropertyType.NUMBER, DataRole.PHYS_COORDINATES, false),
         MassCenterX(PropertyType.NUMBER, DataRole.PHYS_COORDINATES, false),
-        MassCenterY(PropertyType.NUMBER, DataRole.PHYS_COORDINATES, false),
-        ImpulseFunction(PropertyType.SELECTOR ),
-        N(PropertyType.NUMBER),
-        X(PropertyType.NUMBER, DataRole.PHYS_COORDINATES ),
-        C(PropertyType.NUMBER, DataRole.PHYS_COORDINATES ),
-        A1(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
-        A2(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
-        A3(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
-        A4(PropertyType.NUMBER, DataRole.PHYS_COORDINATES);
-
+        MassCenterY(PropertyType.NUMBER, DataRole.PHYS_COORDINATES, false);
 
         private PropertyType propertyType;
         private DataRole dataRole = DataRole.DEFAULT;
@@ -73,12 +64,10 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
 
         static Property_[] values = Property_.values();
         static Array<String> typeNames = new Array<String>();
-        static Array<String> ifuncNames = new Array<String>();
+
         static {
             for ( int i = 0; i < BodyDef.BodyType.values().length; i++)
                 typeNames.add( BodyDef.BodyType.values()[i].name() );
-            for ( int i = 0; i < CollisionSolver.ImpulseFunction.values().length; i++)
-                ifuncNames.add(CollisionSolver.ImpulseFunction.values()[i].name() );
         }
     }
 
@@ -117,8 +106,6 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
         Property_ property = getProperty( rowIndex );
         if ( property == Property_.Type )
             return bodyItem.getBody().getType().ordinal();
-        else if ( property == Property_.ImpulseFunction )
-            return bodyItem.getCollisionProperties().getImpulseFunction().ordinal();
         return -1;
     }
 
@@ -128,8 +115,6 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
 
         if ( property == Property_.Type )
             return Property_.typeNames;
-        else if ( property == Property_.ImpulseFunction )
-            return Property_.ifuncNames;
 
         return null;
     }
@@ -205,22 +190,6 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
                 return body.getLocalCenter().x;
             case MassCenterY:
                 return body.getLocalCenter().y;
-            case ImpulseFunction:
-                return bodyItem.getCollisionProperties().getImpulseFunction().name();
-            case N:
-                return bodyItem.getCollisionProperties().getN();
-            case X:
-                return bodyItem.getCollisionProperties().getX();
-            case C:
-                return bodyItem.getCollisionProperties().getC();
-            case A1:
-                return bodyItem.getCollisionProperties().getA()[0];
-            case A2:
-                return bodyItem.getCollisionProperties().getA()[1];
-            case A3:
-                return bodyItem.getCollisionProperties().getA()[2];
-            case A4:
-                return bodyItem.getCollisionProperties().getA()[3];
         }
 
         return null;
@@ -300,31 +269,6 @@ public class BodyPropertiesTableModel extends PropertiesBaseTableModel {
             case MassCenterX:
                 break;
             case MassCenterY:
-                break;
-            case ImpulseFunction:
-                bodyItem.getCollisionProperties().setImpulseFunction(
-                        CollisionSolver.ImpulseFunction.values()[ (Integer) aValue ]);
-                break;
-            case N:
-                bodyItem.getCollisionProperties().setN(MathUtils.round((Float) aValue));
-                break;
-            case X:
-                bodyItem.getCollisionProperties().setX((Float) aValue);
-                break;
-            case C:
-                bodyItem.getCollisionProperties().setC((Float) aValue);
-                break;
-            case A1:
-                bodyItem.getCollisionProperties().getA()[0] = (Float) aValue;
-                break;
-            case A2:
-                bodyItem.getCollisionProperties().getA()[1] = (Float) aValue;
-                break;
-            case A3:
-                bodyItem.getCollisionProperties().getA()[2] = (Float) aValue;
-                break;
-            case A4:
-                bodyItem.getCollisionProperties().getA()[3] = (Float) aValue;
                 break;
         }
         fireTableDataChanged();

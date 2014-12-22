@@ -20,7 +20,7 @@ import org.skr.PhysModelEditor.gdx.editor.screens.EditorScreen;
 import org.skr.gdx.physmodel.PhysModel;
 import org.skr.gdx.physmodel.PhysModelDescription;
 import org.skr.gdx.physmodel.ShapeDescription;
-import org.skr.gdx.physmodel.bodyitem.BiScSet;
+import org.skr.gdx.physmodel.bisc.BiScSet;
 import org.skr.gdx.physmodel.bodyitem.BodyItem;
 import org.skr.gdx.physmodel.bodyitem.fixtureset.FixtureSet;
 import org.skr.gdx.physmodel.jointitem.JointItem;
