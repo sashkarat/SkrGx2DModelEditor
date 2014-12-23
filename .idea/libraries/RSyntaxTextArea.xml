@@ -1,13 +1,9 @@
 <component name="libraryTable">
   <library name="RSyntaxTextArea">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../lib/RSyntaxTextArea_jar/RSyntaxTextArea.jar!/" />
-      <root url="file://$PROJECT_DIR$/../rsyntaxtextarea_2.5.3" />
+      <root url="jar://$PROJECT_DIR$/ThirdParty/lib/RSyntaxTextArea.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="file://$PROJECT_DIR$/../rsyntaxtextarea_2.5.3/src" />
-      <root url="file://$PROJECT_DIR$/../rsyntaxtextarea_2.5.3/test" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>
