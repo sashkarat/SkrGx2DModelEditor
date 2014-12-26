@@ -1585,7 +1585,7 @@ public class PhysModelStructureGuiProcessing {
 
         Integer newId = handler.container.generateId();
         BiScContainer container = (BiScContainer) handler.container;
-        container.copyContent( handler.id, newId );
+        container.copyContent( handler.id, newId, null );
         handler = new ScContainer.Handler( container, newId );
         PhysModelJTreeNode newNode = new PhysModelJTreeNode(PhysModelJTreeNode.Type.BiScSET, handler );
         loadBiScSetNodes( newNode );
@@ -1605,7 +1605,7 @@ public class PhysModelStructureGuiProcessing {
         handler = (ScContainer.Handler) newPNode.getUserObject();
         BiScSet bsetTarget = (BiScSet) handler.container.getContent( handler.id );
 
-        bsetTarget.copyBiScSetContent( bset );
+        bsetTarget.copyBiScSetContent( bset, null );
         newPNode.removeAllChildren();
         loadBiScSetNodes( newPNode );
         return bsetTarget;
@@ -1619,7 +1619,7 @@ public class PhysModelStructureGuiProcessing {
         ScContainer.Handler handler = (ScContainer.Handler) newPNode.getUserObject();
         BiScSet bset = (BiScSet) handler.get();
         BiScSet sBset = (BiScSet) sNode.getUserObject();
-        bset.copyBodyItemArray( sBset.getBodyItems() );
+        bset.copyBodyItemArray( sBset.getBodyItems(), null );
         newPNode.removeAllChildren();
         loadBiScSetNodes( newPNode );
         return bset;
@@ -1633,7 +1633,7 @@ public class PhysModelStructureGuiProcessing {
         BodyItem bi = (BodyItem) sNode.getUserObject();
         ScContainer.Handler handler = (ScContainer.Handler) newPNode.getUserObject();
         BiScSet bset = (BiScSet) handler.get();
-        Object ret = bset.copyBodyItem( bi );
+        Object ret = bset.copyBodyItem( bi, null );
         newPNode.removeAllChildren();
         loadBiScSetNodes( newPNode );
         return ret;
@@ -1804,7 +1804,7 @@ public class PhysModelStructureGuiProcessing {
                 for ( int i = 0; i < number; i ++ ) {
                     BodyItem bi = (BodyItem) node.getUserObject();
                     BiScSet bset = (BiScSet) parentNode.getUserObject();
-                    BodyItem newBi = bset.copyBodyItem( bi );
+                    BodyItem newBi = bset.copyBodyItem( bi, null );
                     Body body = newBi.getBody();
                     body.setTransform(PhysWorld.get().toPhys(xOffset * (i + 1) )  + body.getPosition().x,
                             PhysWorld.get().toPhys(yOffset * (i + 1) )  + body.getPosition().y,
@@ -1904,7 +1904,7 @@ public class PhysModelStructureGuiProcessing {
         AagDescription desc = aag.getAagDescription();
         PhysModelProcessing.mirrorAagDescription(desc, dir);
         aagNode.removeAllChildren();
-        aag.loadFromDescription(desc, SkrGdxApplication.get().getAtlas());
+        aag.loadAagFromDescription(desc, SkrGdxApplication.get().getAtlas());
         loadAagNodes( aagNode );
         treeDataModel.nodeStructureChanged( aagNode );
         return true;
@@ -1917,7 +1917,7 @@ public class PhysModelStructureGuiProcessing {
         BodyItemDescription desc = bi.getBodyItemDescription();
         PhysModelProcessing.mirrorBodyItemDescription(desc, dir);
         bi.destroyPhysics();
-        bi.loadFromDescription( desc );
+        bi.loadFromDescription( desc, null );
         reloadJointItemNodes();
         return true;
     }
@@ -1942,7 +1942,7 @@ public class PhysModelStructureGuiProcessing {
         PhysModelProcessing.mirrorModelDescription(desc, dir);
         model.destroyPhysics();
         model.clearModel();
-        model.loadFromDescription( desc );
+        model.loadFromDescription( desc, null );
         rootNode.removeAllChildren();
         loadTreeBiScNodes();
     }
@@ -2102,7 +2102,7 @@ public class PhysModelStructureGuiProcessing {
     public void importModelDescription( PhysModelDescription desc ) {
         if ( model == null )
             return;
-        model.mergeFromDescription(desc);
+        model.mergeFromDescription( desc, null );
         rootNode.removeAllChildren();
         loadTreeBiScNodes();
         treeDataModel.nodeStructureChanged( rootNode );

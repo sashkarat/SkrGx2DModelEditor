@@ -1,4 +1,4 @@
-package org.skr.PhysModelEditor.PolisySourceEditor;
+package org.skr.PhysModelEditor.ScriptSourceEditor;
 
 import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.autocomplete.BasicCompletion;
@@ -8,9 +8,10 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 import org.skr.PhysModelEditor.ApplicationSettings;
 import org.skr.SkrScript.Builder;
 import org.skr.SkrScript.Dumper;
-import org.skr.gdx.policy.PhysPolicy;
-import org.skr.gdx.policy.PhysPolicyProvider;
-import org.skr.gdx.policy.PhysPolicySource;
+import org.skr.gdx.scene.PhysScene;
+import org.skr.gdx.script.PhysScript;
+import org.skr.gdx.script.PhysScriptProvider;
+import org.skr.gdx.script.PhysScriptSource;
 
 import javax.swing.*;
 import javax.swing.event.CaretEvent;
@@ -23,7 +24,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-public class DialogPhysPolicySourceEditor extends JDialog {
+public class DialogPhysScriptSourceEditor extends JDialog {
 
     public interface SaveAllRequestListener {
         public void save();
@@ -72,14 +73,14 @@ public class DialogPhysPolicySourceEditor extends JDialog {
     private JButton btnDump;
     protected boolean accept = false;
 
-    protected PhysPolicySource source;
-    protected PhysPolicyProvider provider;
+    protected PhysScriptSource source;
+    protected PhysScriptProvider provider;
 
     protected DefaultListModel<String> logOutDataModel = new DefaultListModel<String>();
 
     SaveAllRequestListener saveAllRequestListener;
 
-    public DialogPhysPolicySourceEditor() {
+    public DialogPhysScriptSourceEditor() {
 
         taSourceText.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
         taSourceText.setAntiAliasingEnabled( true );
@@ -105,7 +106,7 @@ public class DialogPhysPolicySourceEditor extends JDialog {
         ac.install( taSourceText );
 
         AbstractTokenMakerFactory atmf = (AbstractTokenMakerFactory) TokenMakerFactory.getDefaultInstance();
-        atmf.putMapping("text/policyScript", PolicySourceTokenMaker.class.getName());
+        atmf.putMapping("text/policyScript", ScriptSourceTokenMaker.class.getName());
         taSourceText.setSyntaxEditingStyle("text/policyScript");
 
         SyntaxScheme ss = taSourceText.getSyntaxScheme();
@@ -146,7 +147,7 @@ public class DialogPhysPolicySourceEditor extends JDialog {
 
         contentPane.registerKeyboardAction(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                updatePolicy();
+                updateScript();
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_U, InputEvent.CTRL_MASK ), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
@@ -186,7 +187,7 @@ public class DialogPhysPolicySourceEditor extends JDialog {
         btnUpdate.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                updatePolicy();
+                updateScript();
             }
         });
 
@@ -229,16 +230,16 @@ public class DialogPhysPolicySourceEditor extends JDialog {
         btnDump.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                dumpPolicy();
+                dumpScript();
             }
         });
     }
 
-    private void dumpPolicy() {
-        PhysPolicy policy = provider.findPolicy(source.getId());
-        if ( policy == null )
+    private void dumpScript() {
+        PhysScript script = provider.findScript(source.getId());
+        if ( script == null )
             return;
-        Dumper.dump( policy );
+        Dumper.dump( script );
     }
 
     private void saveAll() {
@@ -367,16 +368,16 @@ public class DialogPhysPolicySourceEditor extends JDialog {
         dispose();
     }
 
-    protected void updatePolicy() {
+    protected void updateScript() {
         source.setSourceText( taSourceText.getText() );
-        if ( provider.updatePolicy( source ) ) {
+        if ( provider.updateScript( source ) ) {
             System.out.println("Script building successfully done.");
         } else {
             System.out.println("Script building failed.");
         }
     }
 
-    public boolean execute(PhysPolicySource source, PhysPolicyProvider provider ) {
+    public boolean execute(PhysScriptSource source, PhysScriptProvider provider ) {
         this.source = source;
         this.provider = provider;
         taSourceText.setText(source.getSourceText());
@@ -394,7 +395,7 @@ public class DialogPhysPolicySourceEditor extends JDialog {
 
         setVisible(true);
         if ( accept )
-            updatePolicy();
+            updateScript();
 
         System.setOut( stdOut );
         System.setErr( stdErr );

@@ -1,10 +1,9 @@
-package org.skr.PhysModelEditor.PolisySourceEditor;
+package org.skr.PhysModelEditor.ScriptSourceEditor;
 
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMaker;
 import org.fife.ui.rsyntaxtextarea.Token;
 import org.fife.ui.rsyntaxtextarea.TokenMap;
 import org.skr.SkrScript.Builder;
-import org.skr.gdx.policy.PhysPolicy;
 
 import javax.swing.text.Segment;
 import java.util.StringTokenizer;
@@ -12,7 +11,7 @@ import java.util.StringTokenizer;
 /**
  * Created by rat on 21.11.14.
  */
-public class PolicySourceTokenMaker extends AbstractTokenMaker {
+public class ScriptSourceTokenMaker extends AbstractTokenMaker {
     @Override
     public TokenMap getWordsToHighlight() {
         TokenMap tm = new TokenMap();
@@ -28,7 +27,7 @@ public class PolicySourceTokenMaker extends AbstractTokenMaker {
         // This assumes all keywords, etc. were parsed as "identifiers."
 
         if ( end >= segment.array.length ) {
-            System.err.println("PolicySourceTokenMaker.addToken(...) Wrong end: " + end +
+            System.err.println("ScriptSourceTokenMaker.addToken(...) Wrong end: " + end +
                     " limit: " + segment.array.length );
             return;
         }

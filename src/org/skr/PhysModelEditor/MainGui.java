@@ -8,7 +8,7 @@ import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.physics.box2d.joints.GearJoint;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
-import org.skr.PhysModelEditor.PolisySourceEditor.DialogPhysPolicySourceEditor;
+import org.skr.PhysModelEditor.ScriptSourceEditor.DialogPhysScriptSourceEditor;
 import org.skr.PhysModelEditor.gdx.editor.SkrGdxAppPhysModelEditor;
 import org.skr.PhysModelEditor.gdx.editor.controllers.ShapeControllers.CircleShapeController;
 import org.skr.gdx.Environment;
@@ -26,7 +26,7 @@ import org.skr.gdx.physmodel.bodyitem.fixtureset.FixtureSet;
 import org.skr.gdx.physmodel.jointitem.JointItem;
 import org.skr.gdx.physmodel.jointitem.JointItemDescription;
 import org.skr.gdx.physmodel.jointitem.JointItemFactory;
-import org.skr.gdx.policy.PhysScriptBE;
+import org.skr.gdx.script.PhysScriptBE;
 import org.skr.gdx.utils.PhysModelProcessing;
 
 import javax.swing.*;
@@ -106,6 +106,8 @@ public class MainGui extends JFrame {
     private JButton btnUpdateJointItem;
     private JButton btnCpyProperties;
     private JButton btnNodeProperties;
+    private JPanel panelSlotEditor;
+    private SlotEditorForm formSlotEditor;
 
     private SkrGdxAppPhysModelEditor gApp;
     private String currentModelFileName = "";
@@ -125,19 +127,21 @@ public class MainGui extends JFrame {
 
     private boolean modelChanged = false;
 
-    private static DialogModelPolicies dlgPolicy;
+    private static DialogModelScripts dlgScripts;
 
     MainGui() {
 
         PhysScriptBE.install();
 
-        dlgPolicy = new DialogModelPolicies( );
-        DialogModelPolicies.getDlgSourceEditor().setSaveAllRequestListener(new DialogPhysPolicySourceEditor.SaveAllRequestListener() {
+        dlgScripts = new DialogModelScripts( );
+        DialogModelScripts.getDlgSourceEditor().setSaveAllRequestListener(new DialogPhysScriptSourceEditor.SaveAllRequestListener() {
             @Override
             public void save() {
                 saveModel();
             }
         });
+
+        formSlotEditor.setMainGui( this );
 
         chbDebugRender.setSelected( Environment.debugRender );
         chbBiBBox.setSelected( Environment.drawBodyItemBBox );
@@ -670,10 +674,10 @@ public class MainGui extends JFrame {
         menu.add( subMnu );
         menuBar.add( menu );
 
-        menu = new JMenu("Phys Policy");
+        menu = new JMenu("Phys Script");
 
-        mnuItem = new JMenuItem("Model Policies");
-        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, InputEvent.CTRL_MASK ) );
+        mnuItem = new JMenuItem("Model scripts");
+        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.ALT_MASK ) );
         mnuItem.addActionListener( new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -682,15 +686,6 @@ public class MainGui extends JFrame {
         });
         menu.add( mnuItem );
 
-        mnuItem = new JMenuItem("BodyItem Policies");
-        mnuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.CTRL_MASK ) );
-        mnuItem.addActionListener( new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                showBodyItemDialog();
-            }
-        });
-        menu.add( mnuItem );
 
         menuBar.add( menu );
 
@@ -723,6 +718,14 @@ public class MainGui extends JFrame {
         }, KeyStroke.getKeyStroke(KeyEvent.VK_0, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
     }
 
+
+    public static DialogModelScripts getDlgScripts() {
+        return dlgScripts;
+    }
+
+    public PhysModel getModel() {
+        return model;
+    }
 
     public JTable getTableProperties() {
         return tableProperties;
@@ -969,11 +972,15 @@ public class MainGui extends JFrame {
                 break;
             case OT_Model:
                 tabbedPaneEditors.add( "Tools", panelTools );
+                tabbedPaneEditors.add( "Slot/Script", panelSlotEditor);
+                formSlotEditor.setModelObject( object, mot );
                 break;
             case OT_BodyItem:
                 tabbedPaneEditors.add("Body Editor", panelBodyItemEditor);
                 chbEnableMassCorrection.setSelected( false );
                 tabbedPaneEditors.add( "Tools", panelTools );
+                tabbedPaneEditors.add( "Script", panelSlotEditor);
+                formSlotEditor.setModelObject( object, mot );
                 break;
             case OT_Aag:
                 tabbedPaneEditors.add( "Tools", panelTools );
@@ -1487,17 +1494,9 @@ public class MainGui extends JFrame {
 
 
     void showModelPoliciesDialog() {
-        dlgPolicy.execute(model);
-    }
-
-    void showBodyItemDialog() {
-        PhysModelJTreeNode node = (PhysModelJTreeNode) treePhysModel.getLastSelectedPathComponent();
-        if ( node == null )
+        if ( model == null )
             return;
-        if ( node.type != PhysModelJTreeNode.Type.BODY_ITEM )
-            return;
-//        dlgPolicy.display((BodyItem) node.getUserObject());
-        //TODO: implement this
+        dlgScripts.execute(model);
     }
 
     //======================= main ================================
