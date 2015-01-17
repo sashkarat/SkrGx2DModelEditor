@@ -67,7 +67,7 @@ public class SimulationScreen extends BaseScreen {
         PhysModelDescriptionHandler mdh = new PhysModelDescriptionHandler();
         mdh.setModelDesc( this.description );
         testScene.addModelItem( mdh );
-        testScene.initPolicySlots();
+        testScene.initializeSlots();
     }
 
     public void setPause(boolean state) {

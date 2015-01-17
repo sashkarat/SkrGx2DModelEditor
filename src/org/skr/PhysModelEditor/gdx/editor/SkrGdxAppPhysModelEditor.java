@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.LifecycleListener;
 import org.skr.PhysModelEditor.gdx.editor.screens.EditorScreen;
 import org.skr.PhysModelEditor.gdx.editor.screens.SimulationScreen;
-import org.skr.gdx.SkrGdxApplication;
 
 /**
  * Created by rat on 02.08.14.

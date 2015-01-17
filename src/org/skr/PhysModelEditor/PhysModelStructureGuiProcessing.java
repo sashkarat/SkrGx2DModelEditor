@@ -2068,7 +2068,7 @@ public class PhysModelStructureGuiProcessing {
         biScSetDesc.getJointItemDescriptions().add( jiDesc );
     }
 
-    protected BodyItemDescription findBodyItemDescription( int id, PhysModelDescription desc ) {
+    protected BodyItemDescription findBodyItemDescription( long id, PhysModelDescription desc ) {
         for ( String idStr : desc.getBiScContainerDescription().getContentMap().keySet() ) {
             BiScSetDescription biScSetDesc = desc.getBiScContainerDescription().getContentMap().get( idStr );
             for ( BodyItemDescription biDesc : biScSetDesc.getBodyItemDescriptions() ) {
@@ -2088,7 +2088,7 @@ public class PhysModelStructureGuiProcessing {
             for ( int j = 0; j < jiGroupNode.getChildCount(); j++ ) {
                 PhysModelJTreeNode jiNode = (PhysModelJTreeNode) jiGroupNode.getChildAt( j );
                 JointItem ji = (JointItem) jiNode.getUserObject();
-                int bId = ji.getBodyAId();
+                long bId = ji.getBodyAId();
                 if ( bId != -1 && ( findBodyItemDescription( bId, desc ) == null) )
                     continue;
                 bId = ji.getBodyBId();

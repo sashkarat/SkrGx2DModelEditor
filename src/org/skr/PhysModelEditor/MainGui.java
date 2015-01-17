@@ -134,6 +134,7 @@ public class MainGui extends JFrame {
         PhysScriptBE.install();
 
         dlgScripts = new DialogModelScripts( );
+        dlgScripts.setMainGui( this );
         DialogModelScripts.getDlgSourceEditor().setSaveAllRequestListener(new DialogPhysScriptSourceEditor.SaveAllRequestListener() {
             @Override
             public void save() {
@@ -428,7 +429,7 @@ public class MainGui extends JFrame {
                             public void changed(Object controlledObject, Controller.ControlPoint controlPoint) {
                                 bodyItemsChangedByController();
                             }
-                });
+                        });
 
                 formJointEditor.setupGdxApp();
 
@@ -759,7 +760,7 @@ public class MainGui extends JFrame {
             return;
 
         textureAtlasFilePath = atlasFileSelector.getTextureAtlasFilePath();
-        ApplicationSettings.get().setLastDirectory( atlasFileSelector.getFileDirectory() );
+        ApplicationSettings.get().setLastDirectory(atlasFileSelector.getFileDirectory());
         uploadTextureAtlas();
 
     }
@@ -897,7 +898,7 @@ public class MainGui extends JFrame {
     }
 
     public void saveModel() {
-        saveModel( false );
+        saveModel(false);
     }
 
 
@@ -933,7 +934,7 @@ public class MainGui extends JFrame {
             }
 
             if ( saveAs ) {
-                model.changeUuid();
+                model.setId( Environment.nextId() );
             }
 
             setTitle("PhysModel file: " + currentModelFileName);
@@ -950,7 +951,7 @@ public class MainGui extends JFrame {
         editorScreen.setModel( model );
 //        loadTree();
 
-        modelStructureGuiProcessing.setModel( model );
+        modelStructureGuiProcessing.setModel(model);
 
 //        updateJointCombos();
         setTitle("PhysModel file: " + currentModelFileName);
@@ -964,8 +965,10 @@ public class MainGui extends JFrame {
 
 
     public void setupEditors(Object object, EditorScreen.ModelObjectType mot ) {
+
+        Component selectedComponent = tabbedPaneEditors.getSelectedComponent();
         tabbedPaneEditors.removeAll();
-        editorScreen.setModelObject( object, mot );
+        editorScreen.setModelObject(object, mot);
 
         switch ( mot ) {
             case OT_None:
@@ -1001,6 +1004,10 @@ public class MainGui extends JFrame {
 
         setGuiElementEnable( tabbedPaneEditors, true );
 
+        for( Component comp : tabbedPaneEditors.getComponents() ) {
+            if ( comp == selectedComponent )
+                tabbedPaneEditors.setSelectedComponent( selectedComponent );
+        }
 
     }
 
@@ -1118,7 +1125,7 @@ public class MainGui extends JFrame {
         float y = PhysWorld.get().toPhys( cp.getY() );
         tfControlPointX.setText( String.valueOf( x ) );
         tfControlPointY.setText( String.valueOf( y ) );
-        tfRadius.setText( String.valueOf( shapeDescription.getRadius() ) );
+        tfRadius.setText(String.valueOf(shapeDescription.getRadius()));
     }
 
     void shapePositionChanged( @SuppressWarnings("UnusedParameters") ShapeDescription shapeDescription ) {
@@ -1203,18 +1210,18 @@ public class MainGui extends JFrame {
             setGuiElementEnable( panelSimulationControls, false);
         }
 
-        Gdx.app.postRunnable( new Runnable() {
+        Gdx.app.postRunnable(new Runnable() {
             @Override
             public void run() {
                 boolean simMode = chbSimulation.isSelected();
-                if ( simMode ) {
+                if (simMode) {
 
                     PhysModelDescription description = model.getDescription();
 
-                    if ( description == null)
+                    if (description == null)
                         return;
 
-                    SkrGdxAppPhysModelEditor.get().getSimulationScreen().setModelDescription( description );
+                    SkrGdxAppPhysModelEditor.get().getSimulationScreen().setModelDescription(description);
                     SkrGdxAppPhysModelEditor.get().toggleSimulationScreen();
                     SkrGdxAppPhysModelEditor.get().getSimulationScreen().startSimulation();
 
@@ -1257,7 +1264,7 @@ public class MainGui extends JFrame {
 
     void toggleGrid() {
         boolean state = chbDisplayGrid.isSelected();
-        SkrGdxAppPhysModelEditor.get().getEditorScreen().setDisplayGrid( state );
+        SkrGdxAppPhysModelEditor.get().getEditorScreen().setDisplayGrid(state);
         SkrGdxAppPhysModelEditor.get().getSimulationScreen().setDisplayGrid( state );
 
     }
@@ -1279,7 +1286,7 @@ public class MainGui extends JFrame {
             return;
         }
         BodyItemController ctrlr = SkrGdxAppPhysModelEditor.get().getEditorScreen().getBodyItemController();
-        ctrlr.setWorldCenterOfMass( x, y );
+        ctrlr.setWorldCenterOfMass(x, y);
     }
 
     void resetMassData() {
@@ -1295,7 +1302,7 @@ public class MainGui extends JFrame {
 
     void changeSelectionMode() {
         EditorScreen.SelectionMode selMode = (EditorScreen.SelectionMode) comboSelectionMode.getSelectedItem();
-        editorScreen.setSelectionMode( selMode );
+        editorScreen.setSelectionMode(selMode);
     }
 
     void processMirroring() {
@@ -1496,7 +1503,7 @@ public class MainGui extends JFrame {
     void showModelPoliciesDialog() {
         if ( model == null )
             return;
-        dlgScripts.execute(model);
+        dlgScripts.execute(model, null);
     }
 
     //======================= main ================================

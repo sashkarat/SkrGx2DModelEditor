@@ -2,7 +2,6 @@ package org.skr.PhysModelEditor;
 
 import org.skr.PhysModelEditor.ScriptSourceEditor.DialogPhysScriptSourceEditor;
 import org.skr.gdx.physmodel.PhysModel;
-import org.skr.gdx.physmodel.bodyitem.BodyItem;
 import org.skr.gdx.script.PhysScript;
 import org.skr.gdx.script.PhysScriptProvider;
 import org.skr.gdx.script.PhysScriptSource;
@@ -35,13 +34,14 @@ public class DialogModelScripts extends JDialog {
                     "function init() {}\n" +
                     "function run() {}";
 
+
+    MainGui mainGui;
     PhysModel model;
     PhysScriptProvider provider;
-    BodyItem currentBodyItem;
     boolean accept;
-    PhysScriptSource selectedScriptSrc;
+    PhysScript selectedScript;
 
-    DefaultListModel<PhysScriptSource> modelScriptsListModel = new DefaultListModel<PhysScriptSource>();
+    DefaultListModel<PhysScript> modelScriptsListModel = new DefaultListModel<PhysScript>();
 
     protected static final DialogPhysScriptSourceEditor dlgSourceEditor = new DialogPhysScriptSourceEditor();
 
@@ -67,7 +67,7 @@ public class DialogModelScripts extends JDialog {
         btnNewScript.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                newModelScriptSource();
+                newModelScript();
             }
         });
         btnDuplicateScript.addActionListener(new ActionListener() {
@@ -132,20 +132,25 @@ public class DialogModelScripts extends JDialog {
         dispose();
     }
 
-
-
-    public void execute( PhysModel model ) {
+    public void execute( PhysModel model, PhysScript script ) {
         accept = false;
         setModel( model );
         loadGui();
         pack();
+        if ( script != null )
+            listScripts.setSelectedValue( script, true );
+
         setVisible( true );
         if ( !accept )
-            selectedScriptSrc = null;
+            selectedScript = null;
     }
 
-    public PhysScriptSource getSelectedScriptSource() {
-        return selectedScriptSrc;
+    public void setMainGui(MainGui mainGui) {
+        this.mainGui = mainGui;
+    }
+
+    public PhysScript getSelectedScript() {
+        return selectedScript;
     }
 
     public PhysModel getModel() {
@@ -162,25 +167,32 @@ public class DialogModelScripts extends JDialog {
         loadModelScriptList();
     }
 
-    protected void newModelScriptSource() {
-        PhysScriptSource src = new PhysScriptSource("new Script");
+    protected void newModelScript() {
+        PhysScriptSource src = new PhysScriptSource();
         src.setSourceText( defaultScriptString );
-        if ( !provider.addSource( src ) )
-            return;
-        modelScriptsListModel.addElement(src);
+        PhysScript script = provider.addScript("new Script", src);
+        modelScriptsListModel.addElement( script );
         listScripts.updateUI();
+        mainGui.makeHistorySnapshot();
     }
 
     protected void duplicateModelScript() {
-        //todo: implement
+        if ( selectedScript == null )
+            return ;
+        PhysScriptSource src = new PhysScriptSource( selectedScript.getSource() );
+
+        PhysScript script = provider.addScript( selectedScript.getName() + "_cpy", src );
+        modelScriptsListModel.addElement( script );
+        listScripts.updateUI();
+        mainGui.makeHistorySnapshot();
     }
 
     protected void removeModelScript() {
         //TODO: add Yes/No dialog
-        PhysScriptSource src = (PhysScriptSource) listScripts.getSelectedValue();
-        PhysScript script = provider.findScript(src);
-        if ( provider.removeSource( src ) ) {
-            modelScriptsListModel.removeElement(src);
+        if ( selectedScript == null )
+            return;
+        if ( provider.removeScript( selectedScript ) ) {
+            modelScriptsListModel.removeElement( selectedScript );
             listScripts.updateUI();
         }
         //todo: look up for all items to remove
@@ -188,28 +200,28 @@ public class DialogModelScripts extends JDialog {
 
     protected void loadModelScriptList( ) {
         modelScriptsListModel.clear();
-        for ( PhysScriptSource src : provider.getSourcesArray() )
-            modelScriptsListModel.addElement( src );
+        for ( PhysScript script : provider.getScripts() )
+            modelScriptsListModel.addElement( script );
     }
 
     protected void processScriptListSelection() {
-        selectedScriptSrc = (PhysScriptSource) listScripts.getSelectedValue();
-        if ( selectedScriptSrc == null )
+        selectedScript = (PhysScript) listScripts.getSelectedValue();
+        if ( selectedScript == null )
             return;
-        tfScriptName.setText(selectedScriptSrc.getName());
+        tfScriptName.setText(selectedScript.getName());
     }
 
     protected void setScriptName() {
-        PhysScriptSource p = (PhysScriptSource) listScripts.getSelectedValue();
-        if ( p== null )
+        if ( selectedScript == null )
             return;
-        p.setName(tfScriptName.getText());
+        selectedScript.setName(tfScriptName.getText());
         listScripts.updateUI();
     }
 
     protected void editScriptSource() {
-        PhysScriptSource src = (PhysScriptSource) listScripts.getSelectedValue();
-        dlgSourceEditor.execute( src, provider );
+        if ( selectedScript == null )
+            return;
+        dlgSourceEditor.execute( selectedScript, provider );
     }
 
 }

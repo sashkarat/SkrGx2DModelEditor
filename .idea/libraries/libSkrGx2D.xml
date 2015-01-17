@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="libSkrGx2D">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../libSkrGx2D/libSkrGx2D.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

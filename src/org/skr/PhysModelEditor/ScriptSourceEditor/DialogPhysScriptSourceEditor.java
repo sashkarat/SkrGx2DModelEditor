@@ -8,10 +8,8 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 import org.skr.PhysModelEditor.ApplicationSettings;
 import org.skr.SkrScript.Builder;
 import org.skr.SkrScript.Dumper;
-import org.skr.gdx.scene.PhysScene;
 import org.skr.gdx.script.PhysScript;
 import org.skr.gdx.script.PhysScriptProvider;
-import org.skr.gdx.script.PhysScriptSource;
 
 import javax.swing.*;
 import javax.swing.event.CaretEvent;
@@ -59,7 +57,7 @@ public class DialogPhysScriptSourceEditor extends JDialog {
     private JButton btnOk;
     private JButton buttonCancel;
     private org.fife.ui.rsyntaxtextarea.RSyntaxTextArea taSourceText;
-    private JButton btnUpdate;
+    private JButton btnApply;
     private RTextScrollPane tsp;
     private JComboBox comboVerboseLevel;
     private JList listOutput;
@@ -73,7 +71,8 @@ public class DialogPhysScriptSourceEditor extends JDialog {
     private JButton btnDump;
     protected boolean accept = false;
 
-    protected PhysScriptSource source;
+    protected PhysScript script;
+    protected String originalText;
     protected PhysScriptProvider provider;
 
     protected DefaultListModel<String> logOutDataModel = new DefaultListModel<String>();
@@ -147,9 +146,9 @@ public class DialogPhysScriptSourceEditor extends JDialog {
 
         contentPane.registerKeyboardAction(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                updateScript();
+                buildScriptSource();
             }
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_U, InputEvent.CTRL_MASK ), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.CTRL_MASK ), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
 
         contentPane.registerKeyboardAction(new ActionListener() {
@@ -184,10 +183,10 @@ public class DialogPhysScriptSourceEditor extends JDialog {
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
-        btnUpdate.addActionListener(new ActionListener() {
+        btnApply.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                updateScript();
+                buildScriptSource();
             }
         });
 
@@ -236,14 +235,11 @@ public class DialogPhysScriptSourceEditor extends JDialog {
     }
 
     private void dumpScript() {
-        PhysScript script = provider.findScript(source.getId());
-        if ( script == null )
-            return;
         Dumper.dump( script );
     }
 
     private void saveAll() {
-        source.setSourceText( taSourceText.getText() );
+        script.getSource().setSourceText(taSourceText.getText());
 
         if ( saveAllRequestListener != null ) {
             saveAllRequestListener.save();
@@ -368,21 +364,22 @@ public class DialogPhysScriptSourceEditor extends JDialog {
         dispose();
     }
 
-    protected void updateScript() {
-        source.setSourceText( taSourceText.getText() );
-        if ( provider.updateScript( source ) ) {
+    protected void buildScriptSource() {
+        script.getSource().setSourceText(taSourceText.getText());
+        if ( script.build() ) {
             System.out.println("Script building successfully done.");
         } else {
             System.out.println("Script building failed.");
         }
     }
 
-    public boolean execute(PhysScriptSource source, PhysScriptProvider provider ) {
-        this.source = source;
+    public boolean execute(PhysScript script, PhysScriptProvider provider ) {
+        this.script = script;
+        originalText = script.getSource().getSourceText();
         this.provider = provider;
-        taSourceText.setText(source.getSourceText());
+        taSourceText.setText(script.getSource().getSourceText());
         pack();
-        setSize(400, 400);
+        setSize(500, 600);
 
         PrintStream stdOut = System.out;
         PrintStream stdErr = System.err;
@@ -395,7 +392,9 @@ public class DialogPhysScriptSourceEditor extends JDialog {
 
         setVisible(true);
         if ( accept )
-            updateScript();
+            buildScriptSource();
+        else
+            script.getSource().setSourceText( originalText );
 
         System.setOut( stdOut );
         System.setErr( stdErr );

@@ -50,8 +50,6 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
         JointB(PropertyType.STRING),
         LinearOffset_X(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         LinearOffset_Y(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
-        Target_X(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
-        Target_Y(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         Axis_X(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         Axis_Y(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
         GroundAnchorA_X(PropertyType.NUMBER, DataRole.PHYS_COORDINATES),
@@ -301,10 +299,6 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 break;
             case LinearOffset_Y:
                 break;
-            case Target_X:
-                break;
-            case Target_Y:
-                break;
             case Axis_X:
                 return false;
             case Axis_Y:
@@ -331,14 +325,14 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
         return prop.name();
     }
 
-    String getBodyName( int id ) {
+    String getBodyName( long id ) {
         BodyItem bi = jointItem.getBiScSet().findBodyItem( id );
         if ( bi == null )
             return "not found";
         return bi.getName();
     }
 
-    String getJointName(int id)  {
+    String getJointName(long id)  {
         JointItem ji = jointItem.getBiScSet().findJointItem( id );
         if ( ji == null )
             return "not found";
@@ -414,10 +408,6 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
                 return jointItem.getLinearOffset().x;
             case LinearOffset_Y:
                 return jointItem.getLinearOffset().y;
-            case Target_X:
-                return jointItem.getTarget().x;
-            case Target_Y:
-                return jointItem.getTarget().y;
             case Axis_X:
                 return jointItem.getAxis().x;
             case Axis_Y:
@@ -522,10 +512,6 @@ public class JointPropertiesTableModel extends PropertiesBaseTableModel {
             case LinearOffset_X:
                 break;
             case LinearOffset_Y:
-                break;
-            case Target_X:
-                break;
-            case Target_Y:
                 break;
             case Axis_X:
                 break;

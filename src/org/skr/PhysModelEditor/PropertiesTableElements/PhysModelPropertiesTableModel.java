@@ -59,7 +59,7 @@ public class PhysModelPropertiesTableModel extends PropertiesBaseTableModel {
             case 0:
                 return "Name";
             case 1:
-                return "Uuid";
+                return "Id";
             default:
                 return "";
         }
@@ -75,7 +75,7 @@ public class PhysModelPropertiesTableModel extends PropertiesBaseTableModel {
             case 0:
                 return model.getName();
             case 1:
-                return model.getUuid().toString();
+                return String.valueOf( model.getId() );
             default:
                 return null;
         }
