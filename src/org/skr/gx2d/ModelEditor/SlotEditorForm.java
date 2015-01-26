@@ -5,7 +5,6 @@ import org.skr.gx2d.ModelEditor.gdx.screens.EditorScreen;
 import org.skr.gx2d.model.Model;
 import org.skr.gx2d.node.Node;
 import org.skr.gx2d.physnodes.BodyHandler;
-import org.skr.gx2d.script.NodeScript;
 import org.skr.gx2d.script.NodeScriptEE;
 import org.skr.gx2d.script.NodeSlot;
 import org.skr.gx2d.script.NodeSlotArray;
@@ -153,7 +152,7 @@ public class SlotEditorForm {
                 break;
             case OT_FixtureSet:
                 break;
-            case OT_JointItem:
+            case OT_JointHandler:
                 break;
         }
 

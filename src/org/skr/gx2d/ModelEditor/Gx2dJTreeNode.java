@@ -15,9 +15,13 @@ public class Gx2dJTreeNode extends DefaultMutableTreeNode {
     public enum Type {
         MODEL,
         PHYS_SET,
+        SPRITE_GROUP,
         SPRITE,
+        BH_GROUP,
         BODY_HANDLER,
+        FS_GROUP,
         FIXTURE_SET,
+        JH_GROUP,
         JOINT_HANDLER,
     }
 

@@ -8,17 +8,15 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Joint;
 import com.badlogic.gdx.physics.box2d.JointDef;
 import com.badlogic.gdx.physics.box2d.joints.*;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 import org.skr.gx2d.ModelEditor.PropertiesTableElements.*;
 import org.skr.gx2d.ModelEditor.gdx.SkrGx2DModelEditorGdxApp;
 import org.skr.gx2d.ModelEditor.gdx.screens.EditorScreen;
 import org.skr.gx2d.model.Model;
 import org.skr.gx2d.node.Node;
-import org.skr.gx2d.physnodes.BodyHandler;
-import org.skr.gx2d.physnodes.FixtureSet;
-import org.skr.gx2d.physnodes.JointHandler;
-import org.skr.gx2d.physnodes.PhysSet;
+import org.skr.gx2d.physnodes.*;
+import org.skr.gx2d.physnodes.physdef.ShapeDefinition;
+import org.skr.gx2d.sprite.Sprite;
 
 import javax.swing.*;
 import javax.swing.event.CellEditorListener;
@@ -118,14 +116,22 @@ public class ModelGuiControl {
                     break;
                 case PHYS_SET:
                     break;
+                case SPRITE_GROUP:
+                    break;
                 case SPRITE:
                     if ( parentNode.getType() == Gx2dJTreeNode.Type.BODY_HANDLER)
                         break;
                     return true;
+                case BH_GROUP:
+                    break;
                 case BODY_HANDLER:
                     return true;
+                case FS_GROUP:
+                    break;
                 case FIXTURE_SET:
                     return true;
+                case JH_GROUP:
+                    break;
                 case JOINT_HANDLER:
                     break;
             }
@@ -143,15 +149,23 @@ public class ModelGuiControl {
                     break;
                 case PHYS_SET:
                     break;
+                case SPRITE_GROUP:
+                    break;
                 case SPRITE:
                     if ( tType == Gx2dJTreeNode.Type.SPRITE )
                         return true;
                     break;
+                case BH_GROUP:
+                    break;
                 case BODY_HANDLER:
+                    break;
+                case FS_GROUP:
                     break;
                 case FIXTURE_SET:
                     if ( tType == Gx2dJTreeNode.Type.BODY_HANDLER )
                         return true;
+                    break;
+                case JH_GROUP:
                     break;
                 case JOINT_HANDLER:
                     break;
@@ -175,7 +189,7 @@ public class ModelGuiControl {
 
         TreeDragSource(ModelGuiControl guiProc, int actions ) {
             this.guiProc = guiProc;
-            this.sourceTree = guiProc.getjTreeModel();
+            this.sourceTree = guiProc.getJTreeModel();
             this.nodesComplianceControl = guiProc.getNodesComplianceControl();
             source = new DragSource();
             recognizer = source.createDefaultDragGestureRecognizer( sourceTree, actions, this );
@@ -252,7 +266,7 @@ public class ModelGuiControl {
 
         TreeDropTarget( ModelGuiControl guiProc ) {
             this.guiProc = guiProc;
-            this.targetTree = guiProc.getjTreeModel();
+            this.targetTree = guiProc.getJTreeModel();
             target = new DropTarget( targetTree, this );
             this.nodesComplianceControl = guiProc.getNodesComplianceControl();
         }
@@ -332,7 +346,7 @@ public class ModelGuiControl {
 
     private DefaultTableModel emptyTableModel = new DefaultTableModel();
     private ModelPropertiesTableModel physModelPropertiesTableModel;
-    private SpritePropertiesTableModel aagPropertiesTableModel;
+    private SpritePropertiesTableModel spritePropertiesTableModel;
     private BodyPropertiesTableModel bodyPropertiesTableModel;
     private FixtureSetPropertiesTableModel fixtureSetPropertiesTableModel;
     private JointPropertiesTableModel jointPropertiesTableModel;
@@ -362,7 +376,7 @@ public class ModelGuiControl {
 
 
         physModelPropertiesTableModel = new ModelPropertiesTableModel( this.jTreeModel);
-        aagPropertiesTableModel = new SpritePropertiesTableModel( this.jTreeModel);
+        spritePropertiesTableModel = new SpritePropertiesTableModel( this.jTreeModel);
         bodyPropertiesTableModel = new BodyPropertiesTableModel( this.jTreeModel);
         fixtureSetPropertiesTableModel = new FixtureSetPropertiesTableModel( this.jTreeModel);
         jointPropertiesTableModel = new JointPropertiesTableModel( this.jTreeModel);
@@ -434,7 +448,7 @@ public class ModelGuiControl {
         return mainGui;
     }
 
-    public JTree getjTreeModel() {
+    public JTree getJTreeModel() {
         return jTreeModel;
     }
 
@@ -477,118 +491,76 @@ public class ModelGuiControl {
     }
 
     protected void loadPhysSetNode(Gx2dJTreeNode physSetJNode) {
+        loadBodyHandlerJNodes( physSetJNode );
+        loadJointHandlerJNodes( physSetJNode );
+    }
+
+    protected void loadJointHandlerJNodes( Gx2dJTreeNode physSetJNode ) {
         PhysSet ps = (PhysSet) physSetJNode.getUserObject();
-
-        //todo: dig here.
-
-        Gx2dJTreeNode bgJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.BODY_HANDLER, ps.getBodyHandler() );
-        physSetJNode.add( bgJNode );
-        Gx2dJTreeNode jgJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.JOINT_HANDLER, ps.getJointHandler() );
+        Gx2dJTreeNode jgJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.JH_GROUP, ps );
         physSetJNode.add( jgJNode );
-
-        BodyHandler bh = ps.getBodyHandler();
-
-        if ( bh != null ) {
-            for ( Node node : bh ) {
-                BodyHandler b = (BodyHandler) node;
-                Gx2dJTreeNode bJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.BODY_HANDLER, b);
-                loadBodyHandlerNode(bJNode);
-                bgJNode.add( bJNode );
-            }
-        }
-
         JointHandler jh = ps.getJointHandler();
-        if ( jh != null ) {
-            for ( Node node : jh ) {
-                JointHandler j = (JointHandler) node;
-                Gx2dJTreeNode jJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.JOINT_HANDLER, j );
-
-            }
-        }
-
-        Gx2dJTreeNode jJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.JOINT_ITEM_GROUP,
-                bset );
-        loadJointHandlerNode(jJNode);
-
-        physSetJNode.add(bJNode);
-        physSetJNode.add(jJNode);
-    }
-
-
-
-    protected void loadBodyHandlerNode(Gx2dJTreeNode parentNode) {
-        BiScSet bset = (BiScSet) parentNode.getUserObject();
-        for ( BodyItem bi : bset.getBodyItems() ) {
-            Gx2dJTreeNode node = new Gx2dJTreeNode(Gx2dJTreeNode.Type.BODY_HANDLER, bi );
-            loadBodyItemNodes( node );
-            parentNode.add( node );
+        if ( jh == null )
+            return;
+        for ( Node node : jh ) {
+            JointHandler j = (JointHandler) node;
+            Gx2dJTreeNode jJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.JOINT_HANDLER, j );
+            jgJNode.add( jJNode );
         }
     }
 
-
-    protected void loadBodyItemNodes( Gx2dJTreeNode parentNode ) {
-        BodyItem bi = (BodyItem) parentNode.getUserObject();
-        Gx2dJTreeNode fsgNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.FIXTURE_SET_GROUP,
-                bi );
-        loadFixtureSetsNodes( fsgNode );
-        parentNode.add( fsgNode );
-
-        Gx2dJTreeNode aagNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.SPRITE, bi );
-        loadAagNodes(aagNode);
-        parentNode.add(aagNode);
-    }
-
-    protected void loadFixtureSetsNodes( Gx2dJTreeNode parentNode ) {
-        BodyItem bi = (BodyItem) parentNode.getUserObject();
-        for ( FixtureSet fs : bi.getFixtureSets() ) {
-            parentNode.add( new Gx2dJTreeNode(Gx2dJTreeNode.Type.FIXTURE_SET, fs) );
+    protected void loadBodyHandlerJNodes( Gx2dJTreeNode physSetJNode ) {
+        PhysSet ps = (PhysSet) physSetJNode.getUserObject();
+        Gx2dJTreeNode bgJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.BH_GROUP, ps );
+        physSetJNode.add( bgJNode );
+        BodyHandler bh = ps.getBodyHandler();
+        if ( bh == null )
+            return;
+        for ( Node node : bh ) {
+            BodyHandler b = (BodyHandler) node;
+            Gx2dJTreeNode bJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.BODY_HANDLER, b);
+            loadBodyHandlerJNode(bJNode);
+            bgJNode.add( bJNode );
         }
     }
 
-
-    protected void loadAagNodes( Gx2dJTreeNode parentNode ) {
-        AnimatedActorGroup aag = (AnimatedActorGroup) parentNode.getUserObject();
-        for ( Actor a : aag.getChildren() ) {
-            if ( !( a instanceof AnimatedActorGroup ) )
-                continue;
-            if ( aag.getScChildren().contains( a ) )
-                continue;
-            Gx2dJTreeNode node = new Gx2dJTreeNode(Gx2dJTreeNode.Type.SPRITE, a );
-            loadAagNodes( node );
-            parentNode.add( node );
-        }
-        Gx2dJTreeNode scNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.AAG_SC, aag );
-        loadAagScNodes( scNode );
-        parentNode.add( scNode );
+    protected void loadBodyHandlerJNode(Gx2dJTreeNode bhJNode) {
+        BodyHandler bh = (BodyHandler) bhJNode.getUserObject();
+        Gx2dJTreeNode spriteJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.SPRITE, bh );
+        bhJNode.add( spriteJNode );
+        loadFsJNodes(bhJNode);
+        loadSpriteJNode(spriteJNode);
     }
 
-    protected void loadAagScNodes( Gx2dJTreeNode parentNode ) {
-        AnimatedActorGroup aag = (AnimatedActorGroup) parentNode.getUserObject();
-        AagScContainer aagScContainer = aag.getScChildren();
-        for ( Integer id : aagScContainer.getIdsSet() ) {
-            ScContainer.Handler handler = new ScContainer.Handler( aagScContainer, id );
-            Gx2dJTreeNode scSetNode = new Gx2dJTreeNode( Gx2dJTreeNode.Type.AAG_SC_SET, handler );
-            loadAagScSetNodes(scSetNode);
-            parentNode.add( scSetNode );
+    protected void loadFsJNodes( Gx2dJTreeNode bhJNode ) {
+        BodyHandler bh = (BodyHandler) bhJNode.getUserObject();
+        Gx2dJTreeNode fsgJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.FS_GROUP, bh );
+        bhJNode.add( fsgJNode );
+        FixtureSet fs = bh.getFixtureSet();
+        if ( fs == null )
+            return;
+        for( Node node : fs ) {
+            FixtureSet f = (FixtureSet) node;
+            Gx2dJTreeNode fsJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.FIXTURE_SET, f );
+            fsgJNode.add( fsJNode );
         }
     }
 
-    protected void loadAagScSetNodes(Gx2dJTreeNode parentNode) {
-        ScContainer.Handler handler = (ScContainer.Handler) parentNode.getUserObject();
-        AnimatedActorGroup aag = (AnimatedActorGroup) handler.container.getContent( handler.id );
-        Gx2dJTreeNode aagNode = new Gx2dJTreeNode( Gx2dJTreeNode.Type.SPRITE, aag );
-        loadAagNodes( aagNode );
-        parentNode.add( aagNode );
-    }
-
-    protected void loadJointHandlerNode(Gx2dJTreeNode parentNode) {
-        BiScSet bset = (BiScSet) parentNode.getUserObject();
-        for ( JointItem jointItem : bset.getJointItems() ) {
-            parentNode.add( new Gx2dJTreeNode(Gx2dJTreeNode.Type.JOINT_HANDLER, jointItem ) );
+    protected void loadSpriteJNode(Gx2dJTreeNode spriteJNode) {
+        Sprite sprite = (Sprite) spriteJNode.getUserObject();
+        Gx2dJTreeNode sgJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.SPRITE_GROUP, sprite );
+        Sprite ssprt = sprite.getSubSprite();
+        if ( ssprt == null )
+            return;
+        for ( Node n : ssprt ) {
+            Sprite subSprite = (Sprite) n;
+            Gx2dJTreeNode ssJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.SPRITE, subSprite );
+            sgJNode.add( ssJNode );
+            loadSpriteJNode( ssJNode );
         }
     }
 
-    protected Gx2dJTreeNode getChildNode( Gx2dJTreeNode parentNode, Gx2dJTreeNode.Type childType ) {
+    protected Gx2dJTreeNode getChildJNode(Gx2dJTreeNode parentNode, Gx2dJTreeNode.Type childType) {
         for ( int i = 0; i < parentNode.getChildCount(); i++ ) {
             Gx2dJTreeNode node = (Gx2dJTreeNode) parentNode.getChildAt( i );
             if ( node.getType() == childType )
@@ -597,34 +569,7 @@ public class ModelGuiControl {
         return null;
     }
 
-    protected Gx2dJTreeNode getFixtureSetGroupNode( Gx2dJTreeNode parentBodyItemNode ) {
-        if ( parentBodyItemNode.getType() != Gx2dJTreeNode.Type.BODY_HANDLER)
-            return null;
-
-        return getChildNode( parentBodyItemNode, Gx2dJTreeNode.Type.FIXTURE_SET_GROUP );
-    }
-
-
-    protected Gx2dJTreeNode getJointGroupNode( Gx2dJTreeNode parentBiScSetNode ) {
-        if ( parentBiScSetNode.getType() != Gx2dJTreeNode.Type.BiScSET )
-            return null;
-        return getChildNode( parentBiScSetNode, Gx2dJTreeNode.Type.JOINT_ITEM_GROUP );
-    }
-
-
-    protected Gx2dJTreeNode getAagScNode( Gx2dJTreeNode parentAagNode ) {
-        if ( parentAagNode.getType() != Gx2dJTreeNode.Type.SPRITE)
-            return null;
-        return getChildNode( parentAagNode, Gx2dJTreeNode.Type.AAG_SC );
-    }
-
-    protected Gx2dJTreeNode getAagNode( Gx2dJTreeNode parentAagScSetNode ) {
-        if ( parentAagScSetNode.getType() != Gx2dJTreeNode.Type.AAG_SC_SET )
-            return null;
-        return getChildNode( parentAagScSetNode, Gx2dJTreeNode.Type.SPRITE);
-    }
-
-    protected void checkTreeSelection() {
+    protected void checkJTreeSelection() {
 
         TreePath [] selectionPaths = jTreeModel.getSelectionPaths();
         if ( selectionPaths == null )
@@ -632,11 +577,11 @@ public class ModelGuiControl {
         if ( selectionPaths.length < 2 )
             return;
 
-        Gx2dJTreeNode firstNode = (Gx2dJTreeNode) selectionPaths[0].getLastPathComponent();
+        Gx2dJTreeNode firstJNode = (Gx2dJTreeNode) selectionPaths[0].getLastPathComponent();
 
         for ( int i = 1; i < selectionPaths.length; i++ ) {
             Gx2dJTreeNode node = (Gx2dJTreeNode) selectionPaths[i].getLastPathComponent();
-            if ( node.getType() != firstNode.getType() )
+            if ( node.getType() != firstJNode.getType() )
                 jTreeModel.removeSelectionPath( selectionPaths[i] );
         }
     }
@@ -686,7 +631,7 @@ public class ModelGuiControl {
             return;
         propertiesCellEditor.cancelCellEditing();
 
-        checkTreeSelection();
+        checkJTreeSelection();
 
         TreePath [] selectionPaths = jTreeModel.getSelectionPaths();
 
@@ -708,26 +653,24 @@ public class ModelGuiControl {
         switch ( type ) {
             case MODEL:
                 return EditorScreen.ModelObjectType.OT_Model;
-            case BiScSET:
+            case PHYS_SET:
+                return EditorScreen.ModelObjectType.OT_PhysSet;
+            case SPRITE_GROUP:
                 break;
             case SPRITE:
-                return EditorScreen.ModelObjectType.OT_Aag;
-            case AAG_SC:
-                break;
-            case AAG_SC_SET:
+                return EditorScreen.ModelObjectType.OT_Sprite;
+            case BH_GROUP:
                 break;
             case BODY_HANDLER:
-                return EditorScreen.ModelObjectType.OT_BodyItem;
-            case BODY_ITEM_GROUP:
+                return EditorScreen.ModelObjectType.OT_BodyHandler;
+            case FS_GROUP:
                 break;
             case FIXTURE_SET:
                 return EditorScreen.ModelObjectType.OT_FixtureSet;
-            case FIXTURE_SET_GROUP:
+            case JH_GROUP:
                 break;
             case JOINT_HANDLER:
-                return EditorScreen.ModelObjectType.OT_JointItem;
-            case JOINT_ITEM_GROUP:
-                break;
+                return EditorScreen.ModelObjectType.OT_JointHandler;
         }
         return EditorScreen.ModelObjectType.OT_None;
     }
@@ -750,37 +693,33 @@ public class ModelGuiControl {
                 physModelPropertiesTableModel.setModel( model );
                 jTableProperties.setModel(physModelPropertiesTableModel);
                 break;
-            case BiScSET:
-                scItemTableModel.setHandler((ScContainer.Handler) selNode.getUserObject() );
-                jTableProperties.setModel(scItemTableModel);
+            case PHYS_SET:
+                break;
+            case SPRITE_GROUP:
                 break;
             case SPRITE:
-                aagPropertiesTableModel.setAag((AnimatedActorGroup) selNode.getUserObject());
-                jTableProperties.setModel(aagPropertiesTableModel);
+                spritePropertiesTableModel.setSprite((Sprite) selNode.getUserObject());
+                jTableProperties.setModel(spritePropertiesTableModel);
                 break;
-            case AAG_SC:
-                break;
-            case AAG_SC_SET:
-                scItemTableModel.setHandler((ScContainer.Handler) selNode.getUserObject() );
-                jTableProperties.setModel(scItemTableModel);
+            case BH_GROUP:
                 break;
             case BODY_HANDLER:
-                BodyItem bi = ( BodyItem ) selNode.getUserObject();
-                bodyPropertiesTableModel.setBodyItem(bi);
+                BodyHandler bh = ( BodyHandler ) selNode.getUserObject();
+                bodyPropertiesTableModel.setBodyHandler(bh);
                 jTableProperties.setModel(bodyPropertiesTableModel);
                 break;
-            case BODY_ITEM_GROUP:
+            case FS_GROUP:
                 break;
             case FIXTURE_SET:
                 FixtureSet fs = ( FixtureSet ) selNode.getUserObject();
                 fixtureSetPropertiesTableModel.setFixtureSet(fs);
                 jTableProperties.setModel( fixtureSetPropertiesTableModel );
                 break;
-            case FIXTURE_SET_GROUP:
+            case JH_GROUP:
                 break;
             case JOINT_HANDLER:
-                JointItem ji = (JointItem) selNode.getUserObject();
-                jointPropertiesTableModel.setJointItem(ji);
+                JointHandler jh = (JointHandler) selNode.getUserObject();
+                jointPropertiesTableModel.setJointHandler(jh);
                 jTableProperties.setModel( jointPropertiesTableModel );
                 break;
         }
@@ -807,111 +746,95 @@ public class ModelGuiControl {
             return;
         if ( selPaths.length > 1 )
             return;
-        Gx2dJTreeNode parentNode = (Gx2dJTreeNode) jTreeModel.getLastSelectedPathComponent();
-        Gx2dJTreeNode newNode = null;
+        Gx2dJTreeNode parentJNode = (Gx2dJTreeNode) jTreeModel.getLastSelectedPathComponent();
+        Gx2dJTreeNode newJNode = null;
 
-        switch ( parentNode.getType() ) {
+        switch ( parentJNode.getType() ) {
 
             case MODEL:
-                newNode = createNewBiScSet();
+                newJNode = createNewPhysSetNode( (Model) parentJNode.getUserObject());
                 break;
-            case BiScSET:
+            case PHYS_SET:
+                break;
+            case SPRITE_GROUP:
                 break;
             case SPRITE:
-                newNode = createAagNode( (AnimatedActorGroup) parentNode.getUserObject() );
+                newJNode = createNewSprite((Sprite) parentJNode.getUserObject());
                 break;
-            case AAG_SC:
-                newNode = createAagScItem( ( (AnimatedActorGroup) parentNode.getUserObject() ).getScChildren() );
-                break;
-            case AAG_SC_SET:
+            case BH_GROUP:
+                newJNode = createNewBodyHandler((PhysSet) parentJNode.getUserObject());
                 break;
             case BODY_HANDLER:
                 break;
-            case BODY_ITEM_GROUP:
-                newNode = createNewBodyItem( (BiScSet) parentNode.getUserObject() );
+            case FS_GROUP:
+                newJNode = createNewFixtureSet((BodyHandler) parentJNode.getUserObject());
                 break;
             case FIXTURE_SET:
                 break;
-            case FIXTURE_SET_GROUP:
-                newNode = createFixtureSet((BodyItem) parentNode.getUserObject() );
+            case JH_GROUP:
+                if ( ! dlgNewJointSelector.execute() )
+                    break;
+                newJNode = createNewEmptyJointHandler((PhysSet) parentJNode.getUserObject(), dlgNewJointSelector.getSelectedJointType());
                 break;
             case JOINT_HANDLER:
                 break;
-            case JOINT_ITEM_GROUP:
-                if ( ! dlgNewJointSelector.execute() )
-                    break;
-                newNode = createEmptyJointItemNode((BiScSet) parentNode.getUserObject(), dlgNewJointSelector.getSelectedJointType() );
-                break;
         }
 
-        if ( newNode == null )
+        if ( newJNode == null )
             return;
 
-        parentNode.add( newNode );
-        treeDataModel.nodeStructureChanged( parentNode );
-        selectNode( newNode );
+        parentJNode.add(newJNode);
+        treeDataModel.nodeStructureChanged( parentJNode );
+        selectNode( newJNode );
         mainGui.makeHistorySnapshot();
     }
 
-    public Gx2dJTreeNode createNewBiScSet() {
-        BiScSet newSet = new BiScSet( model );
-        Integer id = model.getScBodyItems().generateId();
-        model.getScBodyItems().addContent(id, newSet );
-
-        ScContainer.Handler handler = new ScContainer.Handler(model.getScBodyItems(), id );
-        Gx2dJTreeNode newNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.BiScSET, handler );
-        loadPhysSetNode(newNode);
-        return newNode;
+    private Gx2dJTreeNode createNewPhysSetNode(Model model) {
+        PhysSet ps = new PhysSet();
+        ps.setName("NewPS");
+        model.addPhysSet( ps );
+        Gx2dJTreeNode psJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.PHYS_SET, ps );
+        loadPhysSetNode( psJNode );
+        return psJNode;
     }
 
-    public Gx2dJTreeNode createNewBodyItem( BiScSet bset ) {
-        BodyItem bi = new BodyItem( bset );
-        bi.setName( "NewBody");
-        bset.addBodyItem( bi );
-        Gx2dJTreeNode node = new Gx2dJTreeNode(Gx2dJTreeNode.Type.BODY_HANDLER, bi );
-        loadBodyItemNodes( node );
-        return node;
+    public Gx2dJTreeNode createNewBodyHandler(PhysSet physSet) {
+        BodyHandler bh = new BodyHandler();
+        bh.setName( "NewBody");
+        physSet.addBodyHandler( bh );
+        Gx2dJTreeNode bhJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.BODY_HANDLER, bh );
+        loadBodyHandlerJNodes( bhJNode );
+        return bhJNode;
     }
 
-    public Gx2dJTreeNode createAagNode( AnimatedActorGroup parentAag ) {
-        AnimatedActorGroup aag = new AnimatedActorGroup( SkrGdxApplication.get().getAtlas() );
-        aag.setName("NewAag");
-        parentAag.addChildAag(aag);
-        Gx2dJTreeNode node = new Gx2dJTreeNode(Gx2dJTreeNode.Type.SPRITE, aag);
-        loadAagNodes( node );
-        return node;
+    public Gx2dJTreeNode createNewSprite(Sprite parentSprite) {
+        Sprite sprite = new Sprite();
+        sprite.setName("NewSprite");
+        parentSprite.addSubSprite(sprite);
+        Gx2dJTreeNode spriteJNode = new Gx2dJTreeNode(Gx2dJTreeNode.Type.SPRITE, sprite);
+        loadSpriteJNode( spriteJNode );
+        return spriteJNode;
     }
 
-    public Gx2dJTreeNode createAagScItem( AagScContainer container ) {
-        AnimatedActorGroup aag = new AnimatedActorGroup( SkrGdxApplication.get().getAtlas() );
-        aag.setName("NewAag");
-        Integer id = container.generateId();
-        container.addContent(id, aag);
-        ScContainer.Handler handler = new ScContainer.Handler( container, id );
-        Gx2dJTreeNode node = new Gx2dJTreeNode(Gx2dJTreeNode.Type.AAG_SC_SET, handler );
-        loadAagScSetNodes(node);
-        return node;
-    }
-
-    public Gx2dJTreeNode createFixtureSet( BodyItem bi ) {
-        FixtureSet fs = new FixtureSet( bi );
+    public Gx2dJTreeNode createNewFixtureSet(BodyHandler bh) {
+        FixtureSet fs = new FixtureSet();
         fs.setName("newFixtureSet");
-        bi.addFixtureSet( fs );
+        bh.addFixtureSet(fs);
         return new Gx2dJTreeNode( Gx2dJTreeNode.Type.FIXTURE_SET, fs );
     }
 
-    public void updateFixtures( Array<ShapeDescription> shpDescriptions ) {
+    public void updateFixtures( Array<ShapeDefinition> shpDefs ) {
         FixtureSet fs = fixtureSetPropertiesTableModel.getFixtureSet();
-        fs.createFixtures( shpDescriptions );
+        fs.createFixtures( shpDefs );
         fixtureSetPropertiesTableModel.fireTableDataChanged();
     }
 
-    public Gx2dJTreeNode createEmptyJointItemNode( BiScSet bset, JointDef.JointType type ) {
-        JointItem ji = JointItemFactory.create( type, "new_"+type, bset );
-        if ( ji == null )
+    public Gx2dJTreeNode createNewEmptyJointHandler(PhysSet physSet, JointDef.JointType type) {
+        JointHandler jh = JointHandlerFactory.create(type);
+        if ( jh == null )
             return null;
-        bset.addJointItem( ji );
-        return new Gx2dJTreeNode(Gx2dJTreeNode.Type.JOINT_HANDLER, ji );
+        physSet.addJointHandler(jh);
+        return new Gx2dJTreeNode(Gx2dJTreeNode.Type.JOINT_HANDLER, jh );
     }
 
     public void updatePropertiesTable() {
@@ -998,16 +921,19 @@ public class ModelGuiControl {
             case OT_Model:
                 foundNode = findNode( object, Gx2dJTreeNode.Type.MODEL );
                 break;
-            case OT_BodyItem:
+            case OT_PhysSet:
+                foundNode = findNode( object, Gx2dJTreeNode.Type.PHYS_SET );
+                break;
+            case OT_BodyHandler:
                 foundNode = findNode( object, Gx2dJTreeNode.Type.BODY_HANDLER);
                 break;
-            case OT_Aag:
+            case OT_Sprite:
                 foundNode = findNode( object, Gx2dJTreeNode.Type.SPRITE);
                 break;
             case OT_FixtureSet:
                 foundNode = findNode( object, Gx2dJTreeNode.Type.FIXTURE_SET );
                 break;
-            case OT_JointItem:
+            case OT_JointHandler:
                 foundNode = findNode( object, Gx2dJTreeNode.Type.JOINT_HANDLER);
                 break;
         }
@@ -1091,22 +1017,32 @@ public class ModelGuiControl {
                 break;
             case BiScSET:
                 return removeBiScSetNode( node );
+            case PHYS_SET:
+                break;
+            case SPRITE_GROUP:
+                break;
             case SPRITE:
                 return removeAagNode( node );
             case AAG_SC:
                 break;
             case AAG_SC_SET:
                 return removeAagScSetNode( node );
+            case BH_GROUP:
+                break;
             case BODY_HANDLER:
                 return removeBodyItemNode( node );
             case BODY_ITEM_GROUP:
+                break;
+            case FS_GROUP:
                 break;
             case FIXTURE_SET:
                 return removeFixtureSetNode( node );
             case FIXTURE_SET_GROUP:
                 break;
+            case JH_GROUP:
+                break;
             case JOINT_HANDLER:
-                return removeJointItemNode( node );
+                return removeJointHandlerNode(node);
             case JOINT_ITEM_GROUP:
                 break;
         }
@@ -1124,52 +1060,52 @@ public class ModelGuiControl {
     protected Gx2dJTreeNode removeBodyItemNode( Gx2dJTreeNode node ) {
         Gx2dJTreeNode parentNode = (Gx2dJTreeNode) node.getParent();
         BiScSet bset = (BiScSet) parentNode.getUserObject();
-        BodyItem bi = (BodyItem) node.getUserObject();
+        BodyHandler bh = (BodyHandler) node.getUserObject();
 
-        Gx2dJTreeNode jgNode = getJointGroupNode((Gx2dJTreeNode) parentNode.getParent());
-        Array<Gx2dJTreeNode> jiNodesToRemove = new Array<Gx2dJTreeNode>();
+        Gx2dJTreeNode jgNode = getJhGroupJNode((Gx2dJTreeNode) parentNode.getParent());
+        Array<Gx2dJTreeNode> jhNodesToRemove = new Array<Gx2dJTreeNode>();
 
         for ( int i = 0; i < jgNode.getChildCount(); i++) {
-            Gx2dJTreeNode jiNode = (Gx2dJTreeNode) jgNode.getChildAt( i );
-            JointItem ji = (JointItem) jiNode.getUserObject();
-            if ( ji.getBodyAId() == bi.getId() ) {
-                jiNodesToRemove.add( jiNode );
+            Gx2dJTreeNode jhNode = (Gx2dJTreeNode) jgNode.getChildAt( i );
+            JointHandler jh = (JointHandler) jhNode.getUserObject();
+            if ( jh.getBodyAId() == bh.getId() ) {
+                jhNodesToRemove.add( jhNode );
                 continue;
             }
-            if ( ji.getBodyBId() == bi.getId() ) {
-                jiNodesToRemove.add( jiNode );
+            if ( jh.getBodyBId() == bh.getId() ) {
+                jhNodesToRemove.add( jhNode );
                 continue;
             }
         }
-        for ( Gx2dJTreeNode jiNode : jiNodesToRemove ) {
-            removeJointItemNode( jiNode );
+        for ( Gx2dJTreeNode jhNode : jhNodesToRemove ) {
+            removeJointHandlerNode(jhNode);
         }
         treeDataModel.nodeStructureChanged( jgNode );
-        bset.removeBodyItem(bi);
+        bset.removeBodyItem(bh);
         node.removeFromParent();
-        cleanupJointItemNodes((Gx2dJTreeNode) parentNode.getParent());
+        cleanupJointHandlerNodes((Gx2dJTreeNode) parentNode.getParent());
         return parentNode;
     }
 
-    protected void cleanupJointItemNodes(Gx2dJTreeNode biScSetNode) {
-        Gx2dJTreeNode jiGroupNode = null;
-        for ( int i = 0; i < biScSetNode.getChildCount(); i++) {
-            Gx2dJTreeNode node = (Gx2dJTreeNode) biScSetNode.getChildAt( i );
+    protected void cleanupJointHandlerNodes(Gx2dJTreeNode bhScSetNode) {
+        Gx2dJTreeNode jhGroupNode = null;
+        for ( int i = 0; i < bhScSetNode.getChildCount(); i++) {
+            Gx2dJTreeNode node = (Gx2dJTreeNode) bhScSetNode.getChildAt( i );
             if ( node.getType() == Gx2dJTreeNode.Type.JOINT_ITEM_GROUP ) {
-                jiGroupNode = node;
+                jhGroupNode = node;
                 break;
             }
         }
-        if ( jiGroupNode == null )
+        if ( jhGroupNode == null )
             return ;
 
-        BiScSet bset = (BiScSet) jiGroupNode.getUserObject();
+        BiScSet bset = (BiScSet) jhGroupNode.getUserObject();
         Array<Gx2dJTreeNode> nodesToRemove  = new Array<Gx2dJTreeNode>();
 
-        for ( int i = 0; i < jiGroupNode.getChildCount(); i++ ) {
-            Gx2dJTreeNode node = (Gx2dJTreeNode) jiGroupNode.getChildAt( i );
-            JointItem ji = (JointItem) node.getUserObject();
-            if ( !bset.getJointItems().contains( ji, true) ) {
+        for ( int i = 0; i < jhGroupNode.getChildCount(); i++ ) {
+            Gx2dJTreeNode node = (Gx2dJTreeNode) jhGroupNode.getChildAt( i );
+            JointHandler jh = (JointHandler) node.getUserObject();
+            if ( !bset.getJointHandlers().contains( jh, true) ) {
                 nodesToRemove.add( node );
             }
         }
@@ -1177,20 +1113,20 @@ public class ModelGuiControl {
             node.removeFromParent();
     }
 
-    protected Gx2dJTreeNode removeJointItemNode( Gx2dJTreeNode jiNode ) {
-        Gx2dJTreeNode parentNode = (Gx2dJTreeNode) jiNode.getParent();
-        JointItem ji = (JointItem) jiNode.getUserObject();
+    protected Gx2dJTreeNode removeJointHandlerNode( Gx2dJTreeNode jhNode ) {
+        Gx2dJTreeNode parentNode = (Gx2dJTreeNode) jhNode.getParent();
+        JointHandler jh = (JointHandler) jhNode.getUserObject();
         BiScSet bset = (BiScSet) parentNode.getUserObject();
-        bset.removeJointItem( ji );
-        jiNode.removeFromParent();
+        bset.removeJointHandler(jh);
+        jhNode.removeFromParent();
         return parentNode;
     }
 
     protected Gx2dJTreeNode removeFixtureSetNode( Gx2dJTreeNode fsNode ) {
         Gx2dJTreeNode parentNode = (Gx2dJTreeNode) fsNode.getParent();
-        BodyItem bi = (BodyItem) parentNode.getUserObject();
+        BodyHandler bh = (BodyHandler) parentNode.getUserObject();
         FixtureSet fs = (FixtureSet) fsNode.getUserObject();
-        bi.removeFixtureSet( fs );
+        bh.removeFixtureSet( fs );
         fsNode.removeFromParent();
         return parentNode;
     }
@@ -1201,8 +1137,8 @@ public class ModelGuiControl {
             return null;
         if ( parentNode.getType() == Gx2dJTreeNode.Type.AAG_SC_SET )
             return null;
-        AnimatedActorGroup parentAag = (AnimatedActorGroup) parentNode.getUserObject();
-        AnimatedActorGroup aag = (AnimatedActorGroup) aagNode.getUserObject();
+        Sprite parentAag = (Sprite) parentNode.getUserObject();
+        Sprite aag = (Sprite) aagNode.getUserObject();
         parentAag.removeChild( aag );
         aagNode.removeFromParent();
         return parentNode;
@@ -1246,7 +1182,7 @@ public class ModelGuiControl {
             case JOINT_HANDLER:
                 return;
             case JOINT_ITEM_GROUP:
-                clearJointItemGroupNode( node );
+                clearJointHandlerGroupNode(node);
         }
 
         treeDataModel.nodeStructureChanged( node );
@@ -1270,40 +1206,40 @@ public class ModelGuiControl {
         BiScSet bset = (BiScSet) node.getUserObject();
         bset.destroyPhysics();
         node.removeAllChildren();
-        loadBodyHandlerNode(node);
+        loadBodyHandlerJNode(node);
     }
 
-    protected void clearJointItemGroupNode( Gx2dJTreeNode node ) {
+    protected void clearJointHandlerGroupNode( Gx2dJTreeNode node ) {
         BiScSet bset = (BiScSet) node.getUserObject();
-        bset.removeAllJointItems();
+        bset.removeAllJointHandlers();
         node.removeAllChildren();
-        loadJointHandlerNode(node);
+        loadJointHandlerJNode(node);
     }
 
     protected void clearBodyItemNode( Gx2dJTreeNode node ) {
-        BodyItem bi = (BodyItem) node.getUserObject();
-        bi.removeAllFixtureSets();
-        bi.clearAag();
+        BodyHandler bh = (BodyHandler) node.getUserObject();
+        bh.removeAllFixtureSets();
+        bh.clearAag();
         node.removeAllChildren();
         loadBodyItemNodes( node );
     }
 
     protected void clearFixtureSetGroupNode( Gx2dJTreeNode node ) {
-        BodyItem bi = (BodyItem) node.getUserObject();
-        bi.removeAllFixtureSets();
+        BodyHandler bh = (BodyHandler) node.getUserObject();
+        bh.removeAllFixtureSets();
         node.removeAllChildren();
         loadFixtureSetsNodes( node );
     }
 
     protected void clearAagNode( Gx2dJTreeNode node ) {
-        AnimatedActorGroup aag = (AnimatedActorGroup) node.getUserObject();
+        Sprite aag = (Sprite) node.getUserObject();
         aag.clearAag();
         node.removeAllChildren();
         loadAagNodes( node );
     }
 
     protected void clearAagScNode( Gx2dJTreeNode node ) {
-        AnimatedActorGroup aag = (AnimatedActorGroup) node.getUserObject();
+        Sprite aag = (Sprite) node.getUserObject();
         aag.getScChildren().clearContent();
         node.removeAllChildren();
         loadAagScNodes( node );
@@ -1311,7 +1247,7 @@ public class ModelGuiControl {
 
     protected void clearAagScSetNode( Gx2dJTreeNode node ) {
         ScContainer.Handler handler = (ScContainer.Handler) node.getUserObject();
-        AnimatedActorGroup aag = (AnimatedActorGroup) handler.get();
+        Sprite aag = (Sprite) handler.get();
         aag.clearAag();
         node.removeAllChildren();
         loadAagScSetNodes(node);
@@ -1332,7 +1268,7 @@ public class ModelGuiControl {
     }
 
 
-    public boolean isAagMovable( AnimatedActorGroup aag, AnimatedActorGroup newParentAag ) {
+    public boolean isAagMovable( Sprite aag, Sprite newParentAag ) {
         if ( aag == newParentAag )
             return false;
         if ( aag.isParentOf( newParentAag ) )
@@ -1396,19 +1332,19 @@ public class ModelGuiControl {
             case SPRITE:
                 removeSourceWhenMove = true;
                 if ( tgtType == Gx2dJTreeNode.Type.SPRITE) {
-                    AnimatedActorGroup sAag = (AnimatedActorGroup) sourceNode.getUserObject();
-                    AnimatedActorGroup tAag = (AnimatedActorGroup) newParentNode.getUserObject();
+                    Sprite sAag = (Sprite) sourceNode.getUserObject();
+                    Sprite tAag = (Sprite) newParentNode.getUserObject();
                     if ( !isAagMovable( sAag, tAag ) && !copy )
                         return null;
                     newObject = copyAagNodeToAagNode( sourceNode, newParentNode );
                 } else if (tgtType == Gx2dJTreeNode.Type.AAG_SC) {
-                        AnimatedActorGroup sAag = (AnimatedActorGroup) sourceNode.getUserObject();
-                        AnimatedActorGroup tAag = (AnimatedActorGroup) newParentNode.getUserObject();
+                        Sprite sAag = (Sprite) sourceNode.getUserObject();
+                        Sprite tAag = (Sprite) newParentNode.getUserObject();
                         if ( !isAagMovable( sAag, tAag ) && !copy )
                             return null;
                         newObject = copyAagNodeToAagScNode( sourceNode, newParentNode );
                 } else if ( tgtType == Gx2dJTreeNode.Type.AAG_SC_SET ) {
-                    Gx2dJTreeNode tAagNode = getAagNode( newParentNode );
+                    Gx2dJTreeNode tAagNode = getSpriteJNode(newParentNode);
                     if ( tAagNode == null )
                         return null;
                     return moveNode( sourceNode, (Gx2dJTreeNode) newParentNode.getParent(), copy );
@@ -1419,15 +1355,15 @@ public class ModelGuiControl {
             case AAG_SC:
                 clearSourceWhenMove = true;
                 if ( tgtType == Gx2dJTreeNode.Type.SPRITE) {
-                    AnimatedActorGroup sAag = (AnimatedActorGroup) sourceNode.getUserObject();
-                    AnimatedActorGroup tAag = (AnimatedActorGroup) newParentNode.getUserObject();
+                    Sprite sAag = (Sprite) sourceNode.getUserObject();
+                    Sprite tAag = (Sprite) newParentNode.getUserObject();
                     if (!isAagMovable(sAag, tAag) && !copy)
                         return null;
                     newObject = copyAagScNodeToAagNode(sourceNode, newParentNode);
                 } else if ( tgtType == Gx2dJTreeNode.Type.AAG_SC ) {
                     return moveNode(sourceNode, (Gx2dJTreeNode) newParentNode.getParent(), copy);
                 } else if ( tgtType == Gx2dJTreeNode.Type.AAG_SC_SET ) {
-                    Gx2dJTreeNode aagNode = getAagNode( newParentNode );
+                    Gx2dJTreeNode aagNode = getSpriteJNode(newParentNode);
                     if ( aagNode == null )
                         return null;
                     return moveNode( sourceNode, aagNode, copy );
@@ -1439,8 +1375,8 @@ public class ModelGuiControl {
                 if ( tgtType == Gx2dJTreeNode.Type.SPRITE) {
                     removeSourceWhenMove = true;
                     ScContainer.Handler handler = (ScContainer.Handler) sourceNode.getUserObject();
-                    AnimatedActorGroup srcAag = (AnimatedActorGroup) handler.get();
-                    AnimatedActorGroup tgtAag = (AnimatedActorGroup) newParentNode.getUserObject();
+                    Sprite srcAag = (Sprite) handler.get();
+                    Sprite tgtAag = (Sprite) newParentNode.getUserObject();
                     if ( srcAag.isParentOf( tgtAag ) && !copy ) {
                         return null;
                     }
@@ -1448,7 +1384,7 @@ public class ModelGuiControl {
                 } else if ( tgtType == Gx2dJTreeNode.Type.AAG_SC ) {
                     return moveNode( sourceNode, (Gx2dJTreeNode) newParentNode.getParent(), copy );
                 } else if ( tgtType == Gx2dJTreeNode.Type.AAG_SC_SET ) {
-                    Gx2dJTreeNode aagNode = getAagNode( newParentNode );
+                    Gx2dJTreeNode aagNode = getSpriteJNode(newParentNode);
                     if ( aagNode == null )
                         return null;
                     return moveNode( sourceNode, aagNode, copy );
@@ -1459,19 +1395,19 @@ public class ModelGuiControl {
             case BODY_HANDLER:
                 if ( tgtType == Gx2dJTreeNode.Type.BiScSET ) {
                     removeSourceWhenMove = true;
-                    BodyItem bi = (BodyItem) sourceNode.getUserObject();
+                    BodyHandler bh = (BodyHandler) sourceNode.getUserObject();
                     ScContainer.Handler handler = (ScContainer.Handler) newParentNode.getUserObject();
                     BiScSet bset = (BiScSet) handler.get();
-                    if ( bset.getBodyItems().contains( bi, true)  && !copy )
+                    if ( bset.getBodyItems().contains( bh, true)  && !copy )
                         return false;
                     if ( !copy )
                         editorScreen.setModelObject( null, EditorScreen.ModelObjectType.OT_None );
                     newObject = copyBodyItemNode( sourceNode, newParentNode );
 
                 } else if ( tgtType == Gx2dJTreeNode.Type.BODY_ITEM_GROUP ) {
-                    BodyItem bi = (BodyItem) sourceNode.getUserObject();
+                    BodyHandler bh = (BodyHandler) sourceNode.getUserObject();
                     BiScSet bset = (BiScSet) newParentNode.getUserObject();
-                    if ( bset.getBodyItems().contains( bi, true)  && !copy )
+                    if ( bset.getBodyItems().contains( bh, true)  && !copy )
                         return null;
                      return moveNode(sourceNode, (Gx2dJTreeNode) newParentNode.getParent(), copy );
 
@@ -1498,9 +1434,9 @@ public class ModelGuiControl {
             case FIXTURE_SET:
                 if ( tgtType == Gx2dJTreeNode.Type.BODY_HANDLER) {
                     removeSourceWhenMove = true;
-                    BodyItem bi = (BodyItem) newParentNode.getUserObject();
+                    BodyHandler bh = (BodyHandler) newParentNode.getUserObject();
                     FixtureSet fs = (FixtureSet) sourceNode.getUserObject();
-                    if ( bi.getFixtureSets().contains( fs, true ) && !copy )
+                    if ( bh.getFixtureSets().contains( fs, true ) && !copy )
                         return null;
                     if ( !copy )
                         editorScreen.setModelObject( null, EditorScreen.ModelObjectType.OT_None );
@@ -1514,8 +1450,8 @@ public class ModelGuiControl {
             case FIXTURE_SET_GROUP:
                 if ( tgtType == Gx2dJTreeNode.Type.BODY_HANDLER) {
                     clearSourceWhenMove = true;
-                    BodyItem sBi = (BodyItem) sourceNode.getUserObject();
-                    BodyItem tBi = (BodyItem) newParentNode.getUserObject();
+                    BodyHandler sBi = (BodyHandler) sourceNode.getUserObject();
+                    BodyHandler tBi = (BodyHandler) newParentNode.getUserObject();
                     if ( ( sBi == tBi ) && !copy )
                         return null;
                     newObject = copyFixtureSetGroupNode( sourceNode, newParentNode );
@@ -1609,10 +1545,10 @@ public class ModelGuiControl {
             return null;
         if ( newPNode.getType() != Gx2dJTreeNode.Type.BiScSET )
             return null;
-        BodyItem bi = (BodyItem) sNode.getUserObject();
+        BodyHandler bh = (BodyHandler) sNode.getUserObject();
         ScContainer.Handler handler = (ScContainer.Handler) newPNode.getUserObject();
         BiScSet bset = (BiScSet) handler.get();
-        Object ret = bset.copyBodyItem( bi, null );
+        Object ret = bset.copyBodyItem( bh, null );
         newPNode.removeAllChildren();
         loadPhysSetNode(newPNode);
         return ret;
@@ -1623,18 +1559,18 @@ public class ModelGuiControl {
             return null;
         if ( newPNode.getType() != Gx2dJTreeNode.Type.BODY_HANDLER)
             return null;
-        BodyItem bi = (BodyItem) newPNode.getUserObject();
-        BodyItem sBi = (BodyItem) sNode.getUserObject();
+        BodyHandler bh = (BodyHandler) newPNode.getUserObject();
+        BodyHandler sBi = (BodyHandler) sNode.getUserObject();
 
-        bi.copyFixtureSetArray(sBi.getFixtureSets());
+        bh.copyFixtureSetArray(sBi.getFixtureSets());
 
-        Gx2dJTreeNode fsgNode = getFixtureSetGroupNode( newPNode );
+        Gx2dJTreeNode fsgNode = getFsGroupJNode(newPNode);
         if ( fsgNode == null )
             return null;
 
         fsgNode.removeAllChildren();
         loadFixtureSetsNodes( fsgNode );
-        return bi;
+        return bh;
     }
 
     public Object copyFixtureSetNode( Gx2dJTreeNode sNode, Gx2dJTreeNode newPNode ) {
@@ -1643,10 +1579,10 @@ public class ModelGuiControl {
         if ( newPNode.getType() != Gx2dJTreeNode.Type.BODY_HANDLER)
             return null;
         FixtureSet fs = (FixtureSet) sNode.getUserObject();
-        BodyItem bi = (BodyItem) newPNode.getUserObject();
-        FixtureSet newFs = bi.copyFixtureSet( fs );
+        BodyHandler bh = (BodyHandler) newPNode.getUserObject();
+        FixtureSet newFs = bh.copyFixtureSet( fs );
 
-        Gx2dJTreeNode fsgNode = getFixtureSetGroupNode( newPNode );
+        Gx2dJTreeNode fsgNode = getFsGroupJNode(newPNode);
         if ( fsgNode == null )
             return null;
 
@@ -1660,9 +1596,9 @@ public class ModelGuiControl {
             return null;
         if ( newPNode.getType() != Gx2dJTreeNode.Type.SPRITE)
             return null;
-        AnimatedActorGroup sAag = (AnimatedActorGroup) sNode.getUserObject();
+        Sprite sAag = (Sprite) sNode.getUserObject();
         AagScContainer sCont = sAag.getScChildren();
-        AnimatedActorGroup tAag = (AnimatedActorGroup) newPNode.getUserObject();
+        Sprite tAag = (Sprite) newPNode.getUserObject();
         AagScContainer tCont = tAag.getScChildren();
         tCont.copyContainer( sCont );
 
@@ -1678,7 +1614,7 @@ public class ModelGuiControl {
         if ( newPNode.getType() != Gx2dJTreeNode.Type.SPRITE)
             return null;
         ScContainer.Handler handler = (ScContainer.Handler) sNode.getUserObject();
-        AnimatedActorGroup tAag = (AnimatedActorGroup) newPNode.getUserObject();
+        Sprite tAag = (Sprite) newPNode.getUserObject();
         tAag.getScChildren().addContentAsCopy( handler );
         Gx2dJTreeNode scNode = getAagScNode( newPNode );
         if ( scNode == null )
@@ -1693,8 +1629,8 @@ public class ModelGuiControl {
             return null;
         if ( newPNode.getType() != Gx2dJTreeNode.Type.AAG_SC )
             return null;
-        AnimatedActorGroup sAag = (AnimatedActorGroup) sNode.getUserObject();
-        AnimatedActorGroup tAag = (AnimatedActorGroup) newPNode.getUserObject();
+        Sprite sAag = (Sprite) sNode.getUserObject();
+        Sprite tAag = (Sprite) newPNode.getUserObject();
         tAag.getScChildren().addContentAsCopy( tAag.getScChildren().generateId(), sAag );
         newPNode.removeAllChildren();
         loadAagScNodes(newPNode);
@@ -1706,9 +1642,9 @@ public class ModelGuiControl {
             return null;
         if ( newPNode.getType() != Gx2dJTreeNode.Type.SPRITE)
             return null;
-        AnimatedActorGroup sAag = (AnimatedActorGroup) sNode.getUserObject();
-        AnimatedActorGroup tAag = (AnimatedActorGroup) newPNode.getUserObject();
-        AnimatedActorGroup aag = AnimatedActorGroup.createFromDescription( sAag.getAagDescription(), sAag.getAtlas() );
+        Sprite sAag = (Sprite) sNode.getUserObject();
+        Sprite tAag = (Sprite) newPNode.getUserObject();
+        Sprite aag = Sprite.createFromDescription( sAag.getAagDescription(), sAag.getAtlas() );
         tAag.addChildAag( aag );
         newPNode.removeAllChildren();
         loadAagNodes( newPNode );
@@ -1760,12 +1696,12 @@ public class ModelGuiControl {
             case SPRITE:
                 if ( parentNode.getType() != Gx2dJTreeNode.Type.SPRITE)
                     return;
-                AnimatedActorGroup parentAag = (AnimatedActorGroup) parentNode.getUserObject();
-                AnimatedActorGroup aag = (AnimatedActorGroup) node.getUserObject();
+                Sprite parentAag = (Sprite) parentNode.getUserObject();
+                Sprite aag = (Sprite) node.getUserObject();
                 AagDescription aagDesc = aag.getAagDescription();
 
                 for ( int i = 0; i < number; i++ ) {
-                    AnimatedActorGroup newAag = AnimatedActorGroup.createFromDescription( aagDesc, aag.getAtlas() );
+                    Sprite newAag = Sprite.createFromDescription( aagDesc, aag.getAtlas() );
                     parentAag.addChildAag( newAag );
                     newAag.setPosition( xOffset * (i+1) + newAag.getX(),
                             yOffset * (i+1) + newAag.getY() );
@@ -1781,9 +1717,9 @@ public class ModelGuiControl {
                 return;
             case BODY_HANDLER:
                 for ( int i = 0; i < number; i ++ ) {
-                    BodyItem bi = (BodyItem) node.getUserObject();
+                    BodyHandler bh = (BodyHandler) node.getUserObject();
                     BiScSet bset = (BiScSet) parentNode.getUserObject();
-                    BodyItem newBi = bset.copyBodyItem( bi, null );
+                    BodyHandler newBi = bset.copyBodyItem( bh, null );
                     Body body = newBi.getBody();
                     body.setTransform(PhysWorld.get().toPhys(xOffset * (i + 1) )  + body.getPosition().x,
                             PhysWorld.get().toPhys(yOffset * (i + 1) )  + body.getPosition().y,
@@ -1791,7 +1727,7 @@ public class ModelGuiControl {
                     newBi.setName( newBi.getName() + "_c" + (i+1) );
                 }
                 parentNode.removeAllChildren();
-                loadBodyHandlerNode(parentNode);
+                loadBodyHandlerJNode(parentNode);
                 break;
             case BODY_ITEM_GROUP:
                 return;
@@ -1810,18 +1746,18 @@ public class ModelGuiControl {
     }
 
 
-    public void reloadJointItemNodes() {
+    public void reloadJointHandlerNodes() {
         Gx2dJTreeNode node = (Gx2dJTreeNode) jTreeModel.getLastSelectedPathComponent();
         if ( node == null )
             return;
-        reloadJointItemNodes( node );
+        reloadJointHandlerNodes(node);
     }
 
-    public void reloadJointItemNodes( Gx2dJTreeNode jointGroupNode ) {
+    public void reloadJointHandlerNodes( Gx2dJTreeNode jointGroupNode ) {
         if ( jointGroupNode.getType() != Gx2dJTreeNode.Type.JOINT_ITEM_GROUP )
             return;
         jointGroupNode.removeAllChildren();
-        loadJointHandlerNode(jointGroupNode);
+        loadJointHandlerJNode(jointGroupNode);
         treeDataModel.nodeStructureChanged( jointGroupNode );
     }
 
@@ -1842,8 +1778,8 @@ public class ModelGuiControl {
                 case BiScSET:
                     break;
                 case SPRITE:
-                    AnimatedActorGroup aag = (AnimatedActorGroup) node.getUserObject();
-                    if ( aag instanceof BodyItem )
+                    Sprite aag = (Sprite) node.getUserObject();
+                    if ( aag instanceof BodyHandler )
                         continue;
                     if ( mirrorAag( node, dir ) )
                         res = true;
@@ -1879,7 +1815,7 @@ public class ModelGuiControl {
     protected boolean mirrorAag( Gx2dJTreeNode aagNode , PhysModelProcessing.MirrorDirection dir ) {
         if ( aagNode.getType() != Gx2dJTreeNode.Type.SPRITE)
             return false;
-        AnimatedActorGroup aag = (AnimatedActorGroup) aagNode.getUserObject();
+        Sprite aag = (Sprite) aagNode.getUserObject();
         AagDescription desc = aag.getAagDescription();
         PhysModelProcessing.mirrorAagDescription(desc, dir);
         aagNode.removeAllChildren();
@@ -1892,12 +1828,12 @@ public class ModelGuiControl {
     protected boolean mirrorBodyItem( Gx2dJTreeNode node, PhysModelProcessing.MirrorDirection dir ) {
         if ( node.getType() != Gx2dJTreeNode.Type.BODY_HANDLER)
             return false;
-        BodyItem bi = (BodyItem) node.getUserObject();
-        BodyItemDescription desc = bi.getBodyItemDescription();
+        BodyHandler bh = (BodyHandler) node.getUserObject();
+        BodyItemDescription desc = bh.getBodyItemDescription();
         PhysModelProcessing.mirrorBodyItemDescription(desc, dir);
-        bi.destroyPhysics();
-        bi.loadFromDescription( desc, null );
-        reloadJointItemNodes();
+        bh.destroyPhysics();
+        bh.loadFromDescription( desc, null );
+        reloadJointHandlerNodes();
         return true;
     }
 
@@ -1908,9 +1844,9 @@ public class ModelGuiControl {
         FixtureSetDescription fsDesc = fs.getDescription();
         PhysModelProcessing.mirrorFixtureSetDescription( fsDesc, dir );
 
-        BodyItem bi = fs.getBodyItem();
-        bi.removeFixtureSet( fs );
-        fs = bi.addNewFixtureSet( fsDesc );
+        BodyHandler bh = fs.getBodyItem();
+        bh.removeFixtureSet( fs );
+        fs = bh.addNewFixtureSet( fsDesc );
 
         node.setUserObject(fs);
         return true;
@@ -1971,14 +1907,14 @@ public class ModelGuiControl {
             }
         }
         if ( addJoints )
-            setJointItemNodesToModelDesc( desc );
+            setJointHandlerNodesToModelDesc(desc);
         return desc;
     }
 
-    protected void setBiScSetNodeToModelDescritpion( Gx2dJTreeNode biScSetNode, PhysModelDescription desc ) {
-        if ( biScSetNode.getType() != Gx2dJTreeNode.Type.BiScSET )
+    protected void setBiScSetNodeToModelDescritpion( Gx2dJTreeNode bhScSetNode, PhysModelDescription desc ) {
+        if ( bhScSetNode.getType() != Gx2dJTreeNode.Type.BiScSET )
             return;
-        ScContainer.Handler handler = (ScContainer.Handler) biScSetNode.getUserObject();
+        ScContainer.Handler handler = (ScContainer.Handler) bhScSetNode.getUserObject();
         BiScSet bset = (BiScSet) handler.get();
         BiScSetDescription bsetDesc = bset.getDescription();
         BiScContainerDescription contDesc = desc.getBiScContainerDescription();
@@ -1992,21 +1928,21 @@ public class ModelGuiControl {
 
     }
 
-    protected void setBodyItemGroupNodeToModelDesc(Gx2dJTreeNode bigNode, PhysModelDescription desc) {
-        if ( bigNode.getType() != Gx2dJTreeNode.Type.BODY_ITEM_GROUP )
+    protected void setBodyItemGroupNodeToModelDesc(Gx2dJTreeNode bhgNode, PhysModelDescription desc) {
+        if ( bhgNode.getType() != Gx2dJTreeNode.Type.BODY_ITEM_GROUP )
             return;
-        Gx2dJTreeNode biScNode = (Gx2dJTreeNode) bigNode.getParent();
-        setBiScSetNodeToModelDescritpion( biScNode, desc );
+        Gx2dJTreeNode bhScNode = (Gx2dJTreeNode) bhgNode.getParent();
+        setBiScSetNodeToModelDescritpion( bhScNode, desc );
     }
 
 
-    protected void setBodyItemNodeToModelDesc(Gx2dJTreeNode biNode, PhysModelDescription desc) {
-        if ( biNode.getType() != Gx2dJTreeNode.Type.BODY_HANDLER)
+    protected void setBodyItemNodeToModelDesc(Gx2dJTreeNode bhNode, PhysModelDescription desc) {
+        if ( bhNode.getType() != Gx2dJTreeNode.Type.BODY_HANDLER)
             return;
-        Gx2dJTreeNode biGroupNode = (Gx2dJTreeNode) biNode.getParent();
-        Gx2dJTreeNode biScSetNode = (Gx2dJTreeNode) biGroupNode.getParent();
+        Gx2dJTreeNode bhGroupNode = (Gx2dJTreeNode) bhNode.getParent();
+        Gx2dJTreeNode bhScSetNode = (Gx2dJTreeNode) bhGroupNode.getParent();
 
-        ScContainer.Handler handler = (ScContainer.Handler) biScSetNode.getUserObject();
+        ScContainer.Handler handler = (ScContainer.Handler) bhScSetNode.getUserObject();
         BiScContainerDescription contDesc = desc.getBiScContainerDescription();
         String idStr = handler.id.toString();
         if ( !contDesc.getContentMap().containsKey( idStr ) ) {
@@ -2018,18 +1954,18 @@ public class ModelGuiControl {
                 contDesc.setCurrentId( handler.id );
         }
 
-        BiScSetDescription biScSetDesc = contDesc.getContentMap().get( idStr );
-        BodyItem bi = (BodyItem) biNode.getUserObject();
-        BodyItemDescription biDesc = bi.getBodyItemDescription();
-        biScSetDesc.getBodyItemDescriptions().add( biDesc );
+        BiScSetDescription bhScSetDesc = contDesc.getContentMap().get( idStr );
+        BodyHandler bh = (BodyHandler) bhNode.getUserObject();
+        BodyItemDescription bhDesc = bh.getBodyItemDescription();
+        bhScSetDesc.getBodyItemDescriptions().add( bhDesc );
     }
 
-    protected void setJointItemNodeToModelDesc( Gx2dJTreeNode jiNode, PhysModelDescription desc ) {
-        if ( jiNode.getType() != Gx2dJTreeNode.Type.JOINT_HANDLER)
+    protected void setJointHandlerNodeToModelDesc( Gx2dJTreeNode jhNode, PhysModelDescription desc ) {
+        if ( jhNode.getType() != Gx2dJTreeNode.Type.JOINT_HANDLER)
             return;
-        Gx2dJTreeNode jiGroupNode = (Gx2dJTreeNode) jiNode.getParent();
-        Gx2dJTreeNode biScSetNode = (Gx2dJTreeNode) jiGroupNode.getParent();
-        ScContainer.Handler handler = (ScContainer.Handler) biScSetNode.getUserObject();
+        Gx2dJTreeNode jhGroupNode = (Gx2dJTreeNode) jhNode.getParent();
+        Gx2dJTreeNode bhScSetNode = (Gx2dJTreeNode) jhGroupNode.getParent();
+        ScContainer.Handler handler = (ScContainer.Handler) bhScSetNode.getUserObject();
         BiScContainerDescription contDesc = desc.getBiScContainerDescription();
         String idStr = handler.id.toString();
         if ( !contDesc.getContentMap().containsKey( idStr ) ) {
@@ -2041,39 +1977,39 @@ public class ModelGuiControl {
                 contDesc.setCurrentId( handler.id );
         }
 
-        BiScSetDescription biScSetDesc = contDesc.getContentMap().get( idStr );
-        JointItem ji = (JointItem) jiNode.getUserObject();
-        JointItemDescription jiDesc = ji.getJointItemDescription();
-        biScSetDesc.getJointItemDescriptions().add( jiDesc );
+        BiScSetDescription bhScSetDesc = contDesc.getContentMap().get( idStr );
+        JointHandler jh = (JointHandler) jhNode.getUserObject();
+        JointHandlerDescription jhDesc = jh.getJointHandlerDescription();
+        bhScSetDesc.getJointHandlerDescriptions().add( jhDesc );
     }
 
     protected BodyItemDescription findBodyItemDescription( long id, PhysModelDescription desc ) {
         for ( String idStr : desc.getBiScContainerDescription().getContentMap().keySet() ) {
-            BiScSetDescription biScSetDesc = desc.getBiScContainerDescription().getContentMap().get( idStr );
-            for ( BodyItemDescription biDesc : biScSetDesc.getBodyItemDescriptions() ) {
-                if ( biDesc.getId() == id )
-                    return biDesc;
+            BiScSetDescription bhScSetDesc = desc.getBiScContainerDescription().getContentMap().get( idStr );
+            for ( BodyItemDescription bhDesc : bhScSetDesc.getBodyItemDescriptions() ) {
+                if ( bhDesc.getId() == id )
+                    return bhDesc;
             }
         }
         return null;
     }
 
-    protected void setJointItemNodesToModelDesc( PhysModelDescription desc ) {
+    protected void setJointHandlerNodesToModelDesc( PhysModelDescription desc ) {
         for ( int i = 0; i < rootNode.getChildCount(); i++ ) {
-            Gx2dJTreeNode biScSetNode = (Gx2dJTreeNode) rootNode.getChildAt( i );
-            Gx2dJTreeNode jiGroupNode = getJointGroupNode( biScSetNode );
-            if ( jiGroupNode == null )
+            Gx2dJTreeNode bhScSetNode = (Gx2dJTreeNode) rootNode.getChildAt( i );
+            Gx2dJTreeNode jhGroupNode = getJhGroupJNode(bhScSetNode);
+            if ( jhGroupNode == null )
                 continue;
-            for ( int j = 0; j < jiGroupNode.getChildCount(); j++ ) {
-                Gx2dJTreeNode jiNode = (Gx2dJTreeNode) jiGroupNode.getChildAt( j );
-                JointItem ji = (JointItem) jiNode.getUserObject();
-                long bId = ji.getBodyAId();
+            for ( int j = 0; j < jhGroupNode.getChildCount(); j++ ) {
+                Gx2dJTreeNode jhNode = (Gx2dJTreeNode) jhGroupNode.getChildAt( j );
+                JointHandler jh = (JointHandler) jhNode.getUserObject();
+                long bId = jh.getBodyAId();
                 if ( bId != -1 && ( findBodyItemDescription( bId, desc ) == null) )
                     continue;
-                bId = ji.getBodyBId();
+                bId = jh.getBodyBId();
                 if ( bId != -1 && ( findBodyItemDescription( bId, desc ) == null) )
                     continue;
-                setJointItemNodeToModelDesc( jiNode, desc );
+                setJointHandlerNodeToModelDesc(jhNode, desc);
             }
         }
     }
@@ -2103,20 +2039,20 @@ public class ModelGuiControl {
 
         switch ( node.getType() ) {
             case SPRITE:
-                AnimatedActorGroup aag = (AnimatedActorGroup) node.getUserObject();
+                Sprite aag = (Sprite) node.getUserObject();
                 propCpyDescRef = aag.getAagDescription();
                 break;
             case BODY_HANDLER:
-                BodyItem bi = (BodyItem) node.getUserObject();
-                propCpyDescRef = bi.getBodyItemDescription();
+                BodyHandler bh = (BodyHandler) node.getUserObject();
+                propCpyDescRef = bh.getBodyItemDescription();
                 break;
             case FIXTURE_SET:
                 FixtureSet fs = (FixtureSet) node.getUserObject();
                 propCpyDescRef = fs.getDescription();
                 break;
             case JOINT_HANDLER:
-                JointItem ji = (JointItem) node.getUserObject();
-                propCpyDescRef = ji.getJointItemDescription();
+                JointHandler jh = (JointHandler) node.getUserObject();
+                propCpyDescRef = jh.getJointHandlerDescription();
                 break;
             default:
                 return;
@@ -2149,7 +2085,7 @@ public class ModelGuiControl {
                     pasteFixtureSetNodeProperties( node );
                     break;
                 case JOINT_HANDLER:
-                    pasteJointItemNodeProperties( node );
+                    pasteJointHandlerNodeProperties(node);
                     break;
                 default:
                     break;
@@ -2162,7 +2098,7 @@ public class ModelGuiControl {
 
     protected void pasteAagNodeProperties( Gx2dJTreeNode node ) {
         final AagDescription desc = (AagDescription) propCpyDescRef;
-        final AnimatedActorGroup aag = (AnimatedActorGroup) node.getUserObject();
+        final Sprite aag = (Sprite) node.getUserObject();
         Gdx.app.postRunnable(new Runnable() {
             @Override
             public void run() {
@@ -2181,9 +2117,9 @@ public class ModelGuiControl {
 
     protected void pasteBodyItemNodeProperties( Gx2dJTreeNode node ) {
         final BodyItemDescription desc = (BodyItemDescription) propCpyDescRef;
-        final BodyItem bi = (BodyItem) node.getUserObject();
+        final BodyHandler bh = (BodyHandler) node.getUserObject();
 
-        final Body body = bi.getBody();
+        final Body body = bh.getBody();
         if ( body == null ) {
             return;
         }
@@ -2226,16 +2162,16 @@ public class ModelGuiControl {
         });
     }
 
-    protected void pasteJointItemNodeProperties( Gx2dJTreeNode node ) {
-        final JointItemDescription desc = (JointItemDescription) propCpyDescRef;
-        final JointItem ji = (JointItem) node.getUserObject();
-        if ( ji.getJoint() == null )
+    protected void pasteJointHandlerNodeProperties( Gx2dJTreeNode node ) {
+        final JointHandlerDescription desc = (JointHandlerDescription) propCpyDescRef;
+        final JointHandler jh = (JointHandler) node.getUserObject();
+        if ( jh.getJoint() == null )
             return;
 
         Gdx.app.postRunnable( new Runnable() {
             @Override
             public void run() {
-                Joint joint = ji.getJoint();
+                Joint joint = jh.getJoint();
 
                 switch ( joint.getType() ) {
                     case Unknown:
@@ -2325,9 +2261,9 @@ public class ModelGuiControl {
 
         for ( TreePath tp : selectionsPaths ) {
             node = (Gx2dJTreeNode) tp.getLastPathComponent();
-            Gx2dJTreeNode biNode = findParentNode( node, type );
-            if ( biNode != null ) {
-                newSelections.add( new TreePath( biNode.getPath() ) );
+            Gx2dJTreeNode bhNode = findParentNode( node, type );
+            if ( bhNode != null ) {
+                newSelections.add( new TreePath( bhNode.getPath() ) );
             } else {
                 Array<Gx2dJTreeNode> nodes = findAllChildNodes( node, type, 20000 );
                 for ( Gx2dJTreeNode sNode : nodes ) {
@@ -2360,7 +2296,7 @@ public class ModelGuiControl {
         convertSelection(Gx2dJTreeNode.Type.SPRITE);
     }
 
-    public void convertSelectionToJointItemSelection() {
+    public void convertSelectionToJointHandlerSelection() {
 
         TreePath [] selectionPaths = jTreeModel.getSelectionPaths();
         if ( selectionPaths == null )
@@ -2371,8 +2307,8 @@ public class ModelGuiControl {
         if ( node.type == Gx2dJTreeNode.Type.JOINT_HANDLER)
             return;
 
-        Array<JointItem> jiArray = new Array<JointItem>();
-        Array< BodyItem > bodyItems = new Array<BodyItem>();
+        Array<JointHandler> jhArray = new Array<JointHandler>();
+        Array< BodyHandler > bodyItems = new Array<BodyHandler>();
 
 
         // find all bodyItems
@@ -2380,44 +2316,44 @@ public class ModelGuiControl {
             node = (Gx2dJTreeNode) tp.getLastPathComponent();
 
             if ( node.type == Gx2dJTreeNode.Type.BODY_HANDLER) {
-                bodyItems.add( (BodyItem) node.getUserObject() );
+                bodyItems.add( (BodyHandler) node.getUserObject() );
                 continue;
             }
 
-            Gx2dJTreeNode biNode = findParentNode( node, Gx2dJTreeNode.Type.BODY_HANDLER);
-            if ( biNode != null ) {
-                bodyItems.add( (BodyItem) biNode.getUserObject() );
+            Gx2dJTreeNode bhNode = findParentNode( node, Gx2dJTreeNode.Type.BODY_HANDLER);
+            if ( bhNode != null ) {
+                bodyItems.add( (BodyHandler) bhNode.getUserObject() );
             } else {
-                Array<Gx2dJTreeNode> biNodes = findAllChildNodes( node, Gx2dJTreeNode.Type.BODY_HANDLER, 10 );
-                for ( Gx2dJTreeNode fBiNode : biNodes ) {
-                    BodyItem bi = (BodyItem) fBiNode.getUserObject();
-                    if ( bodyItems.contains( bi, true ) )
+                Array<Gx2dJTreeNode> bhNodes = findAllChildNodes( node, Gx2dJTreeNode.Type.BODY_HANDLER, 10 );
+                for ( Gx2dJTreeNode fBiNode : bhNodes ) {
+                    BodyHandler bh = (BodyHandler) fBiNode.getUserObject();
+                    if ( bodyItems.contains( bh, true ) )
                         continue;
-                    bodyItems.add(bi);
+                    bodyItems.add(bh);
                 }
             }
         }
 
-        // find all JointItems
-        for ( BodyItem bi : bodyItems ) {
-            BiScSet bset = bi.getBiScSet();
-            Array< JointItem > fJiArray = bset.findJointItems( bi );
-            for ( JointItem ji : fJiArray ) {
-                if ( jiArray.contains( ji, true ) ) {
+        // find all JointHandlers
+        for ( BodyHandler bh : bodyItems ) {
+            BiScSet bset = bh.getBiScSet();
+            Array< JointHandler > fJiArray = bset.findJointHandlers(bh);
+            for ( JointHandler jh : fJiArray ) {
+                if ( jhArray.contains( jh, true ) ) {
                     continue;
                 }
-                jiArray.add( ji );
+                jhArray.add( jh );
             }
         }
 
         clearSelection();
 
-        for ( JointItem ji : jiArray ) {
-            Gx2dJTreeNode jiNode = findNode( ji, Gx2dJTreeNode.Type.JOINT_HANDLER);
-            if ( jiNode == null ) {
+        for ( JointHandler jh : jhArray ) {
+            Gx2dJTreeNode jhNode = findNode( jh, Gx2dJTreeNode.Type.JOINT_HANDLER);
+            if ( jhNode == null ) {
                 continue;
             }
-            jTreeModel.addSelectionPath(new TreePath(jiNode.getPath()));
+            jTreeModel.addSelectionPath(new TreePath(jhNode.getPath()));
         }
 
 

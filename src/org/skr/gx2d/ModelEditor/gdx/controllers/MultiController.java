@@ -102,7 +102,7 @@ public class MultiController extends Controller {
                 break;
             case OT_FixtureSet:
                 break;
-            case OT_JointItem:
+            case OT_JointHandler:
                 break;
         }
     }
@@ -130,7 +130,7 @@ public class MultiController extends Controller {
             case OT_FixtureSet:
                 drawFixtureSets();
                 break;
-            case OT_JointItem:
+            case OT_JointHandler:
                 break;
         }
         getShapeRenderer().end();
@@ -179,7 +179,7 @@ public class MultiController extends Controller {
                 break;
             case OT_FixtureSet:
                 break;
-            case OT_JointItem:
+            case OT_JointHandler:
                 break;
         }
 
@@ -225,7 +225,7 @@ public class MultiController extends Controller {
                 break;
             case OT_FixtureSet:
                 break;
-            case OT_JointItem:
+            case OT_JointHandler:
                 break;
         }
     }

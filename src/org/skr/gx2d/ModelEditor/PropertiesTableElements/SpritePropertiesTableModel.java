@@ -166,7 +166,7 @@ public class SpritePropertiesTableModel extends PropertiesBaseTableModel {
         return DataRole.DEFAULT;
     }
 
-    public void setAag(Sprite sprite) {
+    public void setSprite(Sprite sprite) {
         this.sprite = sprite;
     }
 

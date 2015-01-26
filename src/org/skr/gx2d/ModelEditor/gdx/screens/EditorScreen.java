@@ -54,10 +54,11 @@ public class EditorScreen extends AbstractEditorScreen {
     public static  enum ModelObjectType {
         OT_None,
         OT_Model,
+        OT_PhysSet,
         OT_BodyHandler,
         OT_Sprite,
         OT_FixtureSet,
-        OT_JointItem
+        OT_JointHandler
     }
 
     public interface ItemSelectionListener {
@@ -180,7 +181,7 @@ public class EditorScreen extends AbstractEditorScreen {
             case OT_FixtureSet:
                 setFixtureSet( (FixtureSet) object );
                 break;
-            case OT_JointItem:
+            case OT_JointHandler:
                 currentController = jointEditorController;
                 jointEditorController.setJointHandler( (JointHandler) object );
                 break;

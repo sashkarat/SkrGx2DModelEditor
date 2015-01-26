@@ -978,7 +978,7 @@ public class MainGui extends JFrame {
                 tabbedPaneEditors.add( "Tools", panelTools );
                 setGuiElementEnable( panelTools, true);
                 break;
-            case OT_JointItem:
+            case OT_JointHandler:
                 tabbedPaneEditors.add("Joint editor", panelJointCreator );
                 formJointEditor.setJointHandler((JointItem) object);
                 break;
